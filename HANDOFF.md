@@ -489,3 +489,76 @@ tests/
 - Demo URL 尚未存在，必須先建立 Vercel `lunch-roulette` Project。
 - 建立 Vercel Project 後仍保留「只有 main 部署」這個既定要求。
 - 此交接檔本身不代表未執行測試已通過。
+
+
+## 13. 分支清理｜目標只保留 main
+
+使用者已明確要求 repository 維持單一分支。
+
+### 已查核可刪除的遠端分支
+
+- `chore/vercel-main-only`：PR #3 已 squash merge 到 `main`。
+- `feat/lunch-roulette-mvp`：PR #1 已 squash merge 到 `main`。
+- `feat/reveal-sync-show`：PR #2 已 squash merge 到 `main`。
+- `spec/openspec-lunch-roulette-mvp`：OpenSpec 內容已存在 `main`；proposal/design/config/preference spec 完全一致，live/result spec 在 `main` 有後續新增，tasks 舊分支所有項目也都可在 `main` 找到。
+
+> 因為前面使用 squash merge，舊 branch 會在 Git 顯示 diverged；這不代表成果尚未進 main。本次已另外用 PR 與檔案內容查核。
+
+### 本機 Codex 執行
+
+先確認目前不是在任何待刪 branch／worktree：
+
+```bash
+git status
+git worktree list
+git switch main
+git pull --ff-only
+```
+
+刪除遠端 4 個舊 branch：
+
+```bash
+git push origin --delete \
+  chore/vercel-main-only \
+  feat/lunch-roulette-mvp \
+  feat/reveal-sync-show \
+  spec/openspec-lunch-roulette-mvp
+```
+
+清掉本機 remote-tracking refs：
+
+```bash
+git fetch --prune
+```
+
+若本機也存在這 4 個 local branch，且 `git worktree list` 確認沒有 worktree 正在使用，再刪除：
+
+```bash
+git branch -D \
+  chore/vercel-main-only \
+  feat/lunch-roulette-mvp \
+  feat/reveal-sync-show \
+  spec/openspec-lunch-roulette-mvp
+```
+
+最後驗證：
+
+```bash
+git branch
+git branch -r
+git branch -a
+```
+
+預期 repository 分支只保留：
+
+```text
+main
+origin/main
+```
+
+### 保護條件
+
+- 不刪 `main`。
+- 不對 `main` force push。
+- 如果 `git worktree list` 顯示舊 branch 被 worktree 使用，先確認該 worktree 是否有未提交修改；不要直接移除 worktree。
+- 遠端 branch 清完後，後續工作直接在 `main` 進行；不要再建立 feature/spec/chore branch，除非使用者之後明確改變這個規則。
