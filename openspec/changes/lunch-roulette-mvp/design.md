@@ -139,9 +139,8 @@ Supabase adapter 只負責讀寫與 Realtime；不得把人格計分規則散落
 - 卡片可以使用洗牌、翻牌、抽卡動畫。
 - 真正 persona 由已確認的 scoring rules 產生。
 - 同一個 snapshot 對同一 participant 必須穩定。
-- NEEDS_CONFIRMATION: 各 persona 的名稱、score 權重與 threshold。
-
-若 persona scores 平手，必須使用穩定 tie-breaker；第一版可依固定 persona priority 處理，確切優先順序在實作前確認。
+v0.1 使用 `src/domain/questions.ts` 定義的 8 種 persona 與 option score，不使用 threshold。
+Persona 取總分最高者；若 persona scores 平手，使用固定 `PERSONA_PRIORITY` 做穩定 tie-break。
 
 ## 9. Matching behavior
 
@@ -175,8 +174,8 @@ Supabase adapter 只負責讀寫與 Realtime；不得把人格計分規則散落
 
 - 相同 answers + 相同 rules 永遠得到相同 persona。
 - Reveal 後重新載入 snapshot 不改變 persona。
-- threshold 邊界有明確案例。
-- score 平手依已確認 tie-break rule 穩定處理。
+- 最高分制能產生預期 persona。
+- score 平手依固定 `PERSONA_PRIORITY` 穩定處理。
 
 #### Matching
 
