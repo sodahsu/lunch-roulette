@@ -29,6 +29,21 @@ The system SHALL allow a participant to join a session only while the session st
 - AND 新使用者嘗試加入
 - THEN 系統不得建立新的 participant
 
+## Requirement: 等待階段應提供不洩漏答案的現場節奏提示
+The system SHALL use participant/completion counts to keep the lobby and waiting screens active without exposing personal answers.
+
+### Scenario: Host 等待玩家加入或交卷
+- WHEN session status 為 `open`
+- THEN host 可依已加入人數與完成人數顯示趣味狀態文案
+- AND 文案不得指認某位 participant 選了什麼答案
+
+### Scenario: Participant 已交卷
+- WHEN participant 已完成 active questionnaire
+- AND session status 仍為 `open`
+- THEN participant waiting 畫面應顯示目前完成人數
+- AND 可依尚未完成人數顯示趣味等待文案
+- AND participant 仍可回去修改自己的答案
+
 ## Requirement: 主持人可看到場次進度但看不到個人答案
 The system SHALL expose participant presence and completion progress to the host without exposing per-person answer choices.
 
