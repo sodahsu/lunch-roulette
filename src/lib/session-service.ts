@@ -1,6 +1,12 @@
 import { supabase } from './supabase'
 import { buildResultSnapshot, isCompleteResponse } from '../domain/domain'
-import type { Participant, ResponseRecord, ResultSnapshot, SessionStatus } from '../domain/types'
+import type {
+  Participant,
+  ParticipantResult,
+  ResponseRecord,
+  SessionStatus,
+  GroupQuestionStat,
+} from '../domain/types'
 
 export interface SessionRecord {
   id: string
@@ -94,7 +100,6 @@ export async function saveAnswers(
     },
     { onConflict: 'session_id,participant_id' },
   )
-
   if (error) throw error
 }
 
@@ -104,7 +109,6 @@ export async function listParticipants(sessionId: string): Promise<Participant[]
     .select('*')
     .eq('session_id', sessionId)
     .order('created_at')
-
   if (error) throw error
   return data as Participant[]
 }
@@ -114,12 +118,11 @@ export async function listResponses(sessionId: string): Promise<ResponseRecord[]
     .from('responses')
     .select('*')
     .eq('session_id', sessionId)
-
   if (error) throw error
   return data as ResponseRecord[]
 }
 
-export async function lockAndReveal(session: SessionRecord): Promise<ResultSnapshot> {
+export async function lockAndReveal(session: SessionRecord): Promise<GroupQuestionStat[]> {
   const { error: lockError } = await supabase
     .from('sessions')
     .update({ status: 'locked', locked_at: new Date().toISOString() })
@@ -129,53 +132,73 @@ export async function lockAndReveal(session: SessionRecord): Promise<ResultSnaps
   if (lockError) throw lockError
 
   const responses = await listResponses(session.id)
+  const participants = await listParticipants(session.id)
   const snapshot = buildResultSnapshot(responses)
 
-  const { error: snapshotError } = await supabase
+  const { error: groupError } = await supabase
     .from('result_snapshots')
-    .insert({
-      session_id: session.id,
-      group_stats: snapshot.groupStats,
-      participant_results: snapshot.participantResults,
-    })
+    .insert({ session_id: session.id, group_stats: snapshot.groupStats })
+  if (groupError) throw groupError
 
-  if (snapshotError) throw snapshotError
+  const resultRows = Object.entries(snapshot.participantResults).flatMap(([participantId, result]) => {
+    const person = participants.find((item) => item.id === participantId)
+    if (!person) return []
+    return [{
+      session_id: session.id,
+      participant_id: participantId,
+      user_id: person.user_id,
+      result,
+    }]
+  })
+
+  if (resultRows.length > 0) {
+    const { error: personalError } = await supabase
+      .from('participant_results')
+      .insert(resultRows)
+    if (personalError) throw personalError
+  }
 
   const { error: revealError } = await supabase
     .from('sessions')
     .update({ status: 'revealed', revealed_at: new Date().toISOString() })
     .eq('id', session.id)
-
   if (revealError) throw revealError
-  return snapshot
+
+  return snapshot.groupStats
 }
 
-export async function getSnapshot(sessionId: string): Promise<ResultSnapshot | null> {
+export async function getGroupStats(sessionId: string): Promise<GroupQuestionStat[] | null> {
   const { data, error } = await supabase
     .from('result_snapshots')
-    .select('*')
+    .select('group_stats')
     .eq('session_id', sessionId)
     .maybeSingle()
-
   if (error) throw error
-  if (!data) return null
-
-  return {
-    groupStats: data.group_stats,
-    participantResults: data.participant_results,
-  } as ResultSnapshot
+  return (data?.group_stats as GroupQuestionStat[] | undefined) ?? null
 }
 
-export function subscribeToSession(
+export async function getPersonalResult(
   sessionId: string,
-  onChange: () => void,
-): () => void {
+  participantId: string,
+): Promise<ParticipantResult | null> {
+  const { data, error } = await supabase
+    .from('participant_results')
+    .select('result')
+    .eq('session_id', sessionId)
+    .eq('participant_id', participantId)
+    .maybeSingle()
+  if (error) throw error
+  return (data?.result as ParticipantResult | undefined) ?? null
+}
+
+export function subscribeToSession(sessionId: string, onChange: () => void): () => void {
   const channel = supabase
     .channel(`session:${sessionId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `session_id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'responses', filter: `session_id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'result_snapshots', filter: `session_id=eq.${sessionId}` }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results', filter: `session_id=eq.${sessionId}` }, onChange)
     .subscribe()
 
   return () => {
