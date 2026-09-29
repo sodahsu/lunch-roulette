@@ -21,6 +21,7 @@ create table public.participants (
   display_name text not null check (char_length(trim(display_name)) between 1 and 24),
   created_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now(),
+  completed_at timestamptz,
   unique (session_id, user_id)
 );
 
@@ -67,9 +68,21 @@ on public.sessions for update to authenticated
 using (host_user_id = auth.uid())
 with check (host_user_id = auth.uid());
 
-create policy "authenticated users can read participants"
+create policy "session members can read participants"
 on public.participants for select to authenticated
-using (true);
+using (
+  user_id = auth.uid()
+  or exists (
+    select 1 from public.sessions s
+    where s.id = participants.session_id
+      and s.host_user_id = auth.uid()
+  )
+  or exists (
+    select 1 from public.participants me
+    where me.session_id = participants.session_id
+      and me.user_id = auth.uid()
+  )
+);
 
 create policy "users can join sessions as self"
 on public.participants for insert to authenticated
@@ -189,3 +202,23 @@ $$;
 create trigger responses_touch_updated_at
 before update on public.responses
 for each row execute function public.touch_response_updated_at();
+
+create or replace function public.sync_participant_completion()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  update public.participants
+  set completed_at = case when new.is_complete then now() else null end,
+      last_seen_at = now()
+  where id = new.participant_id
+    and session_id = new.session_id;
+  return new;
+end;
+$;
+
+create trigger responses_sync_participant_completion
+after insert or update of is_complete on public.responses
+for each row execute function public.sync_participant_completion();
