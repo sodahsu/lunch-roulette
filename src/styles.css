@@ -281,3 +281,37 @@ input {
     justify-items: center;
   }
 }
+
+
+.group-verdict-card {
+  display: grid;
+  gap: 10px;
+  padding: 24px;
+  border: 2px solid #26231f;
+  border-radius: 24px;
+  background: #fffdf8;
+  text-align: left;
+}
+
+.group-verdict {
+  font-size: clamp(28px, 6vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.compatibility-score {
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #26231f;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.group-verdict-card p {
+  margin: 0;
+  color: #625d55;
+  font-size: 17px;
+  line-height: 1.55;
+}
