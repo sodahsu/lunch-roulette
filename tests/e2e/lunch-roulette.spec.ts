@@ -66,12 +66,24 @@ function completedMetric(page: Page) {
   return page.locator('.metric').filter({ hasText: '已完成' }).locator('strong')
 }
 
-async function reveal(page: Page) {
+async function revealDinnerSuccess(page: Page) {
   await page.getByRole('button', { name: '鎖定並揭曉' }).click()
-  await expect(page.getByText(/我們這團可以出去吃飯嗎/)).toBeVisible({
+  await expect(page.getByText(/我們這團今晚約成飯的成功率/)).toBeVisible({
     timeout: 15_000,
   })
-  await expect(page.locator('.group-verdict')).toBeVisible()
+  await expect(page.locator('.success-score')).toBeVisible()
+}
+
+async function flipPersonaCards(page: Page) {
+  await page.getByRole('button', { name: /翻出所有人格卡/ }).click()
+  await expect(page.getByText(/人格卡已同步翻開/)).toBeVisible({
+    timeout: 15_000,
+  })
+}
+
+async function reveal(page: Page) {
+  await revealDinnerSuccess(page)
+  await flipPersonaCards(page)
 }
 
 async function closeActors(...actors: Actor[]) {
@@ -80,7 +92,7 @@ async function closeActors(...actors: Actor[]) {
 
 test.describe.configure({ mode: 'serial', timeout: 120_000 })
 
-test('CASE-01 多人正常流程：作答、Reveal、手機同步人格卡', async ({ browser }) => {
+test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }) => {
   const host = await createHost(browser)
   const amy = await joinParticipant(browser, host.code, 'Amy')
   const ben = await joinParticipant(browser, host.code, 'Ben')
@@ -89,8 +101,14 @@ test('CASE-01 多人正常流程：作答、Reveal、手機同步人格卡', asy
     await Promise.all([answerAll(amy.page, 0), answerAll(ben.page, 1)])
     await expect(completedMetric(host.page)).toHaveText('2')
 
-    await reveal(host.page)
-    await expect(host.page.locator('.group-verdict')).toContainText(/可以.*出去吃飯/)
+    await revealDinnerSuccess(host.page)
+    await expect(host.page.locator('.success-score')).toBeVisible()
+    await expect(amy.page.getByText(/全場結算中/)).toBeVisible()
+    await expect(ben.page.getByText(/全場結算中/)).toBeVisible()
+    await expect(amy.page.getByText('你的飲食人格')).toHaveCount(0)
+    await expect(ben.page.getByText('你的飲食人格')).toHaveCount(0)
+
+    await flipPersonaCards(host.page)
 
     await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
