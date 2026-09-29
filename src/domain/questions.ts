@@ -1,14 +1,14 @@
 import type { PersonaDefinition, PersonaKey, Question } from './types'
 
 export const PERSONAS: Record<PersonaKey, PersonaDefinition> = {
-  peacekeeper: { key: 'peacekeeper', emoji: '🫡', name: '和平飯友', tagline: '吃什麼都可以，拜託不要再討論了。' },
+  peacekeeper: { key: 'peacekeeper', emoji: '🦦', name: '和平飯友', tagline: '吃什麼都可以，拜託不要再討論了。' },
   contrarian: { key: 'contrarian', emoji: '🐺', name: '逆風美食家', tagline: '大家往東，我偏偏往西。' },
-  picky: { key: 'picky', emoji: '👑', name: '挑食王', tagline: '不是我難搞，是選項真的不行。' },
-  adventurer: { key: 'adventurer', emoji: '🎲', name: '新店敢死隊', tagline: 'Google 評論只有三則？走啊。' },
-  valueHunter: { key: 'valueHunter', emoji: '💰', name: 'CP 值守門員', tagline: '不是不能吃貴，是要值得。' },
-  homebody: { key: 'homebody', emoji: '🛋️', name: '五百公尺極限派', tagline: '超過兩個路口，就是遠。' },
-  foodFanatic: { key: 'foodFanatic', emoji: '🔥', name: '美食狂熱者', tagline: '好吃的話，排四十分鐘也可以。' },
-  easygoing: { key: 'easygoing', emoji: '👼', name: '真・都可以', tagline: '傳說中的真的都可以。' },
+  picky: { key: 'picky', emoji: '🐈', name: '挑食王', tagline: '不是我難搞，是選項真的不行。' },
+  adventurer: { key: 'adventurer', emoji: '🦊', name: '新店敢死隊', tagline: 'Google 評論只有三則？走啊。' },
+  valueHunter: { key: 'valueHunter', emoji: '🐿️', name: 'CP 值守門員', tagline: '不是不能吃貴，是要值得。' },
+  homebody: { key: 'homebody', emoji: '🐢', name: '五百公尺極限派', tagline: '超過兩個路口，就是遠。' },
+  foodFanatic: { key: 'foodFanatic', emoji: '🐻', name: '美食狂熱者', tagline: '好吃的話，排四十分鐘也可以。' },
+  easygoing: { key: 'easygoing', emoji: '🐶', name: '真・都可以', tagline: '傳說中的真的都可以。' },
 }
 
 export const PERSONA_PRIORITY: PersonaKey[] = [
