@@ -55,6 +55,26 @@ alter table public.responses enable row level security;
 alter table public.result_snapshots enable row level security;
 alter table public.participant_results enable row level security;
 
+create or replace function public.can_access_session(target_session_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $
+  select
+    exists (
+      select 1 from public.sessions s
+      where s.id = target_session_id
+        and s.host_user_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.participants p
+      where p.session_id = target_session_id
+        and p.user_id = auth.uid()
+    );
+$;
+
 create policy "authenticated users can read sessions"
 on public.sessions for select to authenticated
 using (true);
@@ -70,19 +90,7 @@ with check (host_user_id = auth.uid());
 
 create policy "session members can read participants"
 on public.participants for select to authenticated
-using (
-  user_id = auth.uid()
-  or exists (
-    select 1 from public.sessions s
-    where s.id = participants.session_id
-      and s.host_user_id = auth.uid()
-  )
-  or exists (
-    select 1 from public.participants me
-    where me.session_id = participants.session_id
-      and me.user_id = auth.uid()
-  )
-);
+using (public.can_access_session(session_id));
 
 create policy "users can join sessions as self"
 on public.participants for insert to authenticated
@@ -146,18 +154,7 @@ with check (
 
 create policy "session members can read group snapshot"
 on public.result_snapshots for select to authenticated
-using (
-  exists (
-    select 1 from public.participants p
-    where p.session_id = result_snapshots.session_id
-      and p.user_id = auth.uid()
-  )
-  or exists (
-    select 1 from public.sessions s
-    where s.id = result_snapshots.session_id
-      and s.host_user_id = auth.uid()
-  )
-);
+using (public.can_access_session(session_id));
 
 create policy "host can create group snapshot"
 on public.result_snapshots for insert to authenticated
