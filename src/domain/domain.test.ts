@@ -10,7 +10,7 @@ import {
   assignPersona,
   buildParticipantResult,
   buildResultSnapshot,
-  calculateGroupCompatibility,
+  calculateDinnerSuccessRate,
   calculateGroupStats,
   calculatePersonaScores,
   calculateSimilarity,
@@ -104,13 +104,13 @@ describe('group stats', () => {
   })
 })
 
-describe('group dining compatibility', () => {
+describe('dinner success rate', () => {
   function stat(counts: Record<string, number>, sampleSize = 8): GroupQuestionStat {
     return { questionId: 'q', counts, sampleSize }
   }
 
   it('shows that a high-consensus group can go eat together', () => {
-    const result = calculateGroupCompatibility([
+    const result = calculateDinnerSuccessRate([
       stat({ a: 8 }),
       stat({ a: 7, b: 1 }),
       stat({ a: 6, b: 2 }),
@@ -121,7 +121,7 @@ describe('group dining compatibility', () => {
   })
 
   it('keeps the answer playful even when the group is split', () => {
-    const result = calculateGroupCompatibility([
+    const result = calculateDinnerSuccessRate([
       stat({ a: 4, b: 4 }),
       stat({ a: 4, b: 4 }),
       stat({ a: 5, b: 3 }),
