@@ -461,6 +461,379 @@ ENEMY   KEVIN
 - [ ] 一堆 dashboard 小卡。
 - [ ] 一般餐廳推薦 App。
 
+## 6.1 Visual Prompt Library｜可直接拿去生圖
+
+這一節是 **visual generation source brief**。  
+目前只是交接用 prompt，不代表資產已生成或已整合進程式。
+
+### 使用規則
+
+1. 角色圖本身 **不要產生文字**；Persona 名稱、TYPE、MATCH、ENEMY 全由前端疊字。
+2. 所有 8 個角色必須維持：
+   - 相同鏡位。
+   - 相同材質。
+   - 相同燈光。
+   - 相同角色比例。
+   - 相同輪廓語言。
+   - 相同背景邏輯。
+3. 差異只放在：
+   - 動物。
+   - 姿勢。
+   - 食物／餐桌象徵物。
+   - 一個局部識別 accent。
+4. 不要讓角色變成兒童吉祥物。
+5. 不要生成品牌 UI、App screenshot、Logo、浮水印或可讀文字。
+6. Persona card 最終會放在手機，因此角色輪廓在小尺寸必須仍可辨識。
+7. 如果一次產生整組，優先要求 **one coherent visual system, eight clearly distinct characters**，不要八張各自發揮。
+8. 如果分開生圖，每次都要帶上 Shared Style Prompt。
+
+---
+
+### Shared Style Prompt｜全系列共用母版
+
+```text
+A sophisticated animal character illustration for a dark editorial social-experiment game about group dining personalities.
+
+Visual language: dark editorial, collectible identity card, contemporary design exhibition, playful but sophisticated, slightly absurd, modern Taiwanese youth culture, restrained humor, bold silhouette, premium graphic illustration, soft 3D sticker-like material, tactile matte surface, subtle depth, clean studio lighting, precise edges, high contrast.
+
+Art direction: black and charcoal visual system with off-white highlights, electric blue as the main shared accent, one restrained secondary accent per character, minimal composition, strong negative space, gallery-poster sensibility, fashion-editorial attitude rather than children's cartoon.
+
+Character treatment: one stylized animal as the clear focal subject, expressive posture but not exaggerated kawaii proportions, compact readable silhouette, confident personality, food-related prop or dining behavior used as a visual metaphor, front three-quarter view, consistent camera angle and scale across the full series.
+
+Composition: centered or slightly off-center hero character, simple dark background or transparent-ready isolated composition, enough empty space around the subject for frontend typography, mobile-readable at small size.
+
+Do not render any words, letters, numbers, logos, app interface, cards with readable text, watermarks, brand marks, photorealistic humans, childish mascot proportions, rainbow palette, glossy mobile-game aesthetic, excessive neon cyberpunk lighting, anime style, or generic restaurant advertising.
+```
+
+---
+
+### Shared Persona Card Prompt｜人格卡構圖模板
+
+在 Shared Style Prompt 後面加：
+
+```text
+Create this as a collectible identity-card hero asset, not a full card UI. Show only the illustrated character and a few abstract graphic shapes. Keep the lower and upper edges visually clean so the frontend can overlay TYPE number, Chinese persona name, English subtype, tagline, MATCH and ENEMY information. The image itself must contain no text.
+```
+
+建議：
+
+- Persona 主圖：`1:1` 或 `4:5`。
+- 手機卡需要裁切彈性時，角色不要貼邊。
+- 優先透明背景；若透明效果不穩，使用純深灰／黑背景，再由前端整合。
+
+---
+
+## 6.2 八個 Persona 生圖 Prompt
+
+### 01｜和平飯友 🦦 Otter
+
+人格：
+
+> 吃什麼都可以，拜託不要再討論了。
+
+在 Shared Style Prompt 後追加：
+
+```text
+Character: an otter representing the Peacekeeper dining personality.
+
+Pose and metaphor: calm seated posture, gently holding two different food plates as if trying to keep both sides happy, relaxed shoulders, subtle tired-but-patient expression, balancing conflicting choices without drama.
+
+Personality feeling: diplomatic, agreeable, quietly exhausted by endless discussion.
+
+Food cues: two contrasting meal choices presented symmetrically, minimal and abstract rather than realistic food photography.
+
+Accent: restrained electric blue with a tiny warm neutral accent.
+
+Avoid making the otter cute or childish; it should feel like a witty editorial character from a contemporary design exhibition.
+```
+
+### 02｜逆風美食家 🐺 Wolf
+
+人格：
+
+> 大家往東，我偏偏往西。
+
+追加：
+
+```text
+Character: a wolf representing the Contrarian dining personality.
+
+Pose and metaphor: the wolf confidently stepping in the opposite direction from a set of abstract arrows or plates, one paw casually pointing away from the group choice, sharp composed posture rather than aggressive attack.
+
+Personality feeling: independent, opinionated, cool, knowingly difficult, enjoys choosing differently.
+
+Food cues: one distinctive plate separated from several identical plates.
+
+Accent: restrained alert red against the shared black and electric-blue system.
+
+Keep the attitude editorial and stylish, not villainous, violent, furry-fandom, or cartoonish.
+```
+
+### 03｜挑食王 🐈 Cat
+
+人格：
+
+> 不是我難搞，是選項真的不行。
+
+追加：
+
+```text
+Character: a cat representing the Picky Eater personality.
+
+Pose and metaphor: composed cat inspecting a plate with suspicious precision, one paw slightly pushing an unacceptable ingredient away, elegant unimpressed expression.
+
+Personality feeling: selective, discerning, high standards, dry humor, absolutely convinced the problem is the food rather than the person.
+
+Food cues: carefully separated ingredients, one rejected garnish or suspicious item.
+
+Accent: cool silver with a restrained acid-lime detail.
+
+Avoid princess imagery, childish fussiness, angry tantrums, or overt luxury branding.
+```
+
+### 04｜新店敢死隊 🦊 Fox
+
+人格：
+
+> Google 評論只有三則？走啊。
+
+追加：
+
+```text
+Character: a fox representing the Adventurer dining personality.
+
+Pose and metaphor: forward-leaning fox about to enter an unknown doorway or reach for a mysterious covered dish, alert ears, curious confident stance, a sense of voluntary risk.
+
+Personality feeling: exploratory, impulsive, curious, first-to-try, slightly reckless but charismatic.
+
+Food cues: mystery dish, unfamiliar menu shapes, small unknown doorway or location marker used only as abstract symbols.
+
+Accent: electric blue plus restrained warm orange.
+
+Do not make it fantasy-adventure, treasure-hunt, anime, or children's storybook.
+```
+
+### 05｜CP 值守門員 🐿️ Squirrel
+
+人格：
+
+> 不是不能吃貴，是要值得。
+
+追加：
+
+```text
+Character: a squirrel representing the Value Hunter dining personality.
+
+Pose and metaphor: focused squirrel comparing two plates with a tiny abstract balance-scale gesture, one premium-looking plate and one practical plate, analytical but not miserly.
+
+Personality feeling: sharp, rational, value-sensitive, proud of finding the best tradeoff.
+
+Food cues: neatly arranged portions, subtle token or geometric value markers without currency symbols or text.
+
+Accent: electric blue with restrained amber.
+
+Avoid accountant clichés, piles of coins, cheap-shopping imagery, or cartoon acorns as the main joke.
+```
+
+### 06｜五百公尺極限派 🐢 Turtle
+
+人格：
+
+> 超過兩個路口，就是遠。
+
+追加：
+
+```text
+Character: a turtle representing the Homebody / short-distance dining personality.
+
+Pose and metaphor: turtle comfortably settled at a tiny table extremely close to its shell, while a distant glowing restaurant-like shape sits far away in the background, clearly uninterested in traveling.
+
+Personality feeling: comfortable, stubborn about distance, efficient, dryly self-aware.
+
+Food cues: nearby simple meal versus distant premium-looking meal.
+
+Accent: acid lime within the shared dark and electric-blue system.
+
+Avoid sleepy old-person stereotypes, childish turtle mascot styling, or outdoor hiking imagery.
+```
+
+### 07｜美食狂熱者 🐻 Bear
+
+人格：
+
+> 好吃的話，排四十分鐘也可以。
+
+追加：
+
+```text
+Character: a bear representing the Food Fanatic personality.
+
+Pose and metaphor: focused bear waiting patiently behind a minimal queue barrier while staring intensely at one exceptional dish in the distance, clearly willing to suffer for good food.
+
+Personality feeling: passionate, committed, food-obsessed, serious about taste.
+
+Food cues: one visually magnetic hero dish, subtle queue markers, no restaurant branding.
+
+Accent: electric blue with a restrained deep orange or red detail.
+
+Avoid gluttony stereotypes, messy overeating, chef costumes, or comedic fat-character treatment.
+```
+
+### 08｜真・都可以 🐶 Dog
+
+人格：
+
+> 傳說中的真的都可以。
+
+追加：
+
+```text
+Character: a dog representing the Truly Easygoing dining personality.
+
+Pose and metaphor: relaxed confident dog surrounded by several different food choices, genuinely comfortable with all of them, open posture, no indecision or anxiety.
+
+Personality feeling: adaptable, cheerful without being childish, low-friction, socially easy, the rare person who actually means 'anything is fine'.
+
+Food cues: several clearly different meal silhouettes arranged with equal visual weight.
+
+Accent: the cleanest and strongest electric blue treatment in the full series.
+
+Avoid generic happy puppy mascot energy; make it calm, stylish, contemporary and editorial.
+```
+
+---
+
+## 6.3 Persona 系列一次生成 Prompt
+
+如果生成工具能一次產生多張／多角色，可使用：
+
+```text
+Create a coherent series of eight distinct animal dining-personality characters for the same dark editorial social-experiment game.
+
+Characters:
+1. Otter — Peacekeeper: balancing two conflicting food choices.
+2. Wolf — Contrarian: confidently choosing the opposite direction.
+3. Cat — Picky Eater: precisely rejecting one ingredient.
+4. Fox — Adventurer: eager to try an unknown restaurant or mystery dish.
+5. Squirrel — Value Hunter: comparing value between two meals.
+6. Turtle — Homebody: choosing the meal that is closest.
+7. Bear — Food Fanatic: willing to wait for an exceptional dish.
+8. Dog — Truly Easygoing: genuinely comfortable with every option.
+
+All eight must share exactly the same camera angle, scale, lighting, soft 3D matte sticker material, dark editorial art direction, electric-blue visual system, clean background, sophisticated graphic language and collectible-card sensibility.
+
+They must be immediately distinguishable by silhouette and posture but clearly belong to one designed family.
+
+Modern Taiwanese youth-culture energy, playful but sophisticated, slightly absurd, gallery-exhibition quality, screenshot-worthy on mobile.
+
+No text, no letters, no numbers, no logos, no UI, no watermarks, no rainbow palette, no kawaii children's mascot style, no anime, no photorealism, no brand references.
+```
+
+---
+
+## 6.4 Landing Hero Prompt
+
+用途：首頁主視覺；文字全部由前端排版。
+
+```text
+A dark editorial hero illustration for a social dining experiment called conceptually 'anything is fine?', without rendering any text.
+
+Scene: a small group of sophisticated stylized animal silhouettes gathered around a dining table, each subtly pulling toward a different food choice while pretending to be relaxed. The tension should be funny but understated, like a visual joke about group decision-making.
+
+Visual language: contemporary design exhibition, black gallery space, electric-blue directional lines, restrained acid-lime accents, bold negative space, soft 3D sticker-like animal material mixed with crisp graphic shapes, high-contrast editorial composition.
+
+Mood: cool, clever, socially awkward, slightly absurd, designed for creative professionals rather than children.
+
+Composition must leave large intentional empty areas for oversized frontend typography.
+
+No visible words, no logos, no restaurant branding, no app UI, no watermarks, no excessive food clutter, no colorful party-game aesthetic, no neon cyberpunk city.
+```
+
+---
+
+## 6.5 Dinner Success Reveal Prompt
+
+用途：大螢幕成功率 Reveal 的抽象背景／輔助視覺。  
+主角仍應是前端的大型數字，不要讓圖片搶掉 `78%`。
+
+```text
+An abstract editorial visual for the climax of a group dining social experiment.
+
+Concept: group consensus being measured and compressed into one decisive outcome. Use converging and diverging paths, vote-like geometric clusters, table-position dots and one strong electric-blue route resolving through the composition.
+
+Style: black background, high contrast, minimal contemporary exhibition graphics, restrained acid-lime and alert-red accents, precise geometry, subtle soft 3D depth, dramatic negative space.
+
+The composition should feel tense and intelligent, not technical or corporate. It must support an oversized percentage number overlaid by the frontend.
+
+No text, no numbers, no charts with labels, no app interface, no logos, no casino imagery, no generic AI glowing brain, no cyberpunk city.
+```
+
+---
+
+## 6.6 Pacing Event Prompt Library
+
+### Event A｜MINORITY DETECTED
+
+```text
+Dark editorial interstitial background representing one choice breaking away from the group: seven compact abstract marks moving together while one distinct mark sharply diverges. Black background, electric blue majority path, one restrained alert-red divergent mark, huge negative space, contemporary design exhibition aesthetic, tense but funny, minimal.
+
+No text or numbers; frontend will overlay the event copy.
+```
+
+### Event B｜CONSENSUS IS COLLAPSING
+
+```text
+Dark editorial interstitial background visualizing group consensus splitting into two nearly equal directions. A clean electric-blue path fractures into two balanced branches, with subtle acid-lime tension markers. Minimal, dramatic, graphic, contemporary exhibition design, slightly absurd social-experiment energy.
+
+No text, no numbers, no UI, no logos.
+```
+
+### Event C｜FINAL TWO
+
+```text
+Dark editorial interstitial background for the final two questions of a social experiment. Two bold remaining checkpoints float in a nearly empty black composition, connected by one electric-blue line approaching a final decision gate. Minimal, high tension, premium graphic design, strong negative space.
+
+No text, no numbers, no countdown digits, no UI, no logos.
+```
+
+---
+
+## 6.7 Global Negative Prompt｜全系列禁止項目
+
+若工具支援 Negative Prompt，可使用：
+
+```text
+readable text, typography inside image, letters, numbers, logo, watermark, app UI, phone mockup, website screenshot, restaurant brand, food delivery branding, photorealistic human, child character, baby animal, kawaii mascot, chibi proportions, anime, manga, Pixar-like family animation, children's book illustration, rainbow palette, pastel rainbow, purple-pink AI gradient, excessive neon, cyberpunk city, gaming HUD, casino, slot machine, glossy mobile-game asset, emoji-only character, cluttered composition, busy background, stock illustration, clip art, generic corporate vector art, overly cute facial expression, exaggerated slapstick, gore, violence
+```
+
+如果工具不支援獨立 Negative Prompt，就把以下句子接在每個 prompt 尾端：
+
+```text
+Avoid all readable text, logos, UI, watermarks, childish mascot styling, rainbow palettes, purple-pink AI gradients, excessive cyberpunk neon, anime, photorealism, stock-vector aesthetics and generic restaurant advertising.
+```
+
+---
+
+## 6.8 生成資產驗收 Checklist
+
+每一批 Persona 資產生成後，不要只挑「最好看」的單張，要先檢查整組一致性：
+
+- [ ] 8 隻動物一眼可辨識。
+- [ ] 8 張相同鏡位／光線／材質。
+- [ ] 角色大小差異合理，不會有一張突然超近景。
+- [ ] 黑 / 白 / Electric Blue 是共同主系統。
+- [ ] Accent 只做局部識別。
+- [ ] 沒有生成任何可讀文字。
+- [ ] 沒有 Logo / UI / 浮水印。
+- [ ] 沒有兒童卡通感。
+- [ ] 手機縮到小尺寸仍看得懂輪廓。
+- [ ] 能安全裁成 1:1 / 4:5。
+- [ ] Persona 名稱與角色視覺語意一致。
+- [ ] 圖片留有足夠 negative space 給前端排字。
+- [ ] 全系列放在一起時像同一場設計展，而不是八個不同 prompt 拼起來。
+
+---
+
 ---
 
 ## 7. OpenSpec
