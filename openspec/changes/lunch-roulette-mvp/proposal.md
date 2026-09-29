@@ -26,7 +26,7 @@
 - Reveal 使用 `open → locked → revealed`。
 - `locked` 階段先完成倒數並在主持人大螢幕顯示今晚約成飯的成功率。
 - 成功率公開時 participant 手機仍停留在等待畫面，不得顯示 persona。
-- 主持人按「翻出所有人格卡」後，系統才建立／保存正式結果並切到 `revealed`。
+- 主持人按「公開處刑 🎴」後，系統才建立／保存正式結果並切到 `revealed`。
 - `revealed` 後所有在線 participant 手機透過 Realtime 自動翻到人格卡。
 - 主持人大螢幕只顯示匿名 aggregate，不公開「某人某題選了什麼」。
 - 大螢幕結果可顯示：
@@ -39,6 +39,8 @@
   - 靈魂飯友。
   - 飲食天敵。
 - 核心題組、人格、配對與成功率皆採 deterministic 規則。
+- UI 採 Dark Editorial × Food Personality × Social Experiment；Host / Quiz / Reveal / Persona Card 共用同一套高對比視覺系統。
+- Persona runtime asset 使用 8 種自有 inline SVG animal glyph，不依賴外部生成圖或 CDN。
 
 ### Out of scope
 
@@ -67,7 +69,9 @@
 - Persona 不使用 threshold。
 - Similarity：雙方 active questions 的答案完全一致率。
 - 今晚約成飯的成功率：由 locked responses 的 aggregate deterministic 計算。
-- 成功率顯示不代表 session 已 `revealed`；手機 persona 必須等待主持人翻牌。
+- Dinner-success algorithm 依 `questionnaire_version` 固定 mapping；v0.1 / v0.2 目前都使用 `v1`。
+- 未配置 algorithm mapping 的新 questionnaire version 不得 silent fallback。
+- 成功率顯示不代表 session 已 `revealed`；手機 persona 必須等待主持人公開處刑。
 - v0.2 不使用 AI 作為任何核心判定。
 
 ## Change status
