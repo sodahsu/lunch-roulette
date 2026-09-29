@@ -169,12 +169,16 @@ test('CASE-04 未完成者不阻塞 Reveal，且不會拿到硬判人格', async
 
 test('CASE-05 Lock 後 participant 不可繼續修改', async ({ browser }) => {
   const host = await createHost(browser)
+  const complete = await joinParticipant(browser, host.code, 'Complete for lock')
   const participant = await joinParticipant(browser, host.code, 'Locked')
 
   try {
+    await answerAll(complete.page, 0)
+
     await participant.page.locator('.choice').first().click()
     await participant.page.getByRole('button', { name: '下一題' }).click()
 
+    await expect(completedMetric(host.page)).toHaveText('1')
     await host.page.getByRole('button', { name: '鎖定並揭曉' }).click()
 
     await expect.poll(async () => participant.page.locator('body').innerText(), {
@@ -183,7 +187,7 @@ test('CASE-05 Lock 後 participant 不可繼續修改', async ({ browser }) => {
 
     await expect(participant.page.locator('.choice')).toHaveCount(0)
   } finally {
-    await closeActors(host, participant)
+    await closeActors(host, complete, participant)
   }
 })
 
