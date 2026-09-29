@@ -48,6 +48,9 @@
 - [x] persona scoring 使用 active questionnaire
 - [x] similarity / pairing 使用 active questionnaire
 - [x] `calculateDinnerSuccessRate()`
+- [x] Dinner Success algorithm 依 `questionnaire_version` versioned mapping
+- [x] v0.1 / v0.2 固定使用 `v1` algorithm
+- [x] 未 mapping 的新 questionnaire version 明確 fail，不 silent fallback
 - [x] Unit test code：question bank / completeness / stats / success rate / persona / pairing / snapshot
 
 ## 3. UI implementation
@@ -145,11 +148,11 @@
 
 - [x] OpenSpec proposal / design / capability specs 已同步兩段式 Reveal
 - [x] 已修正 `result_snapshots` 與 `participant_results` ownership 描述
-- [ ] 決定「成功率」是否必須跨未來程式版本永久不變
-- [ ] 若要求跨版本不變，persist success summary 或保留 versioned success-rate algorithm
+- [x] 成功率跨未來程式版本採 `questionnaire_version → algorithm version` 固定 mapping
+- [x] 不新增 success-summary persistence；舊版 algorithm 由 code 保留
 - [ ] 完成 runtime validation
 - [ ] OpenSpec archive readiness review
 
 **Current archive verdict: NOT_READY**
 
-原因：runtime validation 尚未執行，且 success-rate 的跨版本 persistence contract 尚未決定。
+原因：success-rate 跨版本 contract 已解決；目前只剩 runtime / integration validation 尚未執行。
