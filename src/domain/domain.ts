@@ -83,7 +83,7 @@ export function calculateGroupCompatibility(stats: GroupQuestionStat[]): GroupCo
   return {
     score,
     verdict: '可以出去吃，但最好先指定隊長',
-    detail: '這團的問題不是沒東西吃，是大家都太有想法。',
+    detail: '這團的問題不是沒東西吃，是大家都太有想法。先指定隊長再出門。',
   }
 }
 
