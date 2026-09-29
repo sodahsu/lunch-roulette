@@ -23,7 +23,7 @@
 - [x] 實作最小 completeness logic
 
 ### 2.2 Group stats
-- [ ] 先寫：只計入 complete responses
+- [x] 先寫：只計入 complete responses
 - [x] 先寫：3 / 8 / 9 人皆可計算
 - [x] 先寫：0 complete 不產生 NaN / Infinity
 - [x] 實作最小 group stats logic
@@ -31,21 +31,21 @@
 ### 2.3 Persona
 - [x] 先寫：相同輸入得到相同 persona
 - [ ] 先寫：threshold 邊界
-- [ ] 先寫：score 平手使用固定 tie-break
+- [x] 先寫：score 平手使用固定 tie-break
 - [x] 實作 persona scoring / assignment
 
 ### 2.4 Similarity
 - [x] 先寫：不與自己比較
-- [ ] 先寫：最高 similarity
-- [ ] 先寫：最低 similarity
-- [ ] 先寫：並列保留全部
-- [ ] 先寫：只有一位 complete 時無 pairing
+- [x] 先寫：最高 similarity
+- [x] 先寫：最低 similarity
+- [x] 先寫：並列保留全部
+- [x] 先寫：只有一位 complete 時無 pairing
 - [x] 實作 similarity
 
 ### 2.5 Snapshot
 - [x] 先寫：incomplete participant 不進 snapshot 統計
-- [ ] 先寫：同名 participant 仍依 id 分開
-- [ ] 先寫：snapshot 重新載入結果不變
+- [x] 先寫：同名 participant 仍依 id 分開
+- [x] 先寫：snapshot 重新載入結果不變
 - [x] 實作 buildResultSnapshot
 
 ## 3. Realtime / persistence
