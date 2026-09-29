@@ -79,6 +79,18 @@
 - [x] Host lobby 依加入／完成人數顯示防冷場文案
 - [x] 成功率改成三拍揭曉：自我認知 → 實際成功率鋪陳 → 分數與 verdict
 - [x] Persona 翻牌後 Host 顯示「舉手機找飯友／天敵」社交收尾
+- [x] Dark Editorial global design tokens
+- [x] Landing 巨型「都可以？」typography
+- [x] Host Control Room / READY / THINKING roster
+- [x] Quiz A / B 大型矩形選項
+- [x] 第 4 / 8 / 11 題 full-screen interstitial
+- [x] Success Rate 大型 typography reveal
+- [x] 「公開處刑 🎴」final reveal CTA
+- [x] 8 種 Persona inline SVG animal glyph system
+- [x] Collectible Persona Card：TYPE / subtype / MATCH / ENEMY
+- [x] Mobile responsive visual system
+- [x] focus-visible / prefers-reduced-motion
+- [x] Dark document theme metadata
 
 ## 4. Automated test code
 
@@ -93,6 +105,7 @@
 - [x] CASE-07 public privacy test code
 - [x] CASE-08 第 9 位可加入 test code
 - [x] CASE-09 第 4 題節奏事件 test code
+- [ ] CASE-10 Persona SVG / collectible card regression test code
 
 > 上述只代表 test code 已寫，不代表 runtime PASS。
 
@@ -123,6 +136,9 @@
 - [ ] 實際驗證第 4 / 8 / 11 題節奏提示不影響答題
 - [ ] 實際驗證成功率三拍揭曉沒有多餘停頓
 - [ ] 實際驗證人格翻牌後大螢幕收尾提示可見
+- [ ] 實際驗證 Dark Visual 在 375 / 768 / 大螢幕不裁切
+- [ ] 實際驗證 Persona SVG 在手機小尺寸清楚可辨識
+- [ ] 實際驗證 reduced-motion
 - [ ] 實際多 browser / device Reveal smoke test
 
 ## 7. Archive gate
