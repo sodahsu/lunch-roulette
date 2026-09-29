@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import QRCode from 'qrcode'
 import { PERSONAS, QUESTIONS } from './domain/questions'
 import type { GroupQuestionStat, Participant, ParticipantResult } from './domain/types'
 import {
@@ -36,6 +37,8 @@ const groupStats = ref<GroupQuestionStat[] | null>(null)
 const personalResult = ref<ParticipantResult | null>(null)
 const isHost = ref(false)
 const revealStep = ref(3)
+const qrCodeDataUrl = ref('')
+const copiedLink = ref(false)
 let unsubscribe: (() => void) | null = null
 
 const currentQuestion = computed(() => QUESTIONS[questionIndex.value])
@@ -60,6 +63,60 @@ const oppositeNames = computed(() => {
     .filter(Boolean)
 })
 
+const joinUrl = computed(() => {
+  if (!session.value) return ''
+  const url = new URL(window.location.href)
+  url.search = ''
+  url.searchParams.set('room', session.value.code)
+  return url.toString()
+})
+
+const resultSampleSize = computed(() => groupStats.value?.[0]?.sampleSize ?? 0)
+
+const selfReportedEasygoing = computed(() => {
+  const stat = groupStats.value?.find((item) => item.questionId === 'self-image')
+  return stat?.counts.very ?? 0
+})
+
+const unanimousStat = computed(() => {
+  if (resultSampleSize.value < 2) return null
+  return groupStats.value?.find((stat) =>
+    Object.values(stat.counts).some((count) => count === stat.sampleSize),
+  ) ?? null
+})
+
+const splitStat = computed(() => {
+  if (resultSampleSize.value < 2) return null
+
+  let best: GroupQuestionStat | null = null
+  let bestGap = Number.POSITIVE_INFINITY
+
+  for (const stat of groupStats.value ?? []) {
+    const counts = Object.values(stat.counts).sort((a, b) => b - a)
+    if (counts.length < 2) continue
+    const gap = Math.abs(counts[0]! - counts[1]!)
+    if (gap < bestGap) {
+      best = stat
+      bestGap = gap
+    }
+  }
+
+  return best
+})
+
+function questionPrompt(questionId: string) {
+  return QUESTIONS.find((question) => question.id === questionId)?.prompt ?? questionId
+}
+
+function statSummary(stat: GroupQuestionStat) {
+  const question = QUESTIONS.find((item) => item.id === stat.questionId)
+  if (!question) return ''
+
+  return question.options
+    .map((option) => `${option.emoji} ${stat.counts[option.id] ?? 0}`)
+    .join('  ·  ')
+}
+
 function fail(error: unknown) {
   console.error(error)
   errorMessage.value = error instanceof Error ? error.message : '發生錯誤，請再試一次。'
@@ -83,6 +140,32 @@ function setRoomInUrl(code: string) {
   window.history.replaceState({}, '', url)
 }
 
+async function updateJoinQr() {
+  if (!joinUrl.value) return
+  try {
+    qrCodeDataUrl.value = await QRCode.toDataURL(joinUrl.value, {
+      width: 280,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+    })
+  } catch (error) {
+    console.warn('QR code generation failed', error)
+  }
+}
+
+async function copyJoinLink() {
+  if (!joinUrl.value) return
+  try {
+    await navigator.clipboard.writeText(joinUrl.value)
+    copiedLink.value = true
+    window.setTimeout(() => {
+      copiedLink.value = false
+    }, 1800)
+  } catch (error) {
+    fail(error)
+  }
+}
+
 async function restoreFromUrl() {
   const code = new URL(window.location.href).searchParams.get('room')
   if (!code) return
@@ -93,6 +176,7 @@ async function restoreFromUrl() {
     session.value = await getSessionByCode(roomCode.value)
     isHost.value = session.value.host_user_id === userId
     participant.value = await getOwnParticipant(session.value.id)
+    if (isHost.value) await updateJoinQr()
 
     if (participant.value) {
       name.value = participant.value.display_name
@@ -157,6 +241,7 @@ async function startHost() {
     roomCode.value = session.value.code
     isHost.value = true
     setRoomInUrl(session.value.code)
+    await updateJoinQr()
     screen.value = 'host'
     attachRealtime()
     await refreshSessionState()
@@ -339,7 +424,18 @@ onBeforeUnmount(() => unsubscribe?.())
     <section v-else-if="screen === 'host'" class="panel host-panel">
       <div class="eyebrow">主持人模式</div>
       <h2>房號 {{ session?.code }}</h2>
-      <p class="lede">把這個房號給大家。人數不用湊滿 8 個，覺得差不多就可以揭曉。</p>
+      <p class="lede">掃 QR Code 或輸入房號都能加入。人數不用湊滿 8 個，覺得差不多就可以揭曉。</p>
+
+      <div class="host-join-card">
+        <img v-if="qrCodeDataUrl" class="join-qr" :src="qrCodeDataUrl" alt="加入這一局的 QR Code" />
+        <div class="host-join-copy">
+          <div class="eyebrow">掃碼加入</div>
+          <strong class="room-code">{{ session?.code }}</strong>
+          <button class="secondary compact-button" type="button" @click="copyJoinLink">
+            {{ copiedLink ? '已複製連結 ✓' : '複製加入連結' }}
+          </button>
+        </div>
+      </div>
 
       <div class="metric-grid">
         <div class="metric"><strong>{{ participants.length }}</strong><span>已加入</span></div>
@@ -367,10 +463,31 @@ onBeforeUnmount(() => unsubscribe?.())
         </button>
       </div>
 
-      <div v-else-if="groupStats" class="group-result">
-        <div class="eyebrow">結果已固定</div>
+      <div v-else-if="groupStats" class="group-result host-results">
+        <div class="eyebrow">結果已固定 · 有效樣本 {{ resultSampleSize }} 人</div>
         <h3>你們對自己有一些誤會。 🎉</h3>
-        <p>有效樣本：{{ groupStats[0]?.sampleSize ?? 0 }} 人</p>
+
+        <div class="host-result-grid">
+          <article class="host-result-card">
+            <span class="result-kicker">😇 都可以自信值</span>
+            <strong>{{ selfReportedEasygoing }} / {{ resultSampleSize }}</strong>
+            <p>有 {{ selfReportedEasygoing }} 個人覺得自己「超好約」。先記住這個數字。</p>
+          </article>
+
+          <article v-if="splitStat" class="host-result-card">
+            <span class="result-kicker">🚨 飲食內戰</span>
+            <strong>{{ statSummary(splitStat) }}</strong>
+            <p>{{ questionPrompt(splitStat.questionId) }}</p>
+          </article>
+
+          <article v-if="unanimousStat" class="host-result-card">
+            <span class="result-kicker">🏛️ 歷史性共識</span>
+            <strong>{{ statSummary(unanimousStat) }}</strong>
+            <p>{{ questionPrompt(unanimousStat.questionId) }}</p>
+          </article>
+        </div>
+
+        <p class="host-result-footer">手機端現在已同步翻牌，請各自面對自己的飲食人格。</p>
       </div>
 
       <div v-else class="bottom-actions">
