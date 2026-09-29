@@ -148,22 +148,30 @@ export async function listResponses(sessionId: string): Promise<ResponseRecord[]
   return data as ResponseRecord[]
 }
 
-export async function lockAndReveal(session: SessionRecord): Promise<GroupQuestionStat[]> {
-  const { error: lockError } = await supabase
+export async function lockSession(session: SessionRecord): Promise<void> {
+  if (session.status !== 'open') return
+
+  const { error } = await supabase
     .from('sessions')
     .update({ status: 'locked', locked_at: new Date().toISOString() })
     .eq('id', session.id)
     .eq('host_user_id', session.host_user_id)
+    .eq('status', 'open')
 
-  if (lockError) throw lockError
+  if (error) throw error
+}
 
+export async function finalizeReveal(session: SessionRecord): Promise<GroupQuestionStat[]> {
   const responses = await listResponses(session.id)
   const participants = await listParticipants(session.id)
   const snapshot = buildResultSnapshot(responses)
 
   const { error: groupError } = await supabase
     .from('result_snapshots')
-    .insert({ session_id: session.id, group_stats: snapshot.groupStats })
+    .upsert(
+      { session_id: session.id, group_stats: snapshot.groupStats },
+      { onConflict: 'session_id', ignoreDuplicates: true },
+    )
   if (groupError) throw groupError
 
   const resultRows = Object.entries(snapshot.participantResults).flatMap(([participantId, result]) => {
@@ -180,7 +188,10 @@ export async function lockAndReveal(session: SessionRecord): Promise<GroupQuesti
   if (resultRows.length > 0) {
     const { error: personalError } = await supabase
       .from('participant_results')
-      .insert(resultRows)
+      .upsert(resultRows, {
+        onConflict: 'session_id,participant_id',
+        ignoreDuplicates: true,
+      })
     if (personalError) throw personalError
   }
 
@@ -188,8 +199,10 @@ export async function lockAndReveal(session: SessionRecord): Promise<GroupQuesti
     .from('sessions')
     .update({ status: 'revealed', revealed_at: new Date().toISOString() })
     .eq('id', session.id)
-  if (revealError) throw revealError
+    .eq('host_user_id', session.host_user_id)
+    .eq('status', 'locked')
 
+  if (revealError) throw revealError
   return snapshot.groupStats
 }
 

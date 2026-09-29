@@ -58,10 +58,13 @@
 - [x] Realtime 同步 session status 與完成數
 
 ## 4. UI slices
+- [x] Realtime 觸發手機自動切換人格卡
+- [x] locked 階段顯示結算等待畫面
+- [x] 主持人倒數 Reveal 畫面可在刷新後續跑
 - [x] 加入場次頁
 - [x] 題目頁與修改答案
 - [x] host 控制頁
-- [ ] 群體 Reveal 頁
+- [x] 群體 Reveal 頁
 - [x] 個人人格卡
 - [x] 靈魂飯友 / 飲食天敵
 

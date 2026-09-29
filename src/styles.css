@@ -107,3 +107,66 @@ input {
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; }
 }
+
+
+.reveal-wait {
+  min-height: 76vh;
+}
+
+.reveal-spin {
+  animation: reveal-bob 900ms ease-in-out infinite alternate;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #26231f;
+  color: #fff;
+  font-weight: 900;
+}
+
+.host-countdown {
+  margin-top: 24px;
+  padding: 28px 20px;
+  border-radius: 24px;
+  background: #26231f;
+  color: #fff;
+  text-align: center;
+}
+
+.host-countdown .eyebrow {
+  color: #cfc8bc;
+}
+
+.host-joke {
+  margin: 12px auto 0;
+  max-width: 420px;
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.countdown-number {
+  font-size: clamp(92px, 26vw, 180px);
+  font-weight: 950;
+  line-height: .95;
+  letter-spacing: -.08em;
+  margin: 20px 0;
+}
+
+.resume-reveal {
+  width: 100%;
+  margin-top: 10px;
+}
+
+@keyframes reveal-bob {
+  from { transform: translateY(-4px) rotate(-3deg); }
+  to { transform: translateY(4px) rotate(3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-spin { animation: none; }
+}

@@ -12,7 +12,7 @@ handoff_status: ready_for_handoff
 
 - 目標與交付物：完成可在手機上操作的多人飲食人格遊戲 MVP，使用 Vue 3 + Vite + TypeScript + Supabase；OpenSpec、真實資料流、RLS、Realtime、單元測試與交接文件都留在 repo。
 - 非目標：目前不做真實餐廳 API、地圖、會員、好友、正式商用高併發架構。
-- 本次已做：OpenSpec、Vue 手機介面、Supabase schema/RLS/Realtime、真實資料寫入驗證、refresh 恢復、逐題儲存、domain unit test cases、GPT 生圖提示詞。
+- 本次已做：OpenSpec、Vue 手機介面、Supabase schema/RLS/Realtime、真實資料寫入驗證、refresh 恢復、逐題儲存、domain unit test cases、GPT 生圖提示詞，以及同步 Reveal：open → locked → revealed；locked 時手機等待，revealed 後手機自動切人格卡。
 - 本次未做：本環境無法解析 github.com，因此 npm install / unit test / typecheck / build / Playwright 尚未實際跑完。
 - 第一個安全動作：在本機切到最新 main，執行依賴安裝與驗證指令；若失敗，先修第一個實際錯誤，再重跑。
 - 停止條件：不要在 unit/typecheck/build 尚未通過前宣稱 OpenSpec 驗證完成；不要刪除 migration 或放寬 RLS 來繞過測試。
@@ -30,7 +30,7 @@ approval_evidence: "使用者已要求合併到主分支，並要求本機 Codex
 | 類別 | 內容 | 來源／範圍 |
 |---|---|---|
 | Completed（本次實際工作） | OpenSpec、Vue MVP、Supabase live schema、RLS、Realtime publication、DB trigger、真實資料 smoke test、單元測試案例 | repo + Supabase project `hvaxoopyccwsqmhjnibg` |
-| In Progress | unit/typecheck/build/e2e 實跑；Anonymous Sign-ins Dashboard 開關；群體 Reveal 視覺 | OpenSpec tasks |
+| In Progress | unit/typecheck/build/e2e 實跑；Anonymous Sign-ins Dashboard 開關；主持人大螢幕視覺後續可再豐富 | OpenSpec tasks |
 | UNKNOWN | 本機安裝依賴後是否有 TypeScript / Vitest / Vite 編譯問題 | 必須在本機跑驗證取得 |
 | PENDING | Anonymous Sign-ins 是否已手動啟用 | Supabase Dashboard |
 
@@ -145,3 +145,12 @@ npm run build
 - 本機執行阻擋證據：`fatal: unable to access 'https://github.com/...': Could not resolve host: github.com`。
 - 文件交付判定：READY_FOR_HANDOFF
 - 執行授權：使用者已要求合併到主分支，並要求本機 Codex 接續執行。
+
+
+## 2026-09-29 Reveal 同步補充
+
+- FACT：主持人觸發 Reveal 後，資料流程現在分成 `lockSession()` 與 `finalizeReveal()`。
+- FACT：`locked` 期間參與者手機會由 Realtime 自動切到「人格計算中」等待畫面。
+- FACT：只有 session status 變成 `revealed` 後，手機才讀取自己的 `participant_results` 並自動切到人格卡。
+- FACT：主持人若在 locked 階段重新整理，可按「繼續揭曉」續跑倒數與 finalize，不需放寬私人結果的 RLS。
+- NOT_RUN：本環境仍未執行 Vue build / browser E2E；本機 Codex 應優先驗證多人同時在線的 Reveal 同步。

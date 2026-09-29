@@ -12,13 +12,14 @@ import {
   ensureUserId,
   joinSession,
   listParticipants,
-  lockAndReveal,
+  finalizeReveal,
+  lockSession,
   saveAnswers,
   subscribeToSession,
   type SessionRecord,
 } from './lib/session-service'
 
-type Screen = 'landing' | 'join' | 'quiz' | 'waiting' | 'host' | 'result'
+type Screen = 'landing' | 'join' | 'quiz' | 'waiting' | 'host' | 'revealing' | 'result'
 
 const screen = ref<Screen>('landing')
 const busy = ref(false)
@@ -34,6 +35,7 @@ const questionIndex = ref(0)
 const groupStats = ref<GroupQuestionStat[] | null>(null)
 const personalResult = ref<ParticipantResult | null>(null)
 const isHost = ref(false)
+const revealStep = ref(3)
 let unsubscribe: (() => void) | null = null
 
 const currentQuestion = computed(() => QUESTIONS[questionIndex.value])
@@ -125,6 +127,11 @@ async function refreshSessionState() {
   participants.value = await listParticipants(latest.id)
   completedCount.value = participants.value.filter((item) => Boolean(item.completed_at)).length
 
+  if (latest.status === 'locked') {
+    screen.value = isHost.value ? 'host' : 'revealing'
+    return
+  }
+
   if (latest.status === 'revealed') {
     groupStats.value = await getGroupStats(latest.id)
     if (participant.value) {
@@ -209,10 +216,35 @@ async function editAnswers() {
   screen.value = 'quiz'
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+async function runRevealCountdown() {
+  for (const step of [3, 2, 1]) {
+    revealStep.value = step
+    await wait(850)
+  }
+}
+
 async function reveal() {
   await withBusy(async () => {
-    if (!session.value) return
-    groupStats.value = await lockAndReveal(session.value)
+    if (!session.value || session.value.status !== 'open') return
+
+    await lockSession(session.value)
+    await refreshSessionState()
+    await runRevealCountdown()
+
+    groupStats.value = await finalizeReveal(session.value)
+    await refreshSessionState()
+  })
+}
+
+async function continueReveal() {
+  await withBusy(async () => {
+    if (!session.value || session.value.status !== 'locked') return
+    await runRevealCountdown()
+    groupStats.value = await finalizeReveal(session.value)
     await refreshSessionState()
   })
 }
@@ -296,6 +328,14 @@ onBeforeUnmount(() => unsubscribe?.())
       <p v-else class="locked-copy">主持人已鎖定答案，準備揭曉。</p>
     </section>
 
+    <section v-else-if="screen === 'revealing'" class="panel center reveal-wait">
+      <div class="eyebrow">全場結算中</div>
+      <div class="hero-emoji reveal-spin">🎰</div>
+      <h2>正在判斷你到底多難約…</h2>
+      <p class="lede">先別動，主持人大螢幕正在公開處刑。人格卡會自己翻出來。</p>
+      <div class="status-pill">等待 Reveal</div>
+    </section>
+
     <section v-else-if="screen === 'host'" class="panel host-panel">
       <div class="eyebrow">主持人模式</div>
       <h2>房號 {{ session?.code }}</h2>
@@ -313,15 +353,29 @@ onBeforeUnmount(() => unsubscribe?.())
         </div>
       </div>
 
-      <div v-if="groupStats" class="group-result">
+      <div v-if="session?.status === 'locked'" class="host-countdown">
+        <div class="eyebrow">全場結算中</div>
+        <p class="host-joke">正在檢查到底有沒有人是真的「都可以」…</p>
+        <div class="countdown-number">{{ revealStep }}</div>
+        <button
+          v-if="!busy"
+          class="secondary resume-reveal"
+          type="button"
+          @click="continueReveal"
+        >
+          繼續揭曉
+        </button>
+      </div>
+
+      <div v-else-if="groupStats" class="group-result">
         <div class="eyebrow">結果已固定</div>
-        <h3>這局完成了 🎉</h3>
+        <h3>你們對自己有一些誤會。 🎉</h3>
         <p>有效樣本：{{ groupStats[0]?.sampleSize ?? 0 }} 人</p>
       </div>
 
       <div v-else class="bottom-actions">
         <button class="primary" type="button" :disabled="busy || completedCount === 0" @click="reveal">
-          {{ busy ? '正在計算…' : '鎖定並揭曉' }}
+          {{ busy ? '正在公開處刑…' : '鎖定並揭曉' }}
         </button>
       </div>
     </section>

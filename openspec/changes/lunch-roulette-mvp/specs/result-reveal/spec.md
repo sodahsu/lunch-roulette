@@ -56,3 +56,17 @@ The system SHALL calculate participant similarity only among complete responses.
 ## Open questions
 - NEEDS_CONFIRMATION: persona 名稱、分數權重、threshold 與 tie-break priority。
 - NEEDS_CONFIRMATION: similarity 的第一版計算方式；建議先採等權題目一致率，避免過度複雜。
+
+
+## Requirement: 個人人格卡只能在全場 Reveal 後出現
+The system SHALL not display a participant persona before the session status is `revealed`.
+
+### Scenario: 結算進行中
+- WHEN session status 為 `locked`
+- THEN 參與者手機顯示結算等待狀態
+- AND 不得讀取或顯示 persona card
+
+### Scenario: 全場同步翻牌
+- WHEN session status 從 `locked` 變成 `revealed`
+- THEN 參與者手機透過 Realtime 自動載入自己的 persisted participant result
+- AND 畫面自動切換為個人人格卡
