@@ -38,8 +38,10 @@
 2. `preference-quiz`：完成與修改飲食情境答案。
 3. `result-reveal`：群體統計、人格卡與配對結果。
 
-## Open questions
+## v0.2 決策
 
-- NEEDS_CONFIRMATION: 第一版實際題數是 6、7 還是 8 題；規格先以「已設定題組」描述。
-- NEEDS_CONFIRMATION: 最終人格名稱、門檻與文案清單。
+- 題庫擴充為 24 題；每個新房間依房號 deterministic 抽 12 題。
+- 12 題採 6 類平衡抽題，每類 2 題，且 `self-image` 必出。
+- Persona 維持 8 種，採 option score 加總、最高分制與固定 tie-break；不使用 threshold。
+- Reveal 的群體結果新增「我們這團可以出去吃飯嗎？」與 deterministic 飯局相容度。
 - NEEDS_CONFIRMATION: 是否在第一版加入 AI 產生的一句吐槽文案；此功能不應阻塞核心結果。
