@@ -74,3 +74,22 @@ The system SHALL restore the participant's latest persisted answers while the se
 - THEN 系統應載入 latest answers
 - AND 顯示等待主持人 Reveal 的狀態
 - AND participant 仍可選擇回去修改答案
+
+
+## Requirement: 12 題流程必須避免連續問卷感
+The system SHALL insert lightweight pacing cues into the v0.2 questionnaire without changing answers or scoring.
+
+### Scenario: 第 4 題
+- WHEN participant 進入第 4 題
+- THEN UI 應顯示「場面觀察」節奏事件
+- AND 不得公開任何 participant 的真實答案或身份
+
+### Scenario: 第 8 題
+- WHEN participant 進入第 8 題
+- THEN UI 應顯示中場節奏事件
+- AND 該事件只作為遊戲氣氛，不影響 scoring
+
+### Scenario: 第 11 題
+- WHEN participant 進入第 11 題
+- THEN UI 應提示最後兩題
+- AND 不得改變 active questionnaire 或答案內容
