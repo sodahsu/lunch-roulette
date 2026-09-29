@@ -131,6 +131,23 @@ describe('dinner success rate', () => {
     expect(result.verdict).toBe('有機會約成，先指定飯局隊長')
     expect(result.detail).toContain('隊長')
   })
+
+  it('pins legacy questionnaire versions to the v1 dinner-success algorithm', () => {
+    const stats = [
+      stat({ a: 6, b: 2 }),
+      stat({ a: 7, b: 1 }),
+    ]
+
+    expect(calculateDinnerSuccessRate(stats, 'v0.1')).toEqual(
+      calculateDinnerSuccessRate(stats, 'v0.2'),
+    )
+  })
+
+  it('requires an explicit algorithm mapping for a new questionnaire version', () => {
+    expect(() => calculateDinnerSuccessRate([stat({ a: 8 })], 'v9.9')).toThrow(
+      /Unsupported dinner-success algorithm/,
+    )
+  })
 })
 
 describe('persona assignment', () => {
