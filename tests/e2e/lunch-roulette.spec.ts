@@ -71,7 +71,7 @@ async function reveal(page: Page) {
   await expect(page.getByText(/我們這團可以出去吃飯嗎/)).toBeVisible({
     timeout: 15_000,
   })
-  await expect(page.locator('.group-verdict')).toContainText(/可以.*出去吃飯/)
+  await expect(page.locator('.group-verdict')).toBeVisible()
 }
 
 async function closeActors(...actors: Actor[]) {
@@ -90,6 +90,7 @@ test('CASE-01 多人正常流程：作答、Reveal、手機同步人格卡', asy
     await expect(completedMetric(host.page)).toHaveText('2')
 
     await reveal(host.page)
+    await expect(host.page.locator('.group-verdict')).toContainText(/可以.*出去吃飯/)
 
     await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
