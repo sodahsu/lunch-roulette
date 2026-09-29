@@ -64,7 +64,7 @@ export interface GroupQuestionStat {
   sampleSize: number
 }
 
-export interface GroupCompatibility {
+export interface DinnerSuccessResult {
   score: number
   verdict: string
   detail: string
