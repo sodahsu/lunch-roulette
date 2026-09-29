@@ -546,12 +546,6 @@ onBeforeUnmount(() => unsubscribe?.())
         <p class="persona-tagline">「{{ PERSONAS[meResult.persona].tagline }}」</p>
 
         <div class="match-card">
-          <span>🍽️ 我們這團</span>
-          <strong>{{ dinnerSuccess.verdict }}</strong>
-          <small>飯局相容度 {{ dinnerSuccess.score }}%</small>
-        </div>
-
-        <div class="match-card">
           <span>👯 靈魂飯友</span>
           <strong>{{ soulmateNames.length ? soulmateNames.join('、') : '這局還沒有可比較的人' }}</strong>
         </div>
