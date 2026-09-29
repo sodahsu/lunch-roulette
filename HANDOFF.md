@@ -10,7 +10,7 @@ handoff_status: ready_for_handoff
 
 **目標：**把 10/1 可玩的多人 Lunch Roulette MVP 驗證到可上場並部署 Demo。程式主要功能已補齊；現在優先做 runtime 驗證，不要再擴 scope。
 
-**目前 main HEAD（本次查核）：** `0032982147ab26e4cd6bb6bc9bcb58492c466a23`
+**實作快照 HEAD（HANDOFF 更新前）：** `0032982147ab26e4cd6bb6bc9bcb58492c466a23`
 
 ### 本次已實作
 
@@ -91,7 +91,7 @@ approval_evidence:
 
 - Repo：`sodahsu/lunch-roulette`
 - Branch：`main`
-- HEAD：`0032982147ab26e4cd6bb6bc9bcb58492c466a23`
+- 實作快照 HEAD：`0032982147ab26e4cd6bb6bc9bcb58492c466a23`（後續只有 HANDOFF 文件更新）
 - 本次實作全部直接寫入 main，沒有另外開 feature branch。
 - `vercel.json` 已設定只有 `main` 允許 deployment。
 
