@@ -179,16 +179,16 @@ function choose(optionId: string) {
 }
 
 async function nextQuestion() {
-  if (!currentAnswer.value) return
-
-  if (questionIndex.value < QUESTIONS.length - 1) {
-    questionIndex.value += 1
-    return
-  }
+  if (!currentAnswer.value || !session.value || !participant.value) return
 
   await withBusy(async () => {
-    if (!session.value || !participant.value) return
-    await saveAnswers(session.value.id, participant.value.id, answers.value)
+    await saveAnswers(session.value!.id, participant.value!.id, answers.value)
+
+    if (questionIndex.value < QUESTIONS.length - 1) {
+      questionIndex.value += 1
+      return
+    }
+
     screen.value = 'waiting'
     await refreshSessionState()
   })
