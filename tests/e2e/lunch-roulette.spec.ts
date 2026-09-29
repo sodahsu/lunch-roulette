@@ -68,9 +68,10 @@ function completedMetric(page: Page) {
 
 async function reveal(page: Page) {
   await page.getByRole('button', { name: '鎖定並揭曉' }).click()
-  await expect(page.getByRole('heading', { name: /你們對自己有一些誤會/ })).toBeVisible({
+  await expect(page.getByText(/你們這團可以出去吃飯嗎/)).toBeVisible({
     timeout: 15_000,
   })
+  await expect(page.locator('.group-verdict')).toContainText(/可以.*出去吃飯/)
 }
 
 async function closeActors(...actors: Actor[]) {
