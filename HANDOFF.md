@@ -907,11 +907,13 @@ Host 公開處刑
 | `npm run typecheck` | NOT_RUN |
 | `npm run build` | NOT_RUN |
 | `npm run test:e2e` | NOT_RUN |
-| Anonymous Sign-ins | UNKNOWN |
+| Supabase project health | VERIFIED: ACTIVE_HEALTHY |
+| Supabase Security Advisor | VERIFIED: 0 security lints |
+| Anonymous Sign-ins runtime | UNKNOWN：目前 auth.users 尚無 anonymous user evidence |
 | 真實多裝置 Reveal | NOT_RUN |
 | 防冷場 pacing 實機節奏 | NOT_RUN |
 | Dark visual redesign code | IMPLEMENTED / RUNTIME_UNVERIFIED |
-| Vercel Demo | NOT_STARTED |
+| Vercel Demo | BLOCKED：Vercel team 尚無 lunch-roulette project，現有 connector 無 create/deploy action |
 
 本機接手第一輪：
 
@@ -925,6 +927,16 @@ npm run typecheck
 npm run build
 npm run test:e2e
 ```
+
+### Local execution blocker
+
+2026-09-29 本次實際查核：
+
+- Container：Node `v22.16.0`、npm `10.9.2`。
+- Container 無法 DNS 解析 `github.com` / Supabase。
+- npm offline cache 缺少 `@playwright/test`；`npm install --package-lock-only --offline` 回傳 `ENOTCACHED`。
+- 因此本環境無法誠實產生 lockfile、install dependencies 或跑 Vitest / vue-tsc / Vite build / Playwright。
+- 這是執行環境 blocker，不應把 test code 存在誤寫成 runtime PASS。
 
 ### Runtime smoke test 必看
 
@@ -1067,26 +1079,26 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 
 ---
 
-## 14. PENDING DECISION
+## 14. Resolved Architecture Decision
 
-### Success-rate cross-version persistence
+### Success-rate cross-version stability
+
+已採用：
+
+**`questionnaire_version → dinner-success algorithm version` 固定 mapping**
 
 目前：
 
-`group_stats` 有 persist。
+- `v0.1 → v1`
+- `v0.2 → v1`
+- 新 questionnaire version 若沒有 mapping，domain function 直接報錯。
+- 不新增 success-summary DB 欄位。
+- `group_stats` 繼續作為 persisted aggregate source。
+- 舊 room 不會因未來新增 success formula 而 silent fallback 到新公式。
 
-`Dinner Success Rate` 是 client 依公式 derive。
+此技術決策已完成；OpenSpec archive 現在只被 runtime / integration validation 阻擋。
 
-因此未來如果改演算法，舊 revealed room 的 score 理論上可能改變。
-
-尚未決定：
-
-1. Persist success summary。
-2. 依 `questionnaire_version` 保留 versioned algorithm。
-
-在此決策與 runtime validation 完成前：
-
-**OpenSpec archive = NOT_READY**
+**OpenSpec archive = NOT_READY（runtime validation only）**
 
 ---
 
@@ -1104,11 +1116,11 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 
 ### NOT_RUN / UNKNOWN
 
-- Runtime tests 尚未執行。
-- Anonymous Auth enable 狀態未知。
+- Runtime tests 尚未執行；本次 local container 的 DNS 與 npm cache 不足以完成 install。
+- Anonymous Auth enable 狀態仍未知；Supabase project 本身已 VERIFIED ACTIVE_HEALTHY，Security Advisor 0 lint。
 - 真機多人同步未驗證。
 - Dark visual redesign 已實作，但尚未完成 browser / device runtime QA。
-- Vercel production demo 尚未建立；2026-09-29 查核 Vercel team 目前只有 `beloved-agent`，沒有 `lunch-roulette` project。
+- Vercel production demo 尚未建立；2026-09-29 查核 Vercel team 目前只有 `beloved-agent`，沒有 `lunch-roulette` project，且目前 Vercel connector 沒有可用的 create-project / deploy action。
 - remote branches 已重新驗證，仍有 `chore/vercel-main-only`、`feat/lunch-roulette-mvp`、`feat/reveal-sync-show`、`spec/openspec-lunch-roulette-mvp` 與 `main`；目前連接器沒有 delete-branch action。
 
 ## Verdict
