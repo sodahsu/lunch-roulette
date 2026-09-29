@@ -54,6 +54,8 @@ const revealStep = ref(3)
 const qrCodeDataUrl = ref('')
 const copiedLink = ref(false)
 const successRevealBeat = ref(0)
+const quizInterstitialVisible = ref(false)
+let quizInterstitialTimer: number | null = null
 let unsubscribe: (() => void) | null = null
 
 const activeQuestions = computed(() => {
@@ -103,17 +105,20 @@ const incompleteCount = computed(() =>
 )
 
 const quizEvent = computed(() => {
-  const events: Record<number, { eyebrow: string; text: string }> = {
+  const events: Record<number, { eyebrow: string; headline: string; text: string }> = {
     4: {
       eyebrow: '📡 場面觀察',
+      headline: 'MINORITY DETECTED',
       text: '有人開始跟全場走不同方向。先不要找戰犯。',
     },
     8: {
       eyebrow: '⚠️ 中場警報',
+      headline: 'CONSENSUS IS COLLAPSING',
       text: '如果你已經改過答案，代表你開始害怕被看穿了。',
     },
     11: {
       eyebrow: '🧨 最後兩題',
+      headline: 'FINAL TWO',
       text: '友情還有機會。請慎選，系統都有看到。',
     },
   }
@@ -350,6 +355,24 @@ function choose(optionId: string) {
   answers.value = { ...answers.value, [question.id]: optionId }
 }
 
+function triggerQuizInterstitial() {
+  if (quizInterstitialTimer !== null) {
+    window.clearTimeout(quizInterstitialTimer)
+    quizInterstitialTimer = null
+  }
+
+  if (!quizEvent.value) {
+    quizInterstitialVisible.value = false
+    return
+  }
+
+  quizInterstitialVisible.value = true
+  quizInterstitialTimer = window.setTimeout(() => {
+    quizInterstitialVisible.value = false
+    quizInterstitialTimer = null
+  }, 1800)
+}
+
 async function nextQuestion() {
   if (!currentAnswer.value || !session.value || !participant.value) return
 
@@ -358,6 +381,7 @@ async function nextQuestion() {
 
     if (questionIndex.value < activeQuestions.value.length - 1) {
       questionIndex.value += 1
+      triggerQuizInterstitial()
       return
     }
 
@@ -431,11 +455,28 @@ onMounted(() => {
   void restoreFromUrl().catch(fail)
 })
 
-onBeforeUnmount(() => unsubscribe?.())
+onBeforeUnmount(() => {
+  unsubscribe?.()
+  if (quizInterstitialTimer !== null) window.clearTimeout(quizInterstitialTimer)
+})
 </script>
 
 <template>
   <main class="app-shell">
+    <Transition name="interstitial">
+      <aside
+        v-if="quizInterstitialVisible && quizEvent"
+        class="quiz-interstitial"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="interstitial-signal" aria-hidden="true"><span></span><span></span><span></span></div>
+        <span class="eyebrow">{{ quizEvent.eyebrow }}</span>
+        <strong>{{ quizEvent.headline }}</strong>
+        <p>{{ quizEvent.text }}</p>
+      </aside>
+    </Transition>
+
     <section v-if="screen === 'landing'" class="hero panel landing-panel">
       <div class="landing-meta">
         <span class="eyebrow">10/1 SOCIAL EXPERIMENT</span>
@@ -482,10 +523,6 @@ onBeforeUnmount(() => unsubscribe?.())
       <div class="progress-track"><div class="progress-bar" :style="{ width: progress + '%' }" /></div>
       <template v-if="currentQuestion">
         <h2 class="question">{{ currentQuestion.prompt }}</h2>
-        <aside v-if="quizEvent" class="quiz-event" aria-live="polite">
-          <span>{{ quizEvent.eyebrow }}</span>
-          <strong>{{ quizEvent.text }}</strong>
-        </aside>
         <div class="choice-list">
           <button
             v-for="(option, optionIndex) in currentQuestion.options"
