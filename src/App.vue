@@ -450,7 +450,7 @@ onBeforeUnmount(() => unsubscribe?.())
       <p class="lede landing-lede">8 個人都說自己很好約。今晚看看誰在說謊。</p>
       <div class="action-stack landing-actions">
         <button class="primary" type="button" :disabled="busy" @click="startJoin">加入飯局 →</button>
-        <button class="secondary host-mode-button" type="button" :disabled="busy" @click="startHost">HOST MODE / 開新局</button>
+        <button class="secondary host-mode-button" type="button" aria-label="我是主持人，開新局" :disabled="busy" @click="startHost">HOST MODE / 開新局</button>
       </div>
       <p class="landing-footnote">DINNER PERSONALITY / GROUP CONSENSUS / LIVE REVEAL</p>
     </section>
@@ -521,6 +521,7 @@ onBeforeUnmount(() => unsubscribe?.())
     </section>
 
     <section v-else-if="screen === 'revealing'" class="panel center reveal-wait state-panel">
+      <span class="sr-only">全場結算中</span>
       <div class="state-code reveal-pulse">LOCKED</div>
       <div class="eyebrow">GROUP ANALYSIS IN PROGRESS</div>
       <h2>正在判斷你到底多難約…</h2>
@@ -658,6 +659,7 @@ onBeforeUnmount(() => unsubscribe?.())
 
     <section v-else-if="screen === 'result'" class="panel result-panel">
       <template v-if="meResult">
+        <span class="sr-only">你的飲食人格</span>
         <article class="persona-card" :data-persona="meResult.persona">
           <header class="persona-card-head">
             <span>TYPE {{ PERSONA_DISPLAY[meResult.persona].code }}</span>
