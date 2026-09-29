@@ -4,9 +4,9 @@
 - [x] 定義半天 MVP 範圍與非目標
 - [x] 定義技術基線與資料 ownership
 - [x] 定義 unit test 與 case test 策略
-- [x] v0.1 固定 8 題且皆 required
-- [x] v0.1 固定 8 人格、option score、最高分制與 PERSONA_PRIORITY tie-break
-- [x] v0.1 使用雙方可比較題目的等權答案一致率
+- [x] v0.2 建立 24 題題庫；新房間 deterministic 抽 12 題，6 類各 2 題；舊 v0.1 保留 8 題
+- [x] 固定 8 人格、option score、最高分制與 PERSONA_PRIORITY tie-break
+- [x] similarity 使用雙方可比較題目的等權答案一致率
 
 ## 1. Project scaffold
 - [x] 建立 Vue 3 + Vite + TypeScript
@@ -71,6 +71,7 @@
 - [x] 主持人匿名群體笑點卡（都可以自信值 / 飲食內戰 / 歷史性共識）
 - [x] 未完成 participant Reveal 後顯示明確無結果狀態
 - [x] 人格卡使用動物角色 emoji
+- [x] 主持人結果顯示「我們這團可以出去吃飯嗎？」與 deterministic 飯局相容度
 
 ## 5. Playwright case tests
 - [x] CASE-01 多人正常流程 test code 已寫（NOT_RUN）
