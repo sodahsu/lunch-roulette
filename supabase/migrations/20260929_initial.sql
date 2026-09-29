@@ -61,7 +61,7 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $$
   select
     exists (
       select 1 from public.sessions s
@@ -73,7 +73,7 @@ as $
       where p.session_id = target_session_id
         and p.user_id = auth.uid()
     );
-$;
+$$;
 
 create policy "authenticated users can read sessions"
 on public.sessions for select to authenticated
@@ -205,7 +205,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 begin
   update public.participants
   set completed_at = case when new.is_complete then now() else null end,
@@ -214,7 +214,7 @@ begin
     and session_id = new.session_id;
   return new;
 end;
-$;
+$$;
 
 create trigger responses_sync_participant_completion
 after insert or update of is_complete on public.responses
