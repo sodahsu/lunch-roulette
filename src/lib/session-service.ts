@@ -170,7 +170,7 @@ export async function finalizeReveal(session: SessionRecord): Promise<GroupQuest
     .from('result_snapshots')
     .upsert(
       { session_id: session.id, group_stats: snapshot.groupStats },
-      { onConflict: 'session_id' },
+      { onConflict: 'session_id', ignoreDuplicates: true },
     )
   if (groupError) throw groupError
 
@@ -188,7 +188,10 @@ export async function finalizeReveal(session: SessionRecord): Promise<GroupQuest
   if (resultRows.length > 0) {
     const { error: personalError } = await supabase
       .from('participant_results')
-      .upsert(resultRows, { onConflict: 'session_id,participant_id' })
+      .upsert(resultRows, {
+        onConflict: 'session_id,participant_id',
+        ignoreDuplicates: true,
+      })
     if (personalError) throw personalError
   }
 
