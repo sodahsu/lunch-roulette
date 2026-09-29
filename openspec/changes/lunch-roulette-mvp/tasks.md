@@ -98,5 +98,5 @@
 - [ ] npm run test:unit
 - [ ] npm run test:e2e
 - [ ] npm run build
-- [ ] final diff review
+- [x] final diff review（GitHub compare static review；runtime validation 仍待本機）
 - [ ] OpenSpec archive readiness review
