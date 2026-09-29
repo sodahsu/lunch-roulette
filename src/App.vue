@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { PERSONAS, QUESTIONS } from './domain/questions'
 import type { GroupQuestionStat, Participant, ParticipantResult } from './domain/types'
 import {
@@ -7,6 +7,9 @@ import {
   getSessionByCode,
   getGroupStats,
   getPersonalResult,
+  getOwnParticipant,
+  getOwnResponse,
+  ensureUserId,
   joinSession,
   listParticipants,
   lockAndReveal,
@@ -30,6 +33,7 @@ const answers = ref<Record<string, string>>({})
 const questionIndex = ref(0)
 const groupStats = ref<GroupQuestionStat[] | null>(null)
 const personalResult = ref<ParticipantResult | null>(null)
+const isHost = ref(false)
 let unsubscribe: (() => void) | null = null
 
 const currentQuestion = computed(() => QUESTIONS[questionIndex.value])
@@ -71,6 +75,44 @@ async function withBusy(task: () => Promise<void>) {
   }
 }
 
+function setRoomInUrl(code: string) {
+  const url = new URL(window.location.href)
+  url.searchParams.set('room', code)
+  window.history.replaceState({}, '', url)
+}
+
+async function restoreFromUrl() {
+  const code = new URL(window.location.href).searchParams.get('room')
+  if (!code) return
+
+  await withBusy(async () => {
+    roomCode.value = code.toUpperCase()
+    const userId = await ensureUserId()
+    session.value = await getSessionByCode(roomCode.value)
+    isHost.value = session.value.host_user_id === userId
+    participant.value = await getOwnParticipant(session.value.id)
+
+    if (participant.value) {
+      name.value = participant.value.display_name
+      const ownResponse = await getOwnResponse(session.value.id, participant.value.id)
+      if (ownResponse) answers.value = ownResponse.answers
+    }
+
+    attachRealtime()
+    await refreshSessionState()
+
+    if (session.value.status === 'open') {
+      if (isHost.value && !participant.value) screen.value = 'host'
+      else if (participant.value) screen.value = ownResponseIsComplete() ? 'waiting' : 'quiz'
+      else screen.value = 'join'
+    }
+  })
+}
+
+function ownResponseIsComplete() {
+  return QUESTIONS.every((question) => !question.required || Boolean(answers.value[question.id]))
+}
+
 async function refreshSessionState() {
   if (!session.value) return
   const latest = await getSessionByCode(session.value.code)
@@ -101,6 +143,8 @@ async function startHost() {
   await withBusy(async () => {
     session.value = await createSession()
     roomCode.value = session.value.code
+    isHost.value = true
+    setRoomInUrl(session.value.code)
     screen.value = 'host'
     attachRealtime()
     await refreshSessionState()
@@ -121,6 +165,7 @@ async function joinRoom() {
     session.value = await getSessionByCode(roomCode.value.trim())
     if (session.value.status !== 'open') throw new Error('這一局已經開始揭曉囉。')
     participant.value = await joinSession(session.value.id, name.value.trim())
+    setRoomInUrl(session.value.code)
     screen.value = 'quiz'
     attachRealtime()
     await refreshSessionState()
@@ -166,6 +211,10 @@ async function reveal() {
     await refreshSessionState()
   })
 }
+
+onMounted(() => {
+  void restoreFromUrl().catch(fail)
+})
 
 onBeforeUnmount(() => unsubscribe?.())
 </script>
