@@ -1,104 +1,121 @@
 # Tasks: lunch-roulette-mvp
 
-## 0. Spec gate
-- [x] 定義半天 MVP 範圍與非目標
-- [x] 定義技術基線與資料 ownership
-- [x] 定義 unit test 與 case test 策略
-- [x] v0.2 建立 24 題題庫；新房間 deterministic 抽 12 題，6 類各 2 題；舊 v0.1 保留 8 題
-- [x] 固定 8 人格、option score、最高分制與 PERSONA_PRIORITY tie-break
-- [x] similarity 使用雙方可比較題目的等權答案一致率
+## 0. Contract / product decisions
 
-## 1. Project scaffold
-- [x] 建立 Vue 3 + Vite + TypeScript
-- [x] package / script / domain test 已設定 Vitest（runtime 尚未實跑）
-- [x] package / config / CASE-01～08 已設定 Playwright（runtime 尚未實跑）
-- [x] 設定 Supabase client 與環境變數
-- [x] 建立 typecheck / test:unit / test:e2e / build scripts
+- [x] 定義產品定位：多人飯局人格社交遊戲，不是餐廳推薦器
+- [x] 約 8 人是主要規模，不是 hard limit
+- [x] Reveal 不要求所有已加入者完成
+- [x] Reveal 前允許修改 latest response
+- [x] v0.2 建立 24 題題庫
+- [x] v0.2 分 6 類，每類 4 題
+- [x] v0.2 每房 deterministic 選 12 題，每類 2 題
+- [x] `self-image` 每局必出
+- [x] v0.1 legacy session 保留原 8 題
+- [x] Persona 固定 8 種、最高分制、固定 `PERSONA_PRIORITY` tie-break
+- [x] Persona v0.2 不使用 threshold
+- [x] Similarity 使用 active questions 的答案完全一致率
+- [x] Reveal 加入「我們這團可以出去吃飯嗎？」與 deterministic 飯局相容度
+- [x] v0.2 核心判定不使用生成式 AI
 
-## 2. Domain tests first
-### 2.1 Response completeness
-- [x] 先寫：完整 required answers => complete
-- [x] 先寫：少一題 => incomplete
-- [x] latest response 由 responses PK + upsert 負責，並由 Playwright CASE-03 覆蓋
-- [x] 實作最小 completeness logic
+## 1. Session / persistence implementation
 
-### 2.2 Group stats
-- [x] 先寫：只計入 complete responses
-- [x] 先寫：3 / 8 / 9 人皆可計算
-- [x] 先寫：0 complete 不產生 NaN / Infinity
-- [x] 實作最小 group stats logic
+- [x] Vue 3 + Vite + TypeScript scaffold
+- [x] Supabase client
+- [x] session / participant / response / result snapshot schema
+- [x] Anonymous Auth client flow
+- [x] open / locked / revealed state model
+- [x] open session join
+- [x] locked/revealed late join RLS restriction
+- [x] participant latest response upsert
+- [x] locked 後 response update restriction
+- [x] Realtime session / participant / response / result subscription
+- [x] group stats persistence
+- [x] participant-specific result persistence
+- [x] locked host refresh / continue Reveal recovery path
 
-### 2.3 Persona
-- [x] 先寫：相同輸入得到相同 persona
-- [x] v0.1 明確不使用 threshold；改驗最高分制與固定 tie-break
-- [x] 先寫：score 平手使用固定 tie-break
-- [x] 實作 persona scoring / assignment
+## 2. Question bank / domain implementation
 
-### 2.4 Similarity
-- [x] 先寫：不與自己比較
-- [x] 先寫：最高 similarity
-- [x] 先寫：最低 similarity
-- [x] 先寫：並列保留全部
-- [x] 先寫：只有一位 complete 時無 pairing
-- [x] 實作 similarity
+- [x] 24 題 question bank
+- [x] 6 question categories
+- [x] deterministic 12-question room selection
+- [x] v0.1 legacy 8-question selection
+- [x] completeness 使用 active questionnaire
+- [x] group stats 使用 active questionnaire
+- [x] persona scoring 使用 active questionnaire
+- [x] similarity / pairing 使用 active questionnaire
+- [x] deterministic group dining compatibility
+- [x] Unit test code：question bank / completeness / stats / compatibility / persona / pairing / snapshot
 
-### 2.5 Snapshot
-- [x] 先寫：incomplete participant 不進 snapshot 統計
-- [x] 先寫：同名 participant 仍依 id 分開
-- [x] 先寫：snapshot 重新載入結果不變
-- [x] 實作 buildResultSnapshot
+## 3. UI implementation
 
-## 3. Realtime / persistence
-- [x] 建立 session / participant / response / result snapshot 最小 schema
-- [x] anonymous join 前端與 open-session RLS 已實作（Auth provider runtime 尚待驗證）
-- [x] participant 可在 open 狀態更新 latest response
-- [x] host 可在任意合理時點 lock
-- [x] locked 後拒絕 response update
-- [x] 建立 result snapshot 後切換 revealed
-- [x] Realtime 同步 session status 與完成數
+- [x] 房號加入
+- [x] QR Code 加入連結
+- [x] 暱稱加入
+- [x] 12 題進度與答題
+- [x] Reveal 前修改答案
+- [x] Waiting 畫面
+- [x] Host 加入／完成數
+- [x] Host participant name list
+- [x] Lock + Reveal countdown
+- [x] locked participant 結算等待
+- [x] revealed participant 自動翻 persona
+- [x] incomplete participant 明確無 persona 狀態
+- [x] 動物 persona card
+- [x] soulmate / opposite
+- [x] Host 飯局相容度
+- [x] Host 都可以自信值
+- [x] Host 飲食內戰
+- [x] Host 歷史性共識
+- [x] Participant persona card 顯示團體飯局 verdict
 
-## 4. UI slices
-- [x] Realtime 觸發手機自動切換人格卡
-- [x] locked 階段顯示結算等待畫面
-- [x] 主持人倒數 Reveal 畫面可在刷新後續跑
-- [x] 加入場次頁
-- [x] 題目頁與修改答案
-- [x] host 控制頁
-- [x] 群體 Reveal 頁
-- [x] 個人人格卡
-- [x] 靈魂飯友 / 飲食天敵
-- [x] 主持人 QR Code 加入連結
-- [x] 主持人匿名群體笑點卡（都可以自信值 / 飲食內戰 / 歷史性共識）
-- [x] 未完成 participant Reveal 後顯示明確無結果狀態
-- [x] 人格卡使用動物角色 emoji
-- [x] 主持人結果顯示「我們這團可以出去吃飯嗎？」與 deterministic 飯局相容度
-- [x] 手機人格卡同步顯示團體飯局 verdict 與相容度
+## 4. Automated test code
 
-## 5. Playwright case tests
-- [x] CASE-01 多人正常流程 test code 已寫（NOT_RUN）
-- [x] CASE-02 未滿約 8 人仍可 Reveal test code 已寫（NOT_RUN）
-- [x] CASE-03 Reveal 前反覆修改，採最後答案 test code 已寫（NOT_RUN）
-- [x] CASE-04 未完成者不阻塞 test code 已寫（NOT_RUN）
-- [x] CASE-05 Lock 後不可修改 test code 已寫（NOT_RUN）
-- [x] CASE-06 Refresh 後結果一致 test code 已寫（NOT_RUN）
-- [x] CASE-07 公開畫面不洩漏個人逐題答案 test code 已寫（NOT_RUN）
-- [x] CASE-08 第 9 位仍可加入 test code 已寫（NOT_RUN）
+- [x] Vitest package / script / test file 已設定
+- [x] Playwright package / config 已設定
+- [x] CASE-01 多人正常流程 test code
+- [x] CASE-02 未滿 8 人 Reveal test code
+- [x] CASE-03 latest response test code
+- [x] CASE-04 incomplete 不阻塞 test code
+- [x] CASE-05 lock 後不可改 test code
+- [x] CASE-06 refresh 結果一致 test code
+- [x] CASE-07 public privacy test code
+- [x] CASE-08 第 9 位可加入 test code
 
-## 5.1 Database integration verification
-- [x] 真實雲端 schema 已套用 Supabase
-- [x] response insert 會觸發 participant.completed_at
+> 上述只代表 test code 已寫，不代表 runtime PASS。
+
+## 5. 已有 database verification evidence
+
+- [x] Live Supabase schema 已套用
+- [x] response insert 會同步 participant completion
 - [x] participant 只能讀自己的 response
-- [x] host 可讀 hosted room 的 responses
+- [x] host 可讀 hosted room responses
 - [x] outsider 無法讀 room participants / responses
-- [x] locked 後 response update 影響 0 rows
+- [x] locked 後 response update 被拒
 - [x] locked 後新 participant insert 被 RLS 拒絕
-- [x] Supabase Security Advisor 無安全警告
-- [ ] Anonymous Sign-ins 已在 Dashboard 啟用
+- [x] Supabase Security Advisor 前次查核無 security lint
 
-## 6. Final validation
-- [ ] npm run typecheck
-- [ ] npm run test:unit
-- [ ] npm run test:e2e
-- [ ] npm run build
-- [x] final diff review（GitHub compare static review；runtime validation 仍待本機）
+## 6. Runtime validation — pending
+
+- [ ] 確認 Supabase Anonymous Sign-ins provider 已 Enable
+- [ ] `npm install` 成功並產生 lockfile
+- [ ] `npm run test:unit`
+- [ ] `npm run typecheck`
+- [ ] `npm run build`
+- [ ] `npm run test:e2e`
+- [ ] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
+- [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
+- [ ] 實際多 browser / device Reveal smoke test
+- [ ] 實際驗證 host / participant 的 group dining verdict 一致
+
+## 7. Archive gate
+
+- [x] OpenSpec proposal / design / capability specs 已同步 v0.2 current implementation
+- [x] 已修正 `result_snapshots` 與 `participant_results` ownership 描述
+- [ ] 決定「飯局相容度」是否必須跨未來程式版本永久不變
+- [ ] 若要求跨版本不變，persist compatibility summary 或保留 versioned compatibility algorithm
+- [ ] 完成 runtime validation
 - [ ] OpenSpec archive readiness review
+
+**Current archive verdict: NOT_READY**
+
+原因：runtime validation 尚未執行，且 group compatibility 的跨版本 persistence contract 尚未決定。
