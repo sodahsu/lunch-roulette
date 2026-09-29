@@ -12,6 +12,8 @@
 - Reveal 必須有「團體 → 個人」兩段高潮：
   1. 大螢幕先公布今晚約成飯的成功率。
   2. 主持人再觸發手機同步翻人格卡。
+- 避免現場 dead air：加入等待吐槽、答題節奏事件、成功率分拍揭曉與人格翻牌後的社交收尾。
+- 防冷場內容只能使用公開計數或固定文案，不得偷讀／暴露個人逐題答案。
 
 ## 2. Technical baseline
 
@@ -293,7 +295,50 @@ Participant：
 - revealed 後可讀自己的 persisted participant result。
 - Persona card 聚焦 persona、靈魂飯友、飲食天敵。
 
-## 12. Testing strategy
+## 12. Game pacing
+
+### Quiz pacing
+
+v0.2 的 12 題不應維持完全相同節奏到底。
+
+固定在：
+- 第 4 題：場面觀察。
+- 第 8 題：中場警報。
+- 第 11 題：最後兩題提示。
+
+這些都是 UI cue：
+- 不改變選項。
+- 不改變答案。
+- 不參與 scoring。
+- 不引用任何 participant 的真實個人答案。
+
+### Waiting pacing
+
+Participant 已交卷但 session 仍 open 時，以 `participants.length`、`completedCount`、derived incomplete count 顯示趣味等待文案。
+
+Host lobby 同樣只使用加入／完成數，避免透露某人的選擇。
+
+### Success reveal pacing
+
+成功率不能在倒數結束後瞬間只丟一個百分比。
+
+Host UI 依序顯示：
+1. 「幾個人自認超好約」。
+2. 「但答案比你們誠實，實際成功率是……」。
+3. 最終成功率、verdict 與「公開處刑」按鈕。
+
+這三拍都仍屬 `locked`，participant 手機持續 waiting。
+
+### Social ending
+
+Final persona reveal 完成後，Host 顯示最後任務：
+- 全部把手機舉起來。
+- 找自己的靈魂飯友。
+- 找自己的飲食天敵。
+
+這個階段不新增新的 domain 計算，也不公開逐題答案。
+
+## 13. Testing strategy
 
 ### Unit / Vitest
 
@@ -316,7 +361,7 @@ Test code 覆蓋：
 
 ### Playwright
 
-CASE-01 已改為驗證核心 Reveal 順序：
+CASE-01 驗證核心 Reveal 順序：
 
 ```text
 Host lock
@@ -325,6 +370,8 @@ Host lock
 → Host 翻人格卡
 → Participant 手機同步 persona
 ```
+
+CASE-09 驗證第 4 題會出現固定節奏事件。
 
 其餘 CASE-02～08 繼續驗證：
 
@@ -338,7 +385,7 @@ Host lock
 
 **Runtime status：NOT_RUN。**
 
-## 13. Validation gate
+## 14. Validation gate
 
 在此 change 可 archive 前至少需要：
 
