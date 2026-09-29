@@ -51,9 +51,11 @@ The system SHALL reveal the group dinner success rate before any participant per
 ### Scenario: Host 成功率畫面
 - WHEN session status 為 `locked`
 - AND host 已完成 Reveal 倒數
-- THEN 主持人大螢幕應優先顯示「我們這團今晚約成飯的成功率」
-- AND 顯示成功率百分比與 deterministic verdict
-- AND participant 手機仍不得顯示 persona card
+- THEN 主持人大螢幕應以多拍節奏揭曉
+- AND 第一拍可先顯示「自認超好約」的人數
+- AND 第二拍應提示「實際成功率是……」
+- AND 最後一拍才顯示「我們這團今晚約成飯的成功率」、百分比與 deterministic verdict
+- AND participant 手機在整段過程都不得顯示 persona card
 
 ### Scenario: Host 還沒按翻牌
 - WHEN host 正在查看成功率畫面
@@ -64,7 +66,7 @@ The system SHALL reveal the group dinner success rate before any participant per
 The system SHALL not persist or display participant persona cards until the host explicitly triggers the persona reveal.
 
 ### Scenario: Host 觸發人格翻牌
-- WHEN host 按下「翻出所有人格卡」
+- WHEN host 按下「公開處刑」
 - THEN 系統應建立 group snapshot
 - AND 為 complete participants 建立 persisted participant results
 - AND session status 應切換為 `revealed`
@@ -126,3 +128,13 @@ The system SHALL calculate participant similarity only among complete responses 
 ### Scenario: 只有一位 complete participant
 - WHEN 只有一位 complete participant
 - THEN 系統不得產生靈魂飯友或飲食天敵
+
+
+## Requirement: Persona Reveal 後應把注意力導回現場互動
+The system SHALL provide a final host-screen social prompt after persona cards have synchronized.
+
+### Scenario: 所有手機已翻人格卡
+- WHEN session status 為 `revealed`
+- THEN host 畫面應提示所有人查看自己的手機
+- AND 引導玩家找出自己的靈魂飯友與飲食天敵
+- AND 不需要公開個人逐題答案
