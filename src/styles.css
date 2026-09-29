@@ -1018,6 +1018,13 @@ input:focus {
 
 /* Result / collectible card */
 
+.persona-result-label {
+  width: min(100%, 520px);
+  margin: 0 auto 10px;
+  color: var(--muted);
+  text-align: left;
+}
+
 .result-panel {
   display: grid;
   min-height: calc(100vh - 42px);
