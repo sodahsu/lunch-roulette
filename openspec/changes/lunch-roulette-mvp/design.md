@@ -198,7 +198,7 @@ Supabase adapter 負責 persistence / Realtime；UI 不應自行實作另一套 
 
 ### Stage B｜個人人格翻牌
 
-1. Host 按「翻出所有人格卡」。
+1. Host 按「公開處刑 🎴」。
 2. 再次從 locked responses 建立正式 deterministic snapshot。
 3. Persist `result_snapshots.group_stats`。
 4. 為 complete participants persist `participant_results`。
@@ -338,7 +338,81 @@ Final persona reveal 完成後，Host 顯示最後任務：
 
 這個階段不新增新的 domain 計算，也不公開逐題答案。
 
-## 13. Testing strategy
+## 13. Visual system
+
+目前實作採 **Dark Editorial × Food Personality × Social Experiment**。
+
+### Global tokens
+
+- Background：`#0B0B0C`
+- Surface：深灰黑階
+- Primary text：off-white
+- Shared accent：Electric Blue
+- Success / live accent：Acid Lime
+- Reveal danger accent：Alert Red
+- 不使用外部 web font；使用 system sans 與 system monospace fallback，避免現場網路造成字型失效。
+
+### Landing
+
+- 巨型「都可以？」typography 是主視覺。
+- 首頁不再使用大型食物 emoji 當 hero。
+- Primary CTA 是「加入飯局」；Host Mode 降低視覺層級。
+- 畫面定位為 social experiment poster，不做一般 SaaS hero。
+
+### Host control room
+
+- 房號與 QR 是主要資訊。
+- Participant roster 顯示序號、暱稱與 `READY / THINKING`。
+- 遠距離大螢幕優先使用高對比與大型數字。
+
+### Quiz
+
+- 一題一屏。
+- A / B 選項使用大型矩形與 selected invert。
+- 第 4 / 8 / 11 題使用 1.8 秒 full-screen interstitial：
+  - `MINORITY DETECTED`
+  - `CONSENSUS IS COLLAPSING`
+  - `FINAL TWO`
+- Interstitial 只使用固定文案，不讀取個人答案，不影響 scoring。
+
+### Dinner success reveal
+
+- 3 / 2 / 1 與成功率使用超大型 monospace typography。
+- 三拍 Reveal 每次只顯示一個主要訊息。
+- 「公開處刑 🎴」使用 Alert Red 作為 final persona reveal CTA。
+
+### Persona collectible card
+
+`src/components/PersonaGlyph.vue` 提供 8 種一致視覺系統的 inline SVG animal glyph：
+
+- Otter / Peacekeeper
+- Wolf / Contrarian
+- Cat / Picky Eater
+- Fox / Adventurer
+- Squirrel / Value Hunter
+- Turtle / Homebody
+- Bear / Food Fanatic
+- Dog / Truly Easygoing
+
+Persona 結果卡顯示：
+
+- TYPE 編號
+- English subtype
+- 中文人格名稱與 tagline
+- MATCH / 靈魂飯友
+- ENEMY / 飲食天敵
+
+目前正式 runtime asset 是自有 inline SVG，不依賴外部生成圖或 CDN。HANDOFF 內的生圖 Prompt Library 保留為未來資產升級來源，不是目前 runtime dependency。
+
+### Responsive / accessibility
+
+- Mobile-first。
+- Host 在寬螢幕擴展至 control-room layout。
+- 保留 `:focus-visible`。
+- 支援 `prefers-reduced-motion`。
+- 關鍵 E2E / accessibility label 保持可見或使用 aria label。
+
+## 14. Testing strategy
 
 ### Unit / Vitest
 
@@ -385,7 +459,7 @@ CASE-09 驗證第 4 題會出現固定節奏事件。
 
 **Runtime status：NOT_RUN。**
 
-## 14. Validation gate
+## 15. Validation gate
 
 在此 change 可 archive 前至少需要：
 
