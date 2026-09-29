@@ -38,6 +38,7 @@ export interface Participant {
   session_id: string
   user_id: string
   display_name: string
+  completed_at: string | null
 }
 
 export interface ResponseRecord {
