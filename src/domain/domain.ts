@@ -1,7 +1,7 @@
 import { PERSONA_PRIORITY, PERSONAS, QUESTIONS } from './questions'
 import type {
   AnswerValue,
-  GroupCompatibility,
+  DinnerSuccessResult,
   GroupQuestionStat,
   ParticipantResult,
   PersonaKey,
@@ -38,13 +38,13 @@ export function calculateGroupStats(
   })
 }
 
-export function calculateGroupCompatibility(stats: GroupQuestionStat[]): GroupCompatibility {
+export function calculateDinnerSuccessRate(stats: GroupQuestionStat[]): DinnerSuccessResult {
   const usable = stats.filter((stat) => stat.sampleSize > 1)
   if (usable.length === 0) {
     return {
       score: 0,
       verdict: '先不要急著訂位',
-      detail: '目前有效樣本太少，還看不出你們到底能不能一起吃飯。',
+      detail: '目前有效樣本太少，還看不出今晚到底約不約得成。',
     }
   }
 
@@ -59,7 +59,7 @@ export function calculateGroupCompatibility(stats: GroupQuestionStat[]): GroupCo
   if (score >= 80) {
     return {
       score,
-      verdict: '我們這團可以直接出去吃飯',
+      verdict: '今晚直接出門，不要再討論',
       detail: '共識高到有點可疑。選一家，現在出門。',
     }
   }
@@ -67,7 +67,7 @@ export function calculateGroupCompatibility(stats: GroupQuestionStat[]): GroupCo
   if (score >= 68) {
     return {
       score,
-      verdict: '我們這團可以出去吃飯',
+      verdict: '今晚約得成，找一個人負責訂位',
       detail: '大方向合得來，少數爭議交給一個人拍板就好。',
     }
   }
@@ -75,14 +75,14 @@ export function calculateGroupCompatibility(stats: GroupQuestionStat[]): GroupCo
   if (score >= 56) {
     return {
       score,
-      verdict: '可以出去吃，但不要開放全民表決',
+      verdict: '約得成，但不要再開全民表決',
       detail: '你們不是沒共識，只是每多問一個人就多一個意見。',
     }
   }
 
   return {
     score,
-    verdict: '可以出去吃，但最好先指定隊長',
+    verdict: '有機會約成，先指定飯局隊長',
     detail: '這團的問題不是沒東西吃，是大家都太有想法。先指定隊長再出門。',
   }
 }
