@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
+import PersonaGlyph from './components/PersonaGlyph.vue'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
 import { calculateDinnerSuccessRate } from './domain/domain'
-import type { GroupQuestionStat, Participant, ParticipantResult } from './domain/types'
+import type { GroupQuestionStat, Participant, ParticipantResult, PersonaKey } from './domain/types'
 import {
   createSession,
   getSessionByCode,
@@ -23,6 +24,17 @@ import {
 } from './lib/session-service'
 
 type Screen = 'landing' | 'join' | 'quiz' | 'waiting' | 'host' | 'revealing' | 'result'
+
+const PERSONA_DISPLAY: Record<PersonaKey, { code: string; label: string }> = {
+  peacekeeper: { code: '01', label: 'PEACEKEEPER' },
+  contrarian: { code: '02', label: 'CONTRARIAN' },
+  picky: { code: '03', label: 'PICKY EATER' },
+  adventurer: { code: '04', label: 'ADVENTURE TYPE' },
+  valueHunter: { code: '05', label: 'VALUE HUNTER' },
+  homebody: { code: '06', label: 'HOME RADIUS TYPE' },
+  foodFanatic: { code: '07', label: 'FOOD FANATIC' },
+  easygoing: { code: '08', label: 'TRULY EASYGOING' },
+}
 
 const screen = ref<Screen>('landing')
 const busy = ref(false)
@@ -424,15 +436,23 @@ onBeforeUnmount(() => unsubscribe?.())
 
 <template>
   <main class="app-shell">
-    <section v-if="screen === 'landing'" class="hero panel">
-      <div class="eyebrow">10/1 設計交流會</div>
-      <div class="hero-emoji" aria-hidden="true">🍜</div>
-      <h1>都可以？</h1>
-      <p class="lede">8 個人都說自己很好約，最後看看誰才是真的「都可以」。</p>
-      <div class="action-stack">
-        <button class="primary" type="button" :disabled="busy" @click="startJoin">加入朋友的房間</button>
-        <button class="secondary" type="button" :disabled="busy" @click="startHost">我是主持人，開新局</button>
+    <section v-if="screen === 'landing'" class="hero panel landing-panel">
+      <div class="landing-meta">
+        <span class="eyebrow">10/1 SOCIAL EXPERIMENT</span>
+        <span class="signal-dot">LIVE TEST / 01</span>
       </div>
+      <div class="hero-signal" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <h1 class="display-title" aria-label="都可以？">
+        <span>都</span><span>可</span><span>以</span><span>？</span>
+      </h1>
+      <p class="lede landing-lede">8 個人都說自己很好約。今晚看看誰在說謊。</p>
+      <div class="action-stack landing-actions">
+        <button class="primary" type="button" :disabled="busy" @click="startJoin">加入飯局 →</button>
+        <button class="secondary host-mode-button" type="button" :disabled="busy" @click="startHost">HOST MODE / 開新局</button>
+      </div>
+      <p class="landing-footnote">DINNER PERSONALITY / GROUP CONSENSUS / LIVE REVEAL</p>
     </section>
 
     <section v-else-if="screen === 'join'" class="panel">
@@ -468,7 +488,7 @@ onBeforeUnmount(() => unsubscribe?.())
         </aside>
         <div class="choice-list">
           <button
-            v-for="option in currentQuestion.options"
+            v-for="(option, optionIndex) in currentQuestion.options"
             :key="option.id"
             type="button"
             class="choice"
@@ -476,8 +496,9 @@ onBeforeUnmount(() => unsubscribe?.())
             :disabled="session?.status !== 'open'"
             @click="choose(option.id)"
           >
-            <span class="choice-emoji">{{ option.emoji }}</span>
-            <span>{{ option.label }}</span>
+            <span class="choice-index">{{ optionIndex === 0 ? 'A' : 'B' }}</span>
+            <span class="choice-label">{{ option.label }}</span>
+            <span class="choice-emoji" aria-hidden="true">{{ option.emoji }}</span>
           </button>
         </div>
       </template>
@@ -489,28 +510,33 @@ onBeforeUnmount(() => unsubscribe?.())
       </div>
     </section>
 
-    <section v-else-if="screen === 'waiting'" class="panel center">
-      <div class="hero-emoji">✅</div>
-      <div class="eyebrow">答案已經存進資料庫</div>
+    <section v-else-if="screen === 'waiting'" class="panel center state-panel">
+      <div class="state-code">READY</div>
+      <div class="eyebrow">RESPONSE LOCKED IN</div>
       <h2>你答完了。先不要偷看別人。</h2>
-      <p class="lede">目前 {{ completedCount }} / {{ participants.length }} 人完成。</p>
+      <p class="lede state-metric">{{ completedCount }} / {{ participants.length }} COMPLETE</p>
       <p class="waiting-joke">{{ waitingMessage }}</p>
-      <button v-if="session?.status === 'open'" class="secondary" type="button" @click="editAnswers">我想改答案</button>
+      <button v-if="session?.status === 'open'" class="secondary" type="button" @click="editAnswers">修改答案 ↗</button>
       <p v-else class="locked-copy">主持人已鎖定答案，準備揭曉。</p>
     </section>
 
-    <section v-else-if="screen === 'revealing'" class="panel center reveal-wait">
-      <div class="eyebrow">全場結算中</div>
-      <div class="hero-emoji reveal-spin">🎰</div>
+    <section v-else-if="screen === 'revealing'" class="panel center reveal-wait state-panel">
+      <div class="state-code reveal-pulse">LOCKED</div>
+      <div class="eyebrow">GROUP ANALYSIS IN PROGRESS</div>
       <h2>正在判斷你到底多難約…</h2>
-      <p class="lede">先別動，主持人大螢幕正在公開處刑。人格卡會自己翻出來。</p>
-      <div class="status-pill">等待 Reveal</div>
+      <p class="lede">先別動。大螢幕正在公布這團的命運，人格卡會自己翻出來。</p>
+      <div class="status-pill"><span></span> WAITING FOR HOST</div>
     </section>
 
     <section v-else-if="screen === 'host'" class="panel host-panel">
-      <div class="eyebrow">主持人模式</div>
-      <h2>房號 {{ session?.code }}</h2>
-      <p class="lede">掃 QR Code 或輸入房號都能加入。人數不用湊滿 8 個，覺得差不多就可以揭曉。</p>
+      <div class="host-header">
+        <div>
+          <div class="eyebrow">HOST / CONTROL ROOM</div>
+          <h2 class="host-room-heading">房號 <span>{{ session?.code }}</span></h2>
+        </div>
+        <div class="live-badge"><span></span> LIVE</div>
+      </div>
+      <p class="lede">掃 QR Code 或輸入房號加入。人數不用湊滿 8 個，覺得差不多就可以揭曉。</p>
 
       <div class="host-join-card">
         <img v-if="qrCodeDataUrl" class="join-qr" :src="qrCodeDataUrl" alt="加入這一局的 QR Code" />
@@ -531,9 +557,13 @@ onBeforeUnmount(() => unsubscribe?.())
       <p v-if="session?.status === 'open'" class="host-live-copy">{{ hostLobbyMessage }}</p>
 
       <div class="people">
-        <div v-for="person in participants" :key="person.id" class="person-row">
+        <div v-for="(person, personIndex) in participants" :key="person.id" class="person-row">
+          <span class="subject-index">{{ String(personIndex + 1).padStart(2, '0') }}</span>
           <span class="avatar">{{ person.display_name.slice(0, 1).toUpperCase() }}</span>
-          <span>{{ person.display_name }}</span>
+          <span class="subject-name">{{ person.display_name }}</span>
+          <span class="subject-status" :class="{ ready: Boolean(person.completed_at) }">
+            {{ person.completed_at ? 'READY' : 'THINKING' }}
+          </span>
         </div>
       </div>
 
@@ -628,23 +658,37 @@ onBeforeUnmount(() => unsubscribe?.())
 
     <section v-else-if="screen === 'result'" class="panel result-panel">
       <template v-if="meResult">
-        <div class="eyebrow">你的飲食人格</div>
-        <div class="persona-emoji">{{ PERSONAS[meResult.persona].emoji }}</div>
-        <h2>{{ PERSONAS[meResult.persona].name }}</h2>
-        <p class="persona-tagline">「{{ PERSONAS[meResult.persona].tagline }}」</p>
+        <article class="persona-card" :data-persona="meResult.persona">
+          <header class="persona-card-head">
+            <span>TYPE {{ PERSONA_DISPLAY[meResult.persona].code }}</span>
+            <span>DINNER IDENTITY</span>
+          </header>
 
-        <div class="match-card">
-          <span>👯 靈魂飯友</span>
-          <strong>{{ soulmateNames.length ? soulmateNames.join('、') : '這局還沒有可比較的人' }}</strong>
-        </div>
-        <div class="match-card">
-          <span>⚔️ 飲食天敵</span>
-          <strong>{{ oppositeNames.length ? oppositeNames.join('、') : '這局還沒有可比較的人' }}</strong>
-        </div>
+          <div class="persona-visual">
+            <PersonaGlyph :persona="meResult.persona" />
+          </div>
+
+          <div class="persona-copy">
+            <div class="eyebrow">{{ PERSONA_DISPLAY[meResult.persona].label }}</div>
+            <h2>{{ PERSONAS[meResult.persona].name }}</h2>
+            <p class="persona-tagline">「{{ PERSONAS[meResult.persona].tagline }}」</p>
+          </div>
+
+          <div class="match-grid">
+            <div class="match-card">
+              <span>MATCH / 靈魂飯友</span>
+              <strong>{{ soulmateNames.length ? soulmateNames.join('、') : 'NO MATCH YET' }}</strong>
+            </div>
+            <div class="match-card enemy">
+              <span>ENEMY / 飲食天敵</span>
+              <strong>{{ oppositeNames.length ? oppositeNames.join('、') : 'NO ENEMY YET' }}</strong>
+            </div>
+          </div>
+        </article>
       </template>
       <template v-else>
-        <div class="eyebrow">這局已揭曉</div>
-        <div class="persona-emoji">🫥</div>
+        <div class="state-code">N/A</div>
+        <div class="eyebrow">RESULT NOT GENERATED</div>
         <h2>你沒有答完</h2>
         <p class="persona-tagline">這次不硬判人格。下局記得交卷，才會拿到人格卡和飯友配對。</p>
       </template>
