@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { buildResultSnapshot, isCompleteResponse } from '../domain/domain'
+import { selectQuestionsForSession } from '../domain/questions'
 import type {
   Participant,
   ParticipantResult,
@@ -35,7 +36,7 @@ export async function createSession(): Promise<SessionRecord> {
   const userId = await ensureUserId()
   const { data, error } = await supabase
     .from('sessions')
-    .insert({ code: createCode(), host_user_id: userId })
+    .insert({ code: createCode(), host_user_id: userId, questionnaire_version: 'v0.2' })
     .select()
     .single()
 
@@ -113,16 +114,17 @@ export async function joinSession(sessionId: string, displayName: string): Promi
 }
 
 export async function saveAnswers(
-  sessionId: string,
+  session: SessionRecord,
   participantId: string,
   answers: Record<string, string>,
 ): Promise<void> {
+  const questions = selectQuestionsForSession(session.code, session.questionnaire_version)
   const { error } = await supabase.from('responses').upsert(
     {
-      session_id: sessionId,
+      session_id: session.id,
       participant_id: participantId,
       answers,
-      is_complete: isCompleteResponse(answers),
+      is_complete: isCompleteResponse(answers, questions),
     },
     { onConflict: 'session_id,participant_id' },
   )
@@ -164,7 +166,8 @@ export async function lockSession(session: SessionRecord): Promise<void> {
 export async function finalizeReveal(session: SessionRecord): Promise<GroupQuestionStat[]> {
   const responses = await listResponses(session.id)
   const participants = await listParticipants(session.id)
-  const snapshot = buildResultSnapshot(responses)
+  const questions = selectQuestionsForSession(session.code, session.questionnaire_version)
+  const snapshot = buildResultSnapshot(responses, questions)
 
   const { error: groupError } = await supabase
     .from('result_snapshots')
