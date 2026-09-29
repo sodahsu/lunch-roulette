@@ -59,7 +59,7 @@ export function calculateGroupCompatibility(stats: GroupQuestionStat[]): GroupCo
   if (score >= 80) {
     return {
       score,
-      verdict: '你們這團可以直接出去吃飯',
+      verdict: '我們這團可以直接出去吃飯',
       detail: '共識高到有點可疑。選一家，現在出門。',
     }
   }
@@ -67,7 +67,7 @@ export function calculateGroupCompatibility(stats: GroupQuestionStat[]): GroupCo
   if (score >= 68) {
     return {
       score,
-      verdict: '你們這團可以出去吃飯',
+      verdict: '我們這團可以出去吃飯',
       detail: '大方向合得來，少數爭議交給一個人拍板就好。',
     }
   }
