@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
-import { PERSONAS, QUESTIONS } from './domain/questions'
+import { PERSONAS, selectQuestionsForSession } from './domain/questions'
+import { calculateGroupCompatibility } from './domain/domain'
 import type { GroupQuestionStat, Participant, ParticipantResult } from './domain/types'
 import {
   createSession,
@@ -41,12 +42,19 @@ const qrCodeDataUrl = ref('')
 const copiedLink = ref(false)
 let unsubscribe: (() => void) | null = null
 
-const currentQuestion = computed(() => QUESTIONS[questionIndex.value])
+const activeQuestions = computed(() => {
+  if (!session.value) return []
+  return selectQuestionsForSession(session.value.code, session.value.questionnaire_version)
+})
+const currentQuestion = computed(() => activeQuestions.value[questionIndex.value])
 const currentAnswer = computed(() => {
   const question = currentQuestion.value
   return question ? answers.value[question.id] : undefined
 })
-const progress = computed(() => ((questionIndex.value + 1) / QUESTIONS.length) * 100)
+const progress = computed(() => {
+  if (activeQuestions.value.length === 0) return 0
+  return ((questionIndex.value + 1) / activeQuestions.value.length) * 100
+})
 const meResult = computed(() => {
   return personalResult.value
 })
@@ -72,6 +80,9 @@ const joinUrl = computed(() => {
 })
 
 const resultSampleSize = computed(() => groupStats.value?.[0]?.sampleSize ?? 0)
+const diningCompatibility = computed(() =>
+  calculateGroupCompatibility(groupStats.value ?? []),
+)
 
 const selfReportedEasygoing = computed(() => {
   const stat = groupStats.value?.find((item) => item.questionId === 'self-image')
@@ -105,11 +116,11 @@ const splitStat = computed(() => {
 })
 
 function questionPrompt(questionId: string) {
-  return QUESTIONS.find((question) => question.id === questionId)?.prompt ?? questionId
+  return activeQuestions.value.find((question) => question.id === questionId)?.prompt ?? questionId
 }
 
 function statSummary(stat: GroupQuestionStat) {
-  const question = QUESTIONS.find((item) => item.id === stat.questionId)
+  const question = activeQuestions.value.find((item) => item.id === stat.questionId)
   if (!question) return ''
 
   return question.options
@@ -183,10 +194,11 @@ async function restoreFromUrl() {
       const ownResponse = await getOwnResponse(session.value.id, participant.value.id)
       if (ownResponse) answers.value = ownResponse.answers
 
-      const firstUnanswered = QUESTIONS.findIndex(
+      const firstUnanswered = activeQuestions.value.findIndex(
         (question) => question.required && !answers.value[question.id],
       )
-      questionIndex.value = firstUnanswered === -1 ? QUESTIONS.length - 1 : firstUnanswered
+      questionIndex.value =
+        firstUnanswered === -1 ? Math.max(0, activeQuestions.value.length - 1) : firstUnanswered
     }
 
     attachRealtime()
@@ -201,7 +213,9 @@ async function restoreFromUrl() {
 }
 
 function ownResponseIsComplete() {
-  return QUESTIONS.every((question) => !question.required || Boolean(answers.value[question.id]))
+  return activeQuestions.value.every(
+    (question) => !question.required || Boolean(answers.value[question.id]),
+  )
 }
 
 async function refreshSessionState() {
@@ -279,9 +293,9 @@ async function nextQuestion() {
   if (!currentAnswer.value || !session.value || !participant.value) return
 
   await withBusy(async () => {
-    await saveAnswers(session.value!.id, participant.value!.id, answers.value)
+    await saveAnswers(session.value!, participant.value!.id, answers.value)
 
-    if (questionIndex.value < QUESTIONS.length - 1) {
+    if (questionIndex.value < activeQuestions.value.length - 1) {
       questionIndex.value += 1
       return
     }
@@ -375,7 +389,7 @@ onBeforeUnmount(() => unsubscribe?.())
 
     <section v-else-if="screen === 'quiz'" class="panel quiz-panel">
       <div class="quiz-top">
-        <span>第 {{ questionIndex + 1 }} / {{ QUESTIONS.length }} 題</span>
+        <span>第 {{ questionIndex + 1 }} / {{ activeQuestions.length }} 題</span>
         <span v-if="session?.status !== 'open'" class="locked-pill">已鎖定</span>
       </div>
       <div class="progress-track"><div class="progress-bar" :style="{ width: progress + '%' }" /></div>
@@ -399,7 +413,7 @@ onBeforeUnmount(() => unsubscribe?.())
       <div class="bottom-actions inline">
         <button class="secondary" type="button" :disabled="questionIndex === 0" @click="previousQuestion">上一題</button>
         <button class="primary" type="button" :disabled="!currentAnswer || busy" @click="nextQuestion">
-          {{ questionIndex === QUESTIONS.length - 1 ? '交卷' : '下一題' }}
+          {{ questionIndex === activeQuestions.length - 1 ? '交卷' : '下一題' }}
         </button>
       </div>
     </section>
@@ -465,7 +479,15 @@ onBeforeUnmount(() => unsubscribe?.())
 
       <div v-else-if="groupStats" class="group-result host-results">
         <div class="eyebrow">結果已固定 · 有效樣本 {{ resultSampleSize }} 人</div>
-        <h3>你們對自己有一些誤會。 🎉</h3>
+
+        <article class="group-verdict-card">
+          <span class="result-kicker">🍽️ 你們這團可以出去吃飯嗎？</span>
+          <strong class="group-verdict">{{ diningCompatibility.verdict }}</strong>
+          <div class="compatibility-score">{{ diningCompatibility.score }}%</div>
+          <p>{{ diningCompatibility.detail }}</p>
+        </article>
+
+        <h3>你們對自己也有一些誤會。 🎉</h3>
 
         <div class="host-result-grid">
           <article class="host-result-card">
