@@ -23,6 +23,13 @@ function response(id: string, answers: Record<string, string>, complete = true):
   }
 }
 
+describe('v0.1 questionnaire contract', () => {
+  it('uses exactly eight required questions', () => {
+    expect(QUESTIONS).toHaveLength(8)
+    expect(QUESTIONS.every((question) => question.required)).toBe(true)
+  })
+})
+
 describe('response completeness', () => {
   it('requires every required question', () => {
     expect(isCompleteResponse(allFirst)).toBe(true)
@@ -61,6 +68,11 @@ describe('group stats', () => {
 describe('persona assignment', () => {
   it('is deterministic for the same answers', () => {
     expect(assignPersona(allFirst)).toBe(assignPersona(allFirst))
+  })
+
+  it('uses highest total score for v0.1 persona assignment', () => {
+    expect(assignPersona(allFirst)).toBe('easygoing')
+    expect(assignPersona(allSecond)).toBe('picky')
   })
 
   it('uses the configured priority as a stable tie breaker', () => {
