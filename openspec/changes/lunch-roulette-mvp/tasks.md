@@ -4,14 +4,14 @@
 - [x] 定義半天 MVP 範圍與非目標
 - [x] 定義技術基線與資料 ownership
 - [x] 定義 unit test 與 case test 策略
-- [ ] 確認正式題數與題目內容
-- [ ] 確認 persona 名稱、score 規則與 tie-break
-- [ ] 確認 similarity 第一版計算方式
+- [x] v0.1 固定 8 題且皆 required
+- [x] v0.1 固定 8 人格、option score、最高分制與 PERSONA_PRIORITY tie-break
+- [x] v0.1 使用雙方可比較題目的等權答案一致率
 
 ## 1. Project scaffold
 - [x] 建立 Vue 3 + Vite + TypeScript
-- [ ] 安裝並設定 Vitest
-- [ ] 安裝並設定 Playwright
+- [x] package / script / domain test 已設定 Vitest（runtime 尚未實跑）
+- [x] package / config / CASE-01～08 已設定 Playwright（runtime 尚未實跑）
 - [x] 設定 Supabase client 與環境變數
 - [x] 建立 typecheck / test:unit / test:e2e / build scripts
 
@@ -19,7 +19,7 @@
 ### 2.1 Response completeness
 - [x] 先寫：完整 required answers => complete
 - [x] 先寫：少一題 => incomplete
-- [ ] 先寫：同一 participant 修改後採 latest response
+- [x] latest response 由 responses PK + upsert 負責，並由 Playwright CASE-03 覆蓋
 - [x] 實作最小 completeness logic
 
 ### 2.2 Group stats
@@ -30,7 +30,7 @@
 
 ### 2.3 Persona
 - [x] 先寫：相同輸入得到相同 persona
-- [ ] 先寫：threshold 邊界
+- [x] v0.1 明確不使用 threshold；改驗最高分制與固定 tie-break
 - [x] 先寫：score 平手使用固定 tie-break
 - [x] 實作 persona scoring / assignment
 
@@ -50,7 +50,7 @@
 
 ## 3. Realtime / persistence
 - [x] 建立 session / participant / response / result snapshot 最小 schema
-- [ ] participant 可以匿名加入 open session
+- [x] anonymous join 前端與 open-session RLS 已實作（Auth provider runtime 尚待驗證）
 - [x] participant 可在 open 狀態更新 latest response
 - [x] host 可在任意合理時點 lock
 - [x] locked 後拒絕 response update
@@ -67,16 +67,20 @@
 - [x] 群體 Reveal 頁
 - [x] 個人人格卡
 - [x] 靈魂飯友 / 飲食天敵
+- [x] 主持人 QR Code 加入連結
+- [x] 主持人匿名群體笑點卡（都可以自信值 / 飲食內戰 / 歷史性共識）
+- [x] 未完成 participant Reveal 後顯示明確無結果狀態
+- [x] 人格卡使用動物角色 emoji
 
 ## 5. Playwright case tests
-- [ ] CASE-01 多人正常流程
-- [ ] CASE-02 未滿約 8 人仍可 Reveal
-- [ ] CASE-03 Reveal 前反覆修改，採最後答案
-- [ ] CASE-04 未完成者不阻塞
-- [ ] CASE-05 Lock 後不可修改
-- [ ] CASE-06 Refresh 後結果一致
-- [ ] CASE-07 公開畫面不洩漏個人逐題答案
-- [ ] CASE-08 第 9 位仍可加入
+- [x] CASE-01 多人正常流程 test code 已寫（NOT_RUN）
+- [x] CASE-02 未滿約 8 人仍可 Reveal test code 已寫（NOT_RUN）
+- [x] CASE-03 Reveal 前反覆修改，採最後答案 test code 已寫（NOT_RUN）
+- [x] CASE-04 未完成者不阻塞 test code 已寫（NOT_RUN）
+- [x] CASE-05 Lock 後不可修改 test code 已寫（NOT_RUN）
+- [x] CASE-06 Refresh 後結果一致 test code 已寫（NOT_RUN）
+- [x] CASE-07 公開畫面不洩漏個人逐題答案 test code 已寫（NOT_RUN）
+- [x] CASE-08 第 9 位仍可加入 test code 已寫（NOT_RUN）
 
 ## 5.1 Database integration verification
 - [x] 真實雲端 schema 已套用 Supabase
