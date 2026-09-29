@@ -15,8 +15,18 @@ The system SHALL calculate reveal results using only complete responses captured
 - THEN 系統不得硬判該 participant 的 persona
 - AND 應顯示明確的未完成狀態
 
-## Requirement: 今晚約成飯的成功率必須 deterministic
-The system SHALL derive a deterministic dinner success rate from locked aggregate answers.
+## Requirement: 今晚約成飯的成功率必須 deterministic 且版本固定
+The system SHALL derive a deterministic dinner success rate from locked aggregate answers using the algorithm assigned to the session questionnaire version.
+
+### Scenario: 舊場次重新開啟
+- WHEN session questionnaire version 為 `v0.1` 或 `v0.2`
+- THEN 系統應使用已固定的 `v1` dinner-success algorithm
+- AND 不得因未來加入新公式而改用不同演算法
+
+### Scenario: 新 questionnaire version 沒有演算法 mapping
+- WHEN session 使用尚未配置 dinner-success algorithm 的 questionnaire version
+- THEN domain 計算應明確失敗
+- AND 不得自動 fallback 到最新演算法
 
 ### Scenario: 計算成功率
 - WHEN 至少兩位 complete participants 形成可用 group stats
