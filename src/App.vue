@@ -41,6 +41,7 @@ const isHost = ref(false)
 const revealStep = ref(3)
 const qrCodeDataUrl = ref('')
 const copiedLink = ref(false)
+const successRevealBeat = ref(0)
 let unsubscribe: (() => void) | null = null
 
 const activeQuestions = computed(() => {
@@ -84,6 +85,53 @@ const resultSampleSize = computed(() => groupStats.value?.[0]?.sampleSize ?? 0)
 const dinnerSuccess = computed(() =>
   calculateDinnerSuccessRate(groupStats.value ?? []),
 )
+
+const incompleteCount = computed(() =>
+  Math.max(0, participants.value.length - completedCount.value),
+)
+
+const quizEvent = computed(() => {
+  const events: Record<number, { eyebrow: string; text: string }> = {
+    4: {
+      eyebrow: '📡 場面觀察',
+      text: '有人開始跟全場走不同方向。先不要找戰犯。',
+    },
+    8: {
+      eyebrow: '⚠️ 中場警報',
+      text: '如果你已經改過答案，代表你開始害怕被看穿了。',
+    },
+    11: {
+      eyebrow: '🧨 最後兩題',
+      text: '友情還有機會。請慎選，系統都有看到。',
+    },
+  }
+
+  return events[questionIndex.value + 1] ?? null
+})
+
+const waitingMessage = computed(() => {
+  if (participants.value.length > 0 && completedCount.value === participants.value.length) {
+    return '全員交卷。現在只剩主持人敢不敢按下去。'
+  }
+  if (incompleteCount.value === 1) {
+    return '只剩 1 個人還在跟自己辯論。先不要催他。'
+  }
+  if (incompleteCount.value > 1) {
+    return `還有 ${incompleteCount.value} 個人正在重新思考自己的人生。`
+  }
+  return '答案已交卷。主持人可以隨時揭曉。'
+})
+
+const hostLobbyMessage = computed(() => {
+  if (participants.value.length === 0) return '等待第一位受害者掃碼…'
+  if (completedCount.value === participants.value.length) {
+    return '全員交卷。現在只剩主持人敢不敢按。'
+  }
+  if (completedCount.value === 0) {
+    return `目前 ${participants.value.length} 個人聲稱自己很好約。`
+  }
+  return `${completedCount.value} 人已交卷，還有 ${incompleteCount.value} 人正在跟自己辯論。`
+})
 
 const selfReportedEasygoing = computed(() => {
   const stat = groupStats.value?.find((item) => item.questionId === 'self-image')
@@ -327,23 +375,35 @@ async function runRevealCountdown() {
   }
 }
 
+async function runDinnerSuccessReveal() {
+  if (!session.value) return
+
+  groupStats.value = await previewLockedGroupStats(session.value)
+  successRevealBeat.value = 1
+  await wait(1300)
+  successRevealBeat.value = 2
+  await wait(1200)
+  successRevealBeat.value = 3
+}
+
 async function reveal() {
   await withBusy(async () => {
     if (!session.value || session.value.status !== 'open') return
 
+    successRevealBeat.value = 0
     await lockSession(session.value)
     await refreshSessionState()
     await runRevealCountdown()
-
-    groupStats.value = await previewLockedGroupStats(session.value)
+    await runDinnerSuccessReveal()
   })
 }
 
 async function continueReveal() {
   await withBusy(async () => {
     if (!session.value || session.value.status !== 'locked') return
+    successRevealBeat.value = 0
     await runRevealCountdown()
-    groupStats.value = await previewLockedGroupStats(session.value)
+    await runDinnerSuccessReveal()
   })
 }
 
@@ -402,6 +462,10 @@ onBeforeUnmount(() => unsubscribe?.())
       <div class="progress-track"><div class="progress-bar" :style="{ width: progress + '%' }" /></div>
       <template v-if="currentQuestion">
         <h2 class="question">{{ currentQuestion.prompt }}</h2>
+        <aside v-if="quizEvent" class="quiz-event" aria-live="polite">
+          <span>{{ quizEvent.eyebrow }}</span>
+          <strong>{{ quizEvent.text }}</strong>
+        </aside>
         <div class="choice-list">
           <button
             v-for="option in currentQuestion.options"
@@ -428,8 +492,9 @@ onBeforeUnmount(() => unsubscribe?.())
     <section v-else-if="screen === 'waiting'" class="panel center">
       <div class="hero-emoji">✅</div>
       <div class="eyebrow">答案已經存進資料庫</div>
-      <h2>等大家一下</h2>
-      <p class="lede">目前 {{ completedCount }} / {{ participants.length }} 人完成。主持人可以隨時揭曉。</p>
+      <h2>你答完了。先不要偷看別人。</h2>
+      <p class="lede">目前 {{ completedCount }} / {{ participants.length }} 人完成。</p>
+      <p class="waiting-joke">{{ waitingMessage }}</p>
       <button v-if="session?.status === 'open'" class="secondary" type="button" @click="editAnswers">我想改答案</button>
       <p v-else class="locked-copy">主持人已鎖定答案，準備揭曉。</p>
     </section>
@@ -463,6 +528,8 @@ onBeforeUnmount(() => unsubscribe?.())
         <div class="metric"><strong>{{ completedCount }}</strong><span>已完成</span></div>
       </div>
 
+      <p v-if="session?.status === 'open'" class="host-live-copy">{{ hostLobbyMessage }}</p>
+
       <div class="people">
         <div v-for="person in participants" :key="person.id" class="person-row">
           <span class="avatar">{{ person.display_name.slice(0, 1).toUpperCase() }}</span>
@@ -473,13 +540,28 @@ onBeforeUnmount(() => unsubscribe?.())
       <div v-if="session?.status === 'locked' && groupStats" class="dinner-success-reveal">
         <div class="eyebrow">今晚的飯局命運已算出來</div>
         <p class="success-question">🍽️ 我們這團今晚約成飯的成功率</p>
-        <div class="success-score">{{ resultSampleSize > 1 ? dinnerSuccess.score + '%' : '樣本不足' }}</div>
-        <h3>{{ dinnerSuccess.verdict }}</h3>
-        <p class="lede">{{ dinnerSuccess.detail }}</p>
-        <p class="persona-tease">成功率看完了。現在看看問題到底出在誰身上。</p>
-        <button class="primary persona-reveal-button" type="button" :disabled="busy" @click="revealPersonas">
-          {{ busy ? '正在翻牌…' : '翻出所有人格卡 🎴' }}
-        </button>
+
+        <div v-if="successRevealBeat === 1" class="success-build-up" aria-live="polite">
+          <span>先看你們怎麼說自己</span>
+          <strong>{{ selfReportedEasygoing }} / {{ resultSampleSize }} 人覺得自己「超好約」</strong>
+          <p>先記住這個數字。</p>
+        </div>
+
+        <div v-else-if="successRevealBeat === 2" class="success-build-up" aria-live="polite">
+          <span>但答案比你們誠實</span>
+          <strong>實際成功率是……</strong>
+          <p>希望你們等等還願意一起吃飯。</p>
+        </div>
+
+        <template v-else>
+          <div class="success-score">{{ resultSampleSize > 1 ? dinnerSuccess.score + '%' : '樣本不足' }}</div>
+          <h3>{{ dinnerSuccess.verdict }}</h3>
+          <p class="lede">{{ dinnerSuccess.detail }}</p>
+          <p class="persona-tease">成功率看完了。現在看看問題到底出在誰身上。</p>
+          <button class="primary persona-reveal-button" type="button" :disabled="busy" @click="revealPersonas">
+            {{ busy ? '正在翻牌…' : '公開處刑 🎴' }}
+          </button>
+        </template>
       </div>
 
       <div v-else-if="session?.status === 'locked'" class="host-countdown">
@@ -528,7 +610,13 @@ onBeforeUnmount(() => unsubscribe?.())
           </article>
         </div>
 
-        <p class="host-result-footer">手機端現在已同步翻牌，請各自面對自己的飲食人格。</p>
+        <article class="final-social-challenge">
+          <span class="result-kicker">🎴 最後任務</span>
+          <strong>全部把手機舉起來。</strong>
+          <p>先找到你的靈魂飯友，再找飲食天敵。找到天敵的人先不要辯解。</p>
+        </article>
+
+        <p class="host-result-footer">手機已同步翻牌。剩下的交給你們互相吐槽。</p>
       </div>
 
       <div v-else class="bottom-actions">
