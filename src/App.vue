@@ -558,9 +558,8 @@ onBeforeUnmount(() => {
     </section>
 
     <section v-else-if="screen === 'revealing'" class="panel center reveal-wait state-panel">
-      <span class="sr-only">全場結算中</span>
       <div class="state-code reveal-pulse">LOCKED</div>
-      <div class="eyebrow">GROUP ANALYSIS IN PROGRESS</div>
+      <div class="eyebrow">GROUP ANALYSIS / 全場結算中</div>
       <h2>正在判斷你到底多難約…</h2>
       <p class="lede">先別動。大螢幕正在公布這團的命運，人格卡會自己翻出來。</p>
       <div class="status-pill"><span></span> WAITING FOR HOST</div>
@@ -696,7 +695,7 @@ onBeforeUnmount(() => {
 
     <section v-else-if="screen === 'result'" class="panel result-panel">
       <template v-if="meResult">
-        <span class="sr-only">你的飲食人格</span>
+        <div class="eyebrow persona-result-label">你的飲食人格 / DINNER IDENTITY</div>
         <article class="persona-card" :data-persona="meResult.persona">
           <header class="persona-card-head">
             <span>TYPE {{ PERSONA_DISPLAY[meResult.persona].code }}</span>
