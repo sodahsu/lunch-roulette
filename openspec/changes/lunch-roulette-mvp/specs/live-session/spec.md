@@ -47,3 +47,19 @@ The system SHALL persist a result snapshot before the session becomes `revealed`
 - AND 參與者重新整理頁面
 - THEN 系統應載入既有 result snapshot
 - AND 不得因重新計算而產生不同結果
+
+
+## Requirement: 結算期間所有參與者同步等待
+The system SHALL use the shared session status as the single source of truth for reveal timing.
+
+### Scenario: 主持人開始結算
+- WHEN 主持人觸發 Reveal
+- THEN 系統先將 session status 從 `open` 切換為 `locked`
+- AND 所有參與者裝置透過 Realtime 進入等待揭曉畫面
+- AND 任何參與者不得在 `locked` 階段提前看到 persona
+
+### Scenario: Reveal 完成
+- WHEN result snapshot 與 participant results 已建立
+- AND session status 切換為 `revealed`
+- THEN 所有在線參與者裝置應自動切換到各自的人格卡
+- AND 不需要參與者手動重新整理或按下一步
