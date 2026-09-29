@@ -9,8 +9,17 @@ export interface QuestionOption {
   scores: Partial<Record<PersonaKey, number>>
 }
 
+export type QuestionCategory =
+  | 'alignment'
+  | 'effort'
+  | 'value'
+  | 'adventure'
+  | 'social'
+  | 'identity'
+
 export interface Question {
   id: string
+  category: QuestionCategory
   prompt: string
   required: boolean
   options: QuestionOption[]
