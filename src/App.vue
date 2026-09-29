@@ -97,7 +97,10 @@ const joinUrl = computed(() => {
 
 const resultSampleSize = computed(() => groupStats.value?.[0]?.sampleSize ?? 0)
 const dinnerSuccess = computed(() =>
-  calculateDinnerSuccessRate(groupStats.value ?? []),
+  calculateDinnerSuccessRate(
+    groupStats.value ?? [],
+    session.value?.questionnaire_version ?? 'v0.2',
+  ),
 )
 
 const incompleteCount = computed(() =>
