@@ -64,6 +64,12 @@ export interface GroupQuestionStat {
   sampleSize: number
 }
 
+export interface GroupCompatibility {
+  score: number
+  verdict: string
+  detail: string
+}
+
 export interface PairingResult {
   participantId: string
   similarity: number
