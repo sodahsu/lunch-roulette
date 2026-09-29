@@ -38,6 +38,17 @@ export const QUESTION_CATEGORIES: QuestionCategory[] = [
 
 export const SESSION_QUESTION_COUNT = 12
 
+const LEGACY_V01_QUESTION_IDS = [
+  'group-choice',
+  'queue',
+  'new-place',
+  'budget',
+  'distance',
+  'you-decide',
+  'last-bite',
+  'self-image',
+]
+
 export const QUESTION_BANK: Question[] = [
   {
     id: 'group-choice',
@@ -304,7 +315,16 @@ function sortBySeed(questions: Question[], seed: string): Question[] {
   })
 }
 
-export function selectQuestionsForSession(code: string): Question[] {
+export function selectQuestionsForSession(
+  code: string,
+  questionnaireVersion = 'v0.2',
+): Question[] {
+  if (questionnaireVersion === 'v0.1') {
+    return LEGACY_V01_QUESTION_IDS
+      .map((id) => QUESTION_BANK.find((question) => question.id === id))
+      .filter((question): question is Question => Boolean(question))
+  }
+
   const normalizedCode = code.trim().toUpperCase()
 
   const selected = QUESTION_CATEGORIES.flatMap((category) => {
