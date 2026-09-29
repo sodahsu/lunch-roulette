@@ -16,7 +16,7 @@ export interface SessionRecord {
   questionnaire_version: string
 }
 
-async function ensureUserId(): Promise<string> {
+export async function ensureUserId(): Promise<string> {
   const { data: sessionData } = await supabase.auth.getSession()
   if (sessionData.session?.user.id) return sessionData.session.user.id
 
@@ -53,6 +53,32 @@ export async function getSessionByCode(code: string): Promise<SessionRecord> {
 
   if (error) throw error
   return data as SessionRecord
+}
+
+export async function getOwnParticipant(sessionId: string): Promise<Participant | null> {
+  const userId = await ensureUserId()
+  const { data, error } = await supabase
+    .from('participants')
+    .select('*')
+    .eq('session_id', sessionId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data as Participant | null
+}
+
+export async function getOwnResponse(
+  sessionId: string,
+  participantId: string,
+): Promise<ResponseRecord | null> {
+  const { data, error } = await supabase
+    .from('responses')
+    .select('*')
+    .eq('session_id', sessionId)
+    .eq('participant_id', participantId)
+    .maybeSingle()
+  if (error) throw error
+  return data as ResponseRecord | null
 }
 
 export async function joinSession(sessionId: string, displayName: string): Promise<Participant> {
