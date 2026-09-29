@@ -246,17 +246,16 @@ score = round(mean(questionAgreement) * 100)
 - verdict 使用「先不要急著訂位」。
 - 不把 score 0 解讀成低成功率。
 
-### Persistence note
+### Persistence / versioning
 
 - locked 成功率 preview：從 locked responses 即時計算，不 persist。
-- final `group_stats`：host 翻 persona 時 persist。
-- revealed 後如需重新顯示成功率，從 persisted `group_stats` deterministic derive。
+- final `group_stats`：host 公開 Persona 時 persist。
+- revealed 後重新顯示成功率，從 persisted `group_stats` deterministic derive。
+- Dinner-success algorithm 由 `questionnaire_version` 明確選擇。
+- `v0.1` 與 `v0.2` 目前都綁定 `v1` success algorithm。
+- 新 questionnaire version 若沒有明確 algorithm mapping，domain function 應直接拒絕，不得 fallback 到最新演算法。
 
-如果未來修改成功率公式，舊 revealed session 的 derived score 理論上可能跟著變。
-
-若產品要求「跨未來程式版本永久不變」，archive 前需要二選一：
-1. persist success summary；或
-2. 依 `questionnaire_version` 保留舊版 success-rate algorithm。
+因此舊 room 的 algorithm contract 不會因未來新增公式而默默改變；不需要新增 success-summary DB 欄位。
 
 ## 9. Persona behavior
 
