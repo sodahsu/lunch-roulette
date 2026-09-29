@@ -8,7 +8,7 @@ handoff_status: ready_for_handoff
 
 ## Resume Here
 
-**交付定位：**核心多人遊戲、兩段式 Reveal、防冷場 pacing 與 OpenSpec 已實作；下一步先做 runtime 驗證，再進行「酷酷的」視覺改版。
+**交付定位：**核心多人遊戲、兩段式 Reveal、防冷場 pacing、Dark Editorial 視覺與 OpenSpec 已實作；下一步重點是 runtime / 多裝置 / 部署驗證，不要再把視覺改版列為未開始。
 
 **功能實作快照 HEAD（本次 HANDOFF 更新前）：** `7981d6b257507973b46d46038c1aa874b733fa3d`
 
@@ -17,7 +17,7 @@ handoff_purpose: implementation_and_validation
 task_state: implementation_written_runtime_unverified
 code_changed: true
 repository_reverified: true
-visual_redesign: pending
+visual_redesign: implemented_runtime_unverified
 ```
 
 ## 1. 產品一句話
@@ -275,15 +275,15 @@ Host 大螢幕：
 
 ---
 
-# 6. 視覺改版交接｜PENDING IMPLEMENTATION
+# 6. 視覺系統｜IMPLEMENTED / RUNTIME UNVERIFIED
 
 使用者已明確要求：
 
 > **設計風格要酷酷的。**
 
-目前程式的整體視覺仍偏米白、圓角、可愛型 UI。
+目前程式已改為正式 Dark Editorial 視覺系統。以下規格是目前 code 的視覺 contract；仍需 browser / device runtime QA 才能標記視覺驗收 PASS。
 
-**以下是下一輪視覺設計目標，尚未實作，不得標成完成。**
+目前 runtime Persona 資產使用 `src/components/PersonaGlyph.vue` 的 8 組自有 inline SVG animal glyph，不依賴外部圖片或 CDN。後面的 Prompt Library 保留作為未來升級成生成插畫時的 source brief，不是目前 runtime dependency。
 
 ## Target Direction
 
@@ -328,14 +328,14 @@ Accent 不要大量彩虹化。
 
 ### Global
 
-- [ ] 米白背景改成深色 editorial system。
-- [ ] 建立統一 dark surface / border / typography tokens。
-- [ ] 降低大圓角與「可愛 App」感。
-- [ ] 大量使用 oversized typography。
-- [ ] Emoji 只做輔助，不作為主要品牌視覺。
-- [ ] 保持 WCAG 可讀性與 focus-visible。
-- [ ] 保持 mobile-first。
-- [ ] 保持 `prefers-reduced-motion`。
+- [x] 米白背景改成深色 editorial system。
+- [x] 建立統一 dark surface / border / typography tokens。
+- [x] 降低大圓角與「可愛 App」感。
+- [x] 大量使用 oversized typography。
+- [x] Emoji 只做輔助，不作為主要品牌視覺。
+- [x] 保留高對比與 focus-visible；WCAG 仍待 runtime / audit 驗證。
+- [x] 保持 mobile-first。
+- [x] 保持 `prefers-reduced-motion`。
 
 ### Landing
 
@@ -353,11 +353,11 @@ Accent 不要大量彩虹化。
 今晚看看誰在說謊。
 ```
 
-- [ ] 移除首頁巨大 🍜 emoji 主視覺。
-- [ ] 「都可以？」改成巨大 typography。
-- [ ] Primary CTA：加入飯局。
-- [ ] Host Mode 降低視覺權重。
-- [ ] 不做一般 SaaS hero。
+- [x] 移除首頁巨大 🍜 emoji 主視覺。
+- [x] 「都可以？」改成巨大 typography。
+- [x] Primary CTA：加入飯局。
+- [x] Host Mode 降低視覺權重。
+- [x] 不做一般 SaaS hero。
 
 ### Host Lobby
 
@@ -365,20 +365,20 @@ Accent 不要大量彩虹化。
 
 **Social Experiment Control Room**
 
-- [ ] QR 做成主視覺之一。
-- [ ] Room code 超大字。
-- [ ] Participant list 改成 experimental roster。
-- [ ] READY / THINKING 狀態更像儀表板。
-- [ ] 加入事件可用「SUBJECT CONNECTED」式視覺。
-- [ ] 遠距離投影仍須易讀。
+- [x] QR 做成主視覺之一。
+- [x] Room code 超大字。
+- [x] Participant list 改成 experimental roster。
+- [x] READY / THINKING 狀態更像儀表板。
+- [x] 已採 subject roster / LIVE control-room 語言；未額外增加瞬時 join toast。
+- [ ] 遠距離投影易讀性需實機 QA。
 
 ### Quiz
 
-- [ ] 一題一屏。
-- [ ] A / B 選項改成大型矩形。
-- [ ] 選中採高反差 invert。
-- [ ] 降低 rounded card feel。
-- [ ] 第 4 / 8 / 11 題 event 改成短暫 full-screen interstitial。
+- [x] 一題一屏。
+- [x] A / B 選項改成大型矩形。
+- [x] 選中採 Acid Lime 高反差 invert。
+- [x] 降低 rounded card feel。
+- [x] 第 4 / 8 / 11 題 event 改成 1.8 秒 full-screen interstitial。
 
 Event visual direction：
 
@@ -408,14 +408,14 @@ TWO
 
 這是全場最大視覺高潮。
 
-- [ ] 減少 dashboard 卡片。
-- [ ] 每一拍只呈現一個核心訊息。
-- [ ] 7 / 8 自認好約 → 單獨一畫面。
-- [ ] 「BUT / 答案比你們誠實」→ 單獨一畫面。
-- [ ] 78% → 超大型 typography。
-- [ ] `DINNER SUCCESS RATE` 可作 secondary label。
-- [ ] 「公開處刑」成為明確 final CTA。
-- [ ] 不做過度 Cyberpunk neon animation。
+- [x] 減少 dashboard 卡片。
+- [x] 每一拍只呈現一個核心訊息。
+- [x] 自認好約人數 → 單獨一拍。
+- [x] 「答案比你們誠實」→ 單獨一拍。
+- [x] Success Rate → 超大型 typography。
+- [x] Dinner success copy 採 secondary label / eyebrow hierarchy。
+- [x] 「公開處刑」成為 Alert Red final CTA。
+- [x] 不做過度 Cyberpunk neon animation。
 
 ### Persona Card
 
@@ -439,13 +439,13 @@ MATCH   AMY
 ENEMY   KEVIN
 ```
 
-- [ ] 卡片使用統一黑 / 白 / Electric Blue 系統。
-- [ ] 每個 Persona 只換局部識別色。
-- [ ] 不做 8 張完全不同的彩虹 theme。
-- [ ] 動物角色維持同一材質、視角、光線與插畫語言。
-- [ ] 角色插畫應是 sophisticated，不是兒童卡通。
-- [ ] Persona Card 必須 screenshot-worthy。
-- [ ] 手機小尺寸也要清楚。
+- [x] 卡片使用統一黑 / 白 / Electric Blue 系統。
+- [x] 每個 Persona 只換局部識別色。
+- [x] 不做 8 張完全不同的彩虹 theme。
+- [x] 8 個 Persona 目前使用同一套 inline SVG 幾何／材質語言。
+- [x] Runtime glyph 採 editorial geometric animal，不走兒童卡通。
+- [x] Persona Card 已採 collectible identity card composition；實機 screenshot QA 待驗證。
+- [ ] 手機 375px 小尺寸仍需 runtime QA。
 - [ ] 未來若整合生成圖，圖片不要含文字、Logo、UI、浮水印。
 
 ### Avoid
@@ -910,7 +910,7 @@ Host 公開處刑
 | Anonymous Sign-ins | UNKNOWN |
 | 真實多裝置 Reveal | NOT_RUN |
 | 防冷場 pacing 實機節奏 | NOT_RUN |
-| Dark visual redesign | NOT_STARTED |
+| Dark visual redesign code | IMPLEMENTED / RUNTIME_UNVERIFIED |
 | Vercel Demo | NOT_STARTED |
 
 本機接手第一輪：
@@ -1029,23 +1029,22 @@ Integration branch：
 - [ ] Anonymous Auth
 - [ ] 2～3 browser smoke test
 
-### Priority 2｜Dark visual redesign
+### Priority 2｜Visual runtime QA / optional asset polish
 
-在 runtime baseline 可啟動後，依第 6 節執行。
-
-建議 implementation order：
+Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證：
 
 ```text
-1. Global design tokens
-2. Landing
-3. Host lobby
-4. Quiz / pacing events
-5. Dinner success Reveal
-6. Persona collectible card
-7. Waiting / incomplete states
-8. Responsive QA
-9. Reduced-motion QA
+1. 375px mobile
+2. 768px tablet
+3. 1280px+ Host / projector
+4. Persona SVG clarity
+5. Q4 / Q8 / Q11 interstitial timing
+6. Success Reveal timing
+7. focus-visible
+8. reduced-motion
 ```
+
+若未來要把 inline SVG 換成 soft-3D 生成插畫，再使用本交接的 Visual Prompt Library；這是 optional asset polish，不阻塞目前功能。
 
 視覺改版時不要更改：
 
@@ -1108,9 +1107,9 @@ Integration branch：
 - Runtime tests 尚未執行。
 - Anonymous Auth enable 狀態未知。
 - 真機多人同步未驗證。
-- Dark visual redesign 尚未實作。
-- Vercel production demo 尚未建立。
-- remote branches 是否只剩 main 尚未重新驗證。
+- Dark visual redesign 已實作，但尚未完成 browser / device runtime QA。
+- Vercel production demo 尚未建立；2026-09-29 查核 Vercel team 目前只有 `beloved-agent`，沒有 `lunch-roulette` project。
+- remote branches 已重新驗證，仍有 `chore/vercel-main-only`、`feat/lunch-roulette-mvp`、`feat/reveal-sync-show`、`spec/openspec-lunch-roulette-mvp` 與 `main`；目前連接器沒有 delete-branch action。
 
 ## Verdict
 
