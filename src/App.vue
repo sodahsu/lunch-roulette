@@ -481,7 +481,7 @@ onBeforeUnmount(() => unsubscribe?.())
         <div class="eyebrow">結果已固定 · 有效樣本 {{ resultSampleSize }} 人</div>
 
         <article class="group-verdict-card">
-          <span class="result-kicker">🍽️ 你們這團可以出去吃飯嗎？</span>
+          <span class="result-kicker">🍽️ 我們這團可以出去吃飯嗎？</span>
           <strong class="group-verdict">{{ diningCompatibility.verdict }}</strong>
           <div class="compatibility-score">{{ diningCompatibility.score }}%</div>
           <p>{{ diningCompatibility.detail }}</p>
