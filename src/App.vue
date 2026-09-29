@@ -9,7 +9,6 @@ import {
   getPersonalResult,
   joinSession,
   listParticipants,
-  listResponses,
   lockAndReveal,
   saveAnswers,
   subscribeToSession,
