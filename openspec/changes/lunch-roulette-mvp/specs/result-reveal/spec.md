@@ -13,6 +13,21 @@ The system SHALL calculate aggregate results using only complete responses captu
 - THEN 系統應產生可顯示的空結果狀態
 - AND 不得產生 NaN、Infinity 或錯誤百分比
 
+## Requirement: 公開結果要回答這團能不能一起出去吃飯
+The system SHALL derive a deterministic group dining compatibility result from aggregate answer agreement.
+
+### Scenario: 至少兩位完整參與者
+- WHEN Reveal 後至少有兩位 complete participants
+- THEN 主持人畫面應顯示「我們這團可以出去吃飯嗎？」
+- AND 顯示 0–100 的飯局相容度
+- AND 顯示一個仍以「可以出去吃飯」為核心、依共識程度調整的趣味 verdict
+- AND verdict 不得依賴 AI 隨機生成
+
+### Scenario: 可用樣本不足
+- WHEN 可用樣本少於兩位 complete participants
+- THEN 系統應顯示樣本不足狀態
+- AND 不得假裝群體相容度已被可靠判定
+
 ## Requirement: 公開結果不得揭露個人逐題答案
 The system SHALL present public group results only as aggregates.
 
