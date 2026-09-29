@@ -10,7 +10,7 @@ handoff_status: ready_for_handoff
 
 **目標：**把 10/1 可玩的多人 Lunch Roulette MVP 驗證到可上場並部署 Demo。程式主要功能已補齊；現在優先做 runtime 驗證，不要再擴 scope。
 
-**目前 main HEAD（本次查核）：** `6e2d546409ad4a8aff033f9df41c785210630bfe`
+**目前 main HEAD（本次查核）：** `0032982147ab26e4cd6bb6bc9bcb58492c466a23`
 
 ### 本次已實作
 
@@ -25,14 +25,24 @@ handoff_status: ready_for_handoff
   - 飲食內戰
   - 歷史性共識
 - Persona 卡改用動物角色 emoji。
-- v0.1 規格正式收斂：
-  - 8 題、全部 required
+- v0.2 題目系統：
+  - 24 題題庫
+  - 6 類，每類 4 題
+  - 新房間依房號 deterministic 抽 12 題，每類 2 題
+  - `self-image` 每局必出
+  - 同一房間 reload 不換題
+  - 舊 v0.1 房間保留原 8 題
+- Persona / matching：
   - 8 persona
   - option score 加總
   - 最高分 persona
   - `PERSONA_PRIORITY` tie-break
   - **不使用 threshold**
   - similarity = 雙方可比較題目的等權答案一致率
+- Reveal 新增團體結果：
+  - 「我們這團可以出去吃飯嗎？」
+  - deterministic 飯局相容度 0–100
+  - 主持人大螢幕與每支手機結果都會顯示
 - Playwright CASE-01～08 **test code 已寫**：
   - 多人正常流程
   - 未滿 8 人 Reveal
@@ -43,8 +53,11 @@ handoff_status: ready_for_handoff
   - 公開畫面不洩漏逐題答案
   - 第 9 位可加入並作答
 - Domain tests 新增：
-  - v0.1 固定 8 題 required
-  - 最高分 persona 行為
+  - 24 題題庫 / 6 類別 contract
+  - v0.2 每房 deterministic 12 題
+  - v0.1 legacy 8 題相容
+  - 完整性、persona、similarity
+  - 飯局相容度
 
 ### 本次沒有宣稱完成的項目
 
@@ -78,7 +91,7 @@ approval_evidence:
 
 - Repo：`sodahsu/lunch-roulette`
 - Branch：`main`
-- HEAD：`6e2d546409ad4a8aff033f9df41c785210630bfe`
+- HEAD：`0032982147ab26e4cd6bb6bc9bcb58492c466a23`
 - 本次實作全部直接寫入 main，沒有另外開 feature branch。
 - `vercel.json` 已設定只有 `main` 允許 deployment。
 
@@ -89,10 +102,12 @@ approval_evidence:
 - Region：`ap-northeast-1`
 - 前次 live 狀態：`ACTIVE_HEALTHY`
 - Security Advisor 前次查核：0 lints
-- Auth schema 本次查核：
+- Auth schema 前次查核：
   - `auth.users` rows = 0
   - `auth.sessions` rows = 0
-- 這只能證明目前沒有 Auth users，**不能證明 Anonymous Sign-ins 已開或沒開**。
+- 本次另查 public sessions：目前有 1 個舊 `v0.1` open session，因此新版保留 v0.1 原 8 題相容路徑。
+- 新建立 session 會明確寫入 `questionnaire_version = 'v0.2'`。
+- 以上仍不能證明 Anonymous Sign-ins 已開或沒開。
 
 ### FACT｜Vercel
 
@@ -104,7 +119,7 @@ approval_evidence:
 
 ### FACT｜Final static diff review
 
-本次從實作前 HEAD `a14bd0fa3e46cd62973c0a8b75154d96aa120ace` 比到實作後 main，變更只落在：
+題庫擴充這輪從 HEAD `5b6f36faaffce3049f4090183dad3cc34282018f` 比到目前 main，變更只落在：
 
 - OpenSpec
 - `package.json`
@@ -277,6 +292,8 @@ origin/main
 | 驗收 | 狀態 |
 |---|---|
 | 核心多人流程程式 | IMPLEMENTED |
+| 24 題題庫 / 12 題房間題組 | IMPLEMENTED / NOT_RUN |
+| 團體「可以出去吃飯嗎」相容度 | IMPLEMENTED / NOT_RUN |
 | QR 加入 | IMPLEMENTED / NOT_RUN |
 | Host aggregate 笑點卡 | IMPLEMENTED / NOT_RUN |
 | 動物 persona card | IMPLEMENTED / NOT_RUN |
@@ -298,6 +315,6 @@ origin/main
 
 **READY_FOR_HANDOFF**
 
-接手者現在不需要再補核心功能；第一優先是 **install → unit → typecheck → build → e2e → Anonymous Auth → Vercel Demo**。
+接手者現在不需要再補核心功能；第一優先是 **install → unit → typecheck → build → e2e → Anonymous Auth → Vercel Demo**。特別驗證 v0.2 同房 12 題一致、v0.1 legacy 8 題不被改掉，以及團體飯局 verdict 在 host/手機都正確顯示。
 
 在這些 runtime checks 實際 PASS 前，不要宣稱「正式可上場」。
