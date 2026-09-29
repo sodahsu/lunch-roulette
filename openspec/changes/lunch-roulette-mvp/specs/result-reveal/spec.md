@@ -53,9 +53,11 @@ The system SHALL calculate participant similarity only among complete responses.
 - WHEN 只有一位 complete participant
 - THEN 系統不得產生靈魂飯友或飲食天敵結果
 
-## Open questions
-- NEEDS_CONFIRMATION: persona 名稱、分數權重、threshold 與 tie-break priority。
-- NEEDS_CONFIRMATION: similarity 的第一版計算方式；建議先採等權題目一致率，避免過度複雜。
+## v0.1 決策
+- Persona 使用目前定義的 8 種人格與各題 option score；不使用 threshold。
+- Persona 取總分最高者；同分時使用固定 `PERSONA_PRIORITY`，確保 deterministic。
+- Similarity 使用所有雙方都有答案的題目做等權「答案完全一致率」。
+- 第一版不加入題目權重、距離函式或 AI 判定。
 
 
 ## Requirement: 個人人格卡只能在全場 Reveal 後出現
