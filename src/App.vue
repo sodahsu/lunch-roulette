@@ -96,6 +96,11 @@ async function restoreFromUrl() {
       name.value = participant.value.display_name
       const ownResponse = await getOwnResponse(session.value.id, participant.value.id)
       if (ownResponse) answers.value = ownResponse.answers
+
+      const firstUnanswered = QUESTIONS.findIndex(
+        (question) => question.required && !answers.value[question.id],
+      )
+      questionIndex.value = firstUnanswered === -1 ? QUESTIONS.length - 1 : firstUnanswered
     }
 
     attachRealtime()
