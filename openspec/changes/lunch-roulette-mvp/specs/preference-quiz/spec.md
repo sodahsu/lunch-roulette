@@ -30,7 +30,10 @@ The system SHALL associate each session with a questionnaire version.
 - THEN 該場次應保存 questionnaire version
 - AND 同一場次的完成判定應使用同一版本
 
-## v0.1 決策
-- 第一版固定使用 `src/domain/questions.ts` 中的 8 題。
-- 8 題皆為 required。
-- session 仍保存 questionnaire version，未來換題時必須升版，不可讓同一場次中途換題。
+## v0.2 決策
+- 題庫共有 24 題，分成 6 類，每類 4 題。
+- 新建立的 v0.2 session 依房號 deterministic 選出 12 題，每類固定 2 題。
+- `self-image` 每局必出，供「都可以自信值」計算。
+- 同一房號重新整理後必須取得相同題組與順序。
+- 12 題皆為 required。
+- 舊 v0.1 session 維持原本 8 題，不因升版改題。
