@@ -38,7 +38,12 @@ export function calculateGroupStats(
   })
 }
 
-export function calculateDinnerSuccessRate(stats: GroupQuestionStat[]): DinnerSuccessResult {
+const DINNER_SUCCESS_ALGORITHM_BY_QUESTIONNAIRE: Record<string, 'v1'> = {
+  'v0.1': 'v1',
+  'v0.2': 'v1',
+}
+
+function calculateDinnerSuccessRateV1(stats: GroupQuestionStat[]): DinnerSuccessResult {
   const usable = stats.filter((stat) => stat.sampleSize > 1)
   if (usable.length === 0) {
     return {
@@ -85,6 +90,18 @@ export function calculateDinnerSuccessRate(stats: GroupQuestionStat[]): DinnerSu
     verdict: '有機會約成，先指定飯局隊長',
     detail: '這團的問題不是沒東西吃，是大家都太有想法。先指定隊長再出門。',
   }
+}
+
+export function calculateDinnerSuccessRate(
+  stats: GroupQuestionStat[],
+  questionnaireVersion = 'v0.2',
+): DinnerSuccessResult {
+  const algorithmVersion = DINNER_SUCCESS_ALGORITHM_BY_QUESTIONNAIRE[questionnaireVersion]
+  if (algorithmVersion !== 'v1') {
+    throw new Error(`Unsupported dinner-success algorithm for questionnaire version: ${questionnaireVersion}`)
+  }
+
+  return calculateDinnerSuccessRateV1(stats)
 }
 
 export function calculatePersonaScores(
