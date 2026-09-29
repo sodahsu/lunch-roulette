@@ -513,6 +513,12 @@ onBeforeUnmount(() => unsubscribe?.())
           <strong>{{ oppositeNames.length ? oppositeNames.join('、') : '這局還沒有可比較的人' }}</strong>
         </div>
       </template>
+      <template v-else>
+        <div class="eyebrow">這局已揭曉</div>
+        <div class="persona-emoji">🫥</div>
+        <h2>你沒有答完</h2>
+        <p class="persona-tagline">這次不硬判人格。下局記得交卷，才會拿到人格卡和飯友配對。</p>
+      </template>
     </section>
 
     <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
