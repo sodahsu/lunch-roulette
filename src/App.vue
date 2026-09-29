@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { PERSONAS, QUESTIONS } from './domain/questions'
-import type { Participant, ResultSnapshot } from './domain/types'
+import type { GroupQuestionStat, Participant, ParticipantResult } from './domain/types'
 import {
   createSession,
   getSessionByCode,
-  getSnapshot,
+  getGroupStats,
+  getPersonalResult,
   joinSession,
   listParticipants,
   listResponses,
@@ -28,7 +29,8 @@ const participants = ref<Participant[]>([])
 const completedCount = ref(0)
 const answers = ref<Record<string, string>>({})
 const questionIndex = ref(0)
-const snapshot = ref<ResultSnapshot | null>(null)
+const groupStats = ref<GroupQuestionStat[] | null>(null)
+const personalResult = ref<ParticipantResult | null>(null)
 let unsubscribe: (() => void) | null = null
 
 const currentQuestion = computed(() => QUESTIONS[questionIndex.value])
@@ -38,8 +40,7 @@ const currentAnswer = computed(() => {
 })
 const progress = computed(() => ((questionIndex.value + 1) / QUESTIONS.length) * 100)
 const meResult = computed(() => {
-  if (!participant.value || !snapshot.value) return null
-  return snapshot.value.participantResults[participant.value.id] ?? null
+  return personalResult.value
 })
 const soulmateNames = computed(() => {
   if (!meResult.value) return []
@@ -76,12 +77,16 @@ async function refreshSessionState() {
   const latest = await getSessionByCode(session.value.code)
   session.value = latest
   participants.value = await listParticipants(latest.id)
-  const responses = await listResponses(latest.id)
-  completedCount.value = responses.filter((item) => item.is_complete).length
+  completedCount.value = participants.value.filter((item) => Boolean(item.completed_at)).length
 
   if (latest.status === 'revealed') {
-    snapshot.value = await getSnapshot(latest.id)
-    screen.value = participant.value ? 'result' : 'host'
+    groupStats.value = await getGroupStats(latest.id)
+    if (participant.value) {
+      personalResult.value = await getPersonalResult(latest.id, participant.value.id)
+      screen.value = 'result'
+    } else {
+      screen.value = 'host'
+    }
   }
 }
 
@@ -158,7 +163,7 @@ async function editAnswers() {
 async function reveal() {
   await withBusy(async () => {
     if (!session.value) return
-    snapshot.value = await lockAndReveal(session.value)
+    groupStats.value = await lockAndReveal(session.value)
     await refreshSessionState()
   })
 }
@@ -255,10 +260,10 @@ onBeforeUnmount(() => unsubscribe?.())
         </div>
       </div>
 
-      <div v-if="snapshot" class="group-result">
+      <div v-if="groupStats" class="group-result">
         <div class="eyebrow">結果已固定</div>
         <h3>這局完成了 🎉</h3>
-        <p>有效樣本：{{ snapshot.groupStats[0]?.sampleSize ?? 0 }} 人</p>
+        <p>有效樣本：{{ groupStats[0]?.sampleSize ?? 0 }} 人</p>
       </div>
 
       <div v-else class="bottom-actions">
