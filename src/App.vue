@@ -220,18 +220,30 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
+async function runRevealCountdown() {
+  for (const step of [3, 2, 1]) {
+    revealStep.value = step
+    await wait(850)
+  }
+}
+
 async function reveal() {
   await withBusy(async () => {
     if (!session.value || session.value.status !== 'open') return
 
     await lockSession(session.value)
     await refreshSessionState()
+    await runRevealCountdown()
 
-    for (const step of [3, 2, 1]) {
-      revealStep.value = step
-      await wait(850)
-    }
+    groupStats.value = await finalizeReveal(session.value)
+    await refreshSessionState()
+  })
+}
 
+async function continueReveal() {
+  await withBusy(async () => {
+    if (!session.value || session.value.status !== 'locked') return
+    await runRevealCountdown()
     groupStats.value = await finalizeReveal(session.value)
     await refreshSessionState()
   })
@@ -345,6 +357,14 @@ onBeforeUnmount(() => unsubscribe?.())
         <div class="eyebrow">全場結算中</div>
         <p class="host-joke">正在檢查到底有沒有人是真的「都可以」…</p>
         <div class="countdown-number">{{ revealStep }}</div>
+        <button
+          v-if="!busy"
+          class="secondary resume-reveal"
+          type="button"
+          @click="continueReveal"
+        >
+          繼續揭曉
+        </button>
       </div>
 
       <div v-else-if="groupStats" class="group-result">
