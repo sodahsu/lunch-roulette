@@ -14,7 +14,9 @@
 - [x] Persona 固定 8 種、最高分制、固定 `PERSONA_PRIORITY` tie-break
 - [x] Persona v0.2 不使用 threshold
 - [x] Similarity 使用 active questions 的答案完全一致率
-- [x] Reveal 加入「我們這團可以出去吃飯嗎？」與 deterministic 飯局相容度
+- [x] 團體指標正式命名「我們這團今晚約成飯的成功率」
+- [x] 成功率定義為 deterministic game score，不冒充真實機率模型
+- [x] Reveal 採兩段式：先大螢幕成功率，再手機 persona 翻牌
 - [x] v0.2 核心判定不使用生成式 AI
 
 ## 1. Session / persistence implementation
@@ -29,9 +31,11 @@
 - [x] participant latest response upsert
 - [x] locked 後 response update restriction
 - [x] Realtime session / participant / response / result subscription
-- [x] group stats persistence
-- [x] participant-specific result persistence
 - [x] locked host refresh / continue Reveal recovery path
+- [x] locked group-stats preview，不提前 persist persona
+- [x] host 翻人格卡後 persist group snapshot
+- [x] host 翻人格卡後 persist participant-specific results
+- [x] final persona reveal 才切 session 到 `revealed`
 
 ## 2. Question bank / domain implementation
 
@@ -43,8 +47,8 @@
 - [x] group stats 使用 active questionnaire
 - [x] persona scoring 使用 active questionnaire
 - [x] similarity / pairing 使用 active questionnaire
-- [x] deterministic group dining compatibility
-- [x] Unit test code：question bank / completeness / stats / compatibility / persona / pairing / snapshot
+- [x] `calculateDinnerSuccessRate()`
+- [x] Unit test code：question bank / completeness / stats / success rate / persona / pairing / snapshot
 
 ## 3. UI implementation
 
@@ -58,21 +62,24 @@
 - [x] Host participant name list
 - [x] Lock + Reveal countdown
 - [x] locked participant 結算等待
-- [x] revealed participant 自動翻 persona
+- [x] 大螢幕先顯示「今晚約成飯的成功率」
+- [x] 樣本不足時不顯示誤導性的 0%
+- [x] 成功率畫面提供「翻出所有人格卡」動作
+- [x] Host 未翻牌前 participant 不出現 persona
+- [x] Host 翻牌後 participant Realtime 自動出現 persona
 - [x] incomplete participant 明確無 persona 狀態
 - [x] 動物 persona card
 - [x] soulmate / opposite
-- [x] Host 飯局相容度
 - [x] Host 都可以自信值
 - [x] Host 飲食內戰
 - [x] Host 歷史性共識
-- [x] Participant persona card 顯示團體飯局 verdict
+- [x] Persona 手機卡聚焦個人人格與配對，不重複團體成功率
 
 ## 4. Automated test code
 
 - [x] Vitest package / script / test file 已設定
 - [x] Playwright package / config 已設定
-- [x] CASE-01 多人正常流程 test code
+- [x] CASE-01 驗證「成功率先出 → 手機仍 waiting → host 翻牌 → 手機 persona」
 - [x] CASE-02 未滿 8 人 Reveal test code
 - [x] CASE-03 latest response test code
 - [x] CASE-04 incomplete 不阻塞 test code
@@ -104,18 +111,20 @@
 - [ ] `npm run test:e2e`
 - [ ] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
 - [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
+- [ ] 實際驗證成功率畫面出現時 participant 仍停留在 waiting
+- [ ] 實際驗證 host 按翻人格卡後所有完成者同步 persona
+- [ ] 實際驗證 incomplete participant 不會拿到 persona
 - [ ] 實際多 browser / device Reveal smoke test
-- [ ] 實際驗證 host / participant 的 group dining verdict 一致
 
 ## 7. Archive gate
 
-- [x] OpenSpec proposal / design / capability specs 已同步 v0.2 current implementation
+- [x] OpenSpec proposal / design / capability specs 已同步兩段式 Reveal
 - [x] 已修正 `result_snapshots` 與 `participant_results` ownership 描述
-- [ ] 決定「飯局相容度」是否必須跨未來程式版本永久不變
-- [ ] 若要求跨版本不變，persist compatibility summary 或保留 versioned compatibility algorithm
+- [ ] 決定「成功率」是否必須跨未來程式版本永久不變
+- [ ] 若要求跨版本不變，persist success summary 或保留 versioned success-rate algorithm
 - [ ] 完成 runtime validation
 - [ ] OpenSpec archive readiness review
 
 **Current archive verdict: NOT_READY**
 
-原因：runtime validation 尚未執行，且 group compatibility 的跨版本 persistence contract 尚未決定。
+原因：runtime validation 尚未執行，且 success-rate 的跨版本 persistence contract 尚未決定。
