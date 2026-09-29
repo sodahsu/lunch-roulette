@@ -9,122 +9,120 @@ The system SHALL calculate reveal results using only complete responses captured
 - AND persona / pairing 只為 complete participants 建立
 - AND incomplete participants 不得影響有效樣本數
 
-### Scenario: 未完成 participant 在 Reveal 後查看結果
+### Scenario: 未完成 participant
 - WHEN participant 在鎖定前沒有完成 active questionnaire
-- AND session 已進入 `revealed`
-- THEN系統不得硬判該 participant 的 persona
-- AND 應顯示明確的「未完成」結果狀態
+- AND session 最後進入 `revealed`
+- THEN 系統不得硬判該 participant 的 persona
+- AND 應顯示明確的未完成狀態
 
-## Requirement: Group stats 必須保存 Reveal 當下的 aggregate
-The system SHALL persist group statistics for the revealed session.
+## Requirement: 今晚約成飯的成功率必須 deterministic
+The system SHALL derive a deterministic dinner success rate from locked aggregate answers.
+
+### Scenario: 計算成功率
+- WHEN 至少兩位 complete participants 形成可用 group stats
+- THEN 每一題的共識度應為該題最高 option count 除以 sample size
+- AND 整體成功率應為所有可用題目共識度的平均值
+- AND 顯示分數應四捨五入為 0–100 的整數
+
+### Scenario: 80–100 分
+- WHEN 成功率大於等於 80
+- THEN verdict 應為「今晚直接出門，不要再討論」
+
+### Scenario: 68–79 分
+- WHEN 成功率介於 68 與 79
+- THEN verdict 應為「今晚約得成，找一個人負責訂位」
+
+### Scenario: 56–67 分
+- WHEN 成功率介於 56 與 67
+- THEN verdict 應為「約得成，但不要再開全民表決」
+
+### Scenario: 0–55 分
+- WHEN 成功率低於 56
+- THEN verdict 應為「有機會約成，先指定飯局隊長」
+
+### Scenario: 可用樣本不足
+- WHEN complete participant 少於兩位
+- THEN 系統應顯示樣本不足狀態
+- AND 不得把 0 分解讀為已確認的低成功率
+
+## Requirement: 成功率必須先於 persona card 公布
+The system SHALL reveal the group dinner success rate before any participant persona card becomes visible.
+
+### Scenario: Host 成功率畫面
+- WHEN session status 為 `locked`
+- AND host 已完成 Reveal 倒數
+- THEN 主持人大螢幕應優先顯示「我們這團今晚約成飯的成功率」
+- AND 顯示成功率百分比與 deterministic verdict
+- AND participant 手機仍不得顯示 persona card
+
+### Scenario: Host 還沒按翻牌
+- WHEN host 正在查看成功率畫面
+- THEN session status 應保持 `locked`
+- AND participant 手機應持續顯示等待狀態
+
+## Requirement: Persona card 只能在主持人翻牌後出現
+The system SHALL not persist or display participant persona cards until the host explicitly triggers the persona reveal.
+
+### Scenario: Host 觸發人格翻牌
+- WHEN host 按下「翻出所有人格卡」
+- THEN 系統應建立 group snapshot
+- AND 為 complete participants 建立 persisted participant results
+- AND session status 應切換為 `revealed`
+
+### Scenario: Participant 自動翻牌
+- WHEN session status 從 `locked` 變成 `revealed`
+- THEN complete participant 手機應透過 Realtime 自動載入自己的 persisted result
+- AND 自動切換為 persona card
+- AND persona card 應顯示 persona、靈魂飯友與飲食天敵
+- AND 不要求 participant 再按任何按鈕
+
+## Requirement: Group stats 必須保存正式 Reveal 當下的 aggregate
+The system SHALL persist group statistics when the host triggers the final persona reveal.
 
 ### Scenario: 建立 group snapshot
-- WHEN host 完成 Reveal 計算
-- THEN系統應把 selected questions 的 aggregate counts 與有效樣本數保存於 group snapshot
-- AND participant 重新整理後應讀取既有 group snapshot
+- WHEN host 觸發人格翻牌
+- THEN 系統應把 selected questions 的 aggregate counts 與有效樣本數保存於 group snapshot
+- AND participant / host 重新整理後應讀取既有 group snapshot
 
 ## Requirement: 公開結果不得揭露個人逐題答案
 The system SHALL present public reveal information only as aggregates.
 
-### Scenario: 主持人大螢幕顯示結果
-- WHEN session status 為 `revealed`
-- THEN主持人畫面可顯示有效樣本、aggregate counts、最一致題目與最分裂題目
-- AND不得顯示「某位 participant 在某一題選了哪個 option」
-
-## Requirement: Reveal 必須回答「我們這團可以出去吃飯嗎？」
-The system SHALL derive a deterministic group dining compatibility result from the persisted group statistics.
-
-### Scenario: 計算飯局相容度
-- WHEN 至少兩位 complete participants 形成可用 group stats
-- THEN每一題的共識度應為該題最高 option count 除以 sample size
-- AND整體相容度應為所有可用題目共識度的平均值
-- AND顯示分數應四捨五入為 0–100 的整數
-
-### Scenario: 80–100 分
-- WHEN 飯局相容度大於等於 80
-- THEN verdict 應為「我們這團可以直接出去吃飯」
-
-### Scenario: 68–79 分
-- WHEN 飯局相容度介於 68 與 79
-- THEN verdict 應為「我們這團可以出去吃飯」
-
-### Scenario: 56–67 分
-- WHEN 飯局相容度介於 56 與 67
-- THEN verdict 應為「可以出去吃，但不要開放全民表決」
-
-### Scenario: 0–55 分
-- WHEN 飯局相容度低於 56
-- THEN verdict 應為「可以出去吃，但最好先指定隊長」
-
-### Scenario: 可用樣本不足
-- WHEN complete participant 少於兩位
-- THEN系統應顯示樣本不足狀態
-- AND不得把 0 分解讀為已確認的低相容度
-
-### Scenario: Host 顯示團體 verdict
-- WHEN session status 為 `revealed`
-- THEN主持人大螢幕應優先顯示「我們這團可以出去吃飯嗎？」
-- AND顯示飯局相容度百分比
-- AND可再顯示都可以自信值、飲食內戰與歷史性共識
-
-### Scenario: Participant 顯示團體 verdict
-- WHEN complete participant 已進入自己的 persona result
-- THEN手機結果應同步顯示同一場次的團體 verdict
-- AND顯示相同飯局相容度百分比
+### Scenario: 主持人大螢幕
+- WHEN host 顯示成功率或 revealed group result
+- THEN 可顯示有效樣本、aggregate counts、最一致題目與最分裂題目
+- AND 不得顯示某位 participant 的逐題答案
 
 ## Requirement: Persona 使用 deterministic scoring
-The system SHALL assign one of the configured eight personas using only the participant's active-question answers and the configured v0.2 scoring rules.
+The system SHALL assign one of the configured eight personas using only the participant's active-question answers and configured v0.2 scoring rules.
 
 ### Scenario: Persona scoring
 - WHEN participant 為 complete
-- THEN系統應加總其 active answers 對各 persona 的 option scores
-- AND選擇總分最高的 persona
-- AND不得使用 threshold 作為 v0.2 persona 判定
+- THEN 系統應加總其 active answers 對各 persona 的 option scores
+- AND 選擇總分最高的 persona
+- AND 不得使用 threshold 作為 v0.2 persona 判定
 
 ### Scenario: Persona score 平手
-- WHEN兩個以上 personas 具有相同最高分
-- THEN系統應依固定 `PERSONA_PRIORITY` 選出結果
-- AND相同 answers 與相同 rules 必須得到相同 persona
-
-### Scenario: Persist personal result
-- WHEN host 建立 Reveal results
-- THEN complete participant 的 persona 與 pairing result 應保存成 participant-specific persisted result
-- AND participant 重新整理後應載入同一 persisted result
+- WHEN 兩個以上 personas 具有相同最高分
+- THEN 系統應依固定 `PERSONA_PRIORITY` 選出結果
+- AND 相同 answers 與相同 rules 必須得到相同 persona
 
 ## Requirement: Pairing 只比較 complete participants
 The system SHALL calculate participant similarity only among complete responses from the same active questionnaire.
 
 ### Scenario: 計算 similarity
-- WHEN比較兩位 complete participants
+- WHEN 比較兩位 complete participants
 - THEN similarity 應為雙方 active questions 中答案完全相同的題數除以可比較題數
 
-### Scenario: 靈魂飯友
-- WHEN至少存在另一位 complete participant
-- THEN系統應列出 similarity 最高的 participant
-- AND不得把自己列入 pairing
-
-### Scenario: 飲食天敵
-- WHEN至少存在另一位 complete participant
-- THEN系統應列出 similarity 最低的 participant
+### Scenario: 靈魂飯友與飲食天敵
+- WHEN 至少存在另一位 complete participant
+- THEN 系統應列出 similarity 最高者為靈魂飯友
+- AND 列出 similarity 最低者為飲食天敵
+- AND 不得把自己列入 pairing
 
 ### Scenario: similarity 並列
-- WHEN多人具有相同最高或最低 similarity
-- THEN系統應保留所有並列 participants
-- AND不得任意挑選單一對象
+- WHEN 多人具有相同最高或最低 similarity
+- THEN 系統應保留所有並列 participants
 
 ### Scenario: 只有一位 complete participant
-- WHEN只有一位 complete participant
-- THEN系統不得產生靈魂飯友或飲食天敵
-
-## Requirement: Persona card 只能在全場 Reveal 後出現
-The system SHALL not display a participant persona before session status is `revealed`.
-
-### Scenario: locked 階段
-- WHEN session status 為 `locked`
-- THENparticipant 手機應顯示結算等待狀態
-- AND不得顯示 persona card
-
-### Scenario: revealed 階段
-- WHEN session status 從 `locked` 變成 `revealed`
-- THENparticipant 手機應透過 Realtime 載入自己的 persisted result
-- AND自動切換到 persona result
+- WHEN 只有一位 complete participant
+- THEN 系統不得產生靈魂飯友或飲食天敵
