@@ -30,6 +30,7 @@ The system SHALL associate each session with a questionnaire version.
 - THEN 該場次應保存 questionnaire version
 - AND 同一場次的完成判定應使用同一版本
 
-## Open questions
-- NEEDS_CONFIRMATION: 第一版正式題數。
-- NEEDS_CONFIRMATION: 各題題目、選項與是否必填。
+## v0.1 決策
+- 第一版固定使用 `src/domain/questions.ts` 中的 8 題。
+- 8 題皆為 required。
+- session 仍保存 questionnaire version，未來換題時必須升版，不可讓同一場次中途換題。
