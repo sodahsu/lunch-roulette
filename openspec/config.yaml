@@ -1,0 +1,36 @@
+schema: spec-driven
+
+context: |
+  語言：所有 OpenSpec artifacts 使用繁體中文（台灣用語）。
+  專案：lunch-roulette，10/1 設計交流會的半天 MVP。
+  使用情境：現場約 8 人一起玩；8 人是預期規模，不是硬性人數限制。
+  核心體驗：加入同一場次 → 回答飲食情境題 → 主持人鎖定並揭曉 → 看群體結果 → 每人取得人格卡與配對結果。
+  互動規則：Reveal 前參與者可以修改答案，系統以鎖定當下的最後有效答案為準；不要求所有已加入者都完成才可揭曉。
+  隱私：全場結果不得公開「某人投了哪個答案」；個人人格與配對結果顯示在個人裝置。
+  技術基線：Vue 3 + Vite + TypeScript；Supabase 提供匿名身分、資料儲存與 Realtime；Vitest 做單元測試；Playwright 做關鍵案例測試。
+  測試策略：核心計算邏輯必須是可獨立測試的純函式；AI 文案不得成為核心流程的正確性依賴。
+  範圍原則：優先完成半天可交付的最小版本，不做會員、好友、真實餐廳 API、地圖、歷史紀錄。
+
+rules:
+  proposal:
+    - 明確列出半天 MVP 的範圍與非目標，不把「約 8 人」寫成硬性限制。
+  specs:
+    - Requirement 必須描述可觀察行為，不描述 Vue component、資料表或 framework 細節。
+    - 對尚未決定的人格門檻、文案與題目內容標記 NEEDS_CONFIRMATION，不自行發明規則。
+  design:
+    - 先定義資料 ownership、狀態轉換、Realtime 邊界、測試策略，再談 UI 實作。
+    - 核心 domain 邏輯必須可由 Vitest 在不連 Supabase 的情況下測試。
+  tasks:
+    - 每個核心規則先建立失敗的單元測試或案例測試，再安排實作任務。
+    - 每個主要使用流程至少有一個 Playwright 案例。
+    - 完成前必須執行 typecheck、unit tests、case tests 與 build。
+
+operations:
+  apply:
+    guidance:
+      - 先寫測試，再寫滿足測試的最小實作。
+      - 不為未確認需求加入抽象層或額外服務。
+      - 未通過相關測試前不得把對應 task 標記完成。
+  archive:
+    guidance:
+      - 只有已實作且通過驗證的 Requirement 才能進入 openspec/specs/。
