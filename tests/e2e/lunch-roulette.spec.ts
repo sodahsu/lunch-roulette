@@ -75,7 +75,7 @@ async function revealDinnerSuccess(page: Page) {
 }
 
 async function flipPersonaCards(page: Page) {
-  await page.getByRole('button', { name: /翻出所有人格卡/ }).click()
+  await page.getByRole('button', { name: /公開處刑/ }).click()
   await expect(page.getByText(/人格卡已同步翻開/)).toBeVisible({
     timeout: 15_000,
   })
@@ -264,5 +264,23 @@ test('CASE-08 第 9 位仍可加入並作答', async ({ browser }) => {
     await expect(completedMetric(host.page)).toHaveText('1')
   } finally {
     await closeActors(host, ...actors)
+  }
+})
+
+
+test('CASE-09 答題中會出現節奏事件', async ({ browser }) => {
+  const host = await createHost(browser)
+  const participant = await joinParticipant(browser, host.code, 'Pacing')
+
+  try {
+    for (let index = 0; index < 3; index += 1) {
+      await participant.page.locator('.choice').first().click()
+      await participant.page.getByRole('button', { name: '下一題' }).click()
+    }
+
+    await expect(participant.page.getByText('📡 場面觀察')).toBeVisible()
+    await expect(participant.page.getByText(/先不要找戰犯/)).toBeVisible()
+  } finally {
+    await closeActors(host, participant)
   }
 })
