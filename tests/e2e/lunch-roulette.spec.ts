@@ -284,3 +284,23 @@ test('CASE-09 答題中會出現節奏事件', async ({ browser }) => {
     await closeActors(host, participant)
   }
 })
+
+
+test('CASE-10 Persona collectible card 會 render 動物向量與 TYPE', async ({ browser }) => {
+  const host = await createHost(browser)
+  const participant = await joinParticipant(browser, host.code, 'Card Test')
+
+  try {
+    await answerAll(participant.page, 0)
+    await reveal(host.page)
+
+    await expect(participant.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+    await expect(participant.page.locator('.persona-card')).toBeVisible()
+    await expect(participant.page.locator('svg.persona-glyph')).toBeVisible()
+    await expect(participant.page.locator('.persona-card-head')).toContainText(/TYPE 0[1-8]/)
+    await expect(participant.page.getByText(/MATCH \/ 靈魂飯友/)).toBeVisible()
+    await expect(participant.page.getByText(/ENEMY \/ 飲食天敵/)).toBeVisible()
+  } finally {
+    await closeActors(host, participant)
+  }
+})
