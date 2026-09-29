@@ -1,39 +1,76 @@
 # Capability: preference-quiz
 
-## Requirement: 參與者可在揭曉前修改答案
+## Requirement: 題組由 questionnaire version 決定
+The system SHALL determine the active questionnaire from the session questionnaire version.
+
+### Scenario: v0.2 新場次
+- WHEN session questionnaire version 為 `v0.2`
+- THEN active question bank 應包含 24 題
+- AND 題庫應分成 6 類
+- AND 每類包含 4 題
+
+### Scenario: v0.1 舊場次
+- WHEN session questionnaire version 為 `v0.1`
+- THEN active questionnaire 應維持原本 8 題
+- AND 不得因部署 v0.2 而把既有 v0.1 場次改成 12 題
+
+## Requirement: v0.2 每個房間固定取得 12 題
+The system SHALL deterministically derive the v0.2 active questionnaire from the session code.
+
+### Scenario: 建立 v0.2 題組
+- WHEN 系統取得 v0.2 session code
+- THEN 應從 6 個 question categories 各選 2 題
+- AND 共得到 12 題
+- AND `self-image` 必須包含在該 12 題中
+
+### Scenario: 同一場次由不同 participants 開啟
+- WHEN 多位 participants 使用同一 session code
+- THEN 所有人應取得相同 12 題
+- AND 題目順序應一致
+
+### Scenario: 重新整理
+- WHEN participant 在同一 v0.2 session 重新載入
+- THEN active 12 題與順序不得改變
+
+## Requirement: 完整性只以 active questionnaire 判定
+The system SHALL determine response completeness using only the active questions for that session.
+
+### Scenario: 完成全部 active required questions
+- WHEN participant 已回答 active questionnaire 的所有 required questions
+- THEN response 應標記為 complete
+
+### Scenario: 缺少 active required question
+- WHEN participant 尚缺至少一題 active required question
+- THEN response 應標記為 incomplete
+- AND 該 response 不得進入 Reveal 統計、persona 或 pairing
+
+### Scenario: v0.2 未回答未被抽中的題目
+- WHEN participant 已完成該場次的 12 題
+- AND 24 題題庫中的其他 12 題沒有答案
+- THEN response 仍應視為 complete
+
+## Requirement: Reveal 前可反覆修改答案
 The system SHALL allow a participant to update their answers repeatedly while the session status is `open`.
 
 ### Scenario: 修改已填答案
-- WHEN 參與者已儲存一份答案
-- AND 場次狀態仍為 `open`
-- AND 參與者修改其中一題
-- THEN 系統應保存新的 latest response
-- AND 先前版本不得被當作鎖定時的有效答案
+- WHEN participant 已儲存一份答案
+- AND session status 仍為 `open`
+- AND participant 修改其中一題
+- THEN 系統應更新該 participant 的 latest response
+- AND Reveal 不得使用被覆蓋的舊答案版本
 
-## Requirement: 完整性由題組定義判定
-The system SHALL determine whether a response is complete using the active questionnaire definition.
+## Requirement: 同一 participant 重新進入時恢復 latest answers
+The system SHALL restore the participant's latest persisted answers while the session remains available.
 
-### Scenario: 所有必填題完成
-- WHEN 參與者完成 active questionnaire 的所有必填題
-- THEN 該 response 應標記為 complete
+### Scenario: 未完成者重新整理
+- WHEN participant 已回答部分 active questions
+- AND participant 重新載入同一 open session
+- THEN 系統應載入 latest answers
+- AND 將 participant 帶回尚未完成的 active question
 
-### Scenario: 缺少必填題
-- WHEN 參與者仍缺少至少一題必填題
-- THEN 該 response 應標記為 incomplete
-- AND 該 response 不得進入 Reveal 的統計樣本
-
-## Requirement: 題目內容屬於可版本化設定
-The system SHALL associate each session with a questionnaire version.
-
-### Scenario: 場次使用固定題組版本
-- WHEN 場次建立完成
-- THEN 該場次應保存 questionnaire version
-- AND 同一場次的完成判定應使用同一版本
-
-## v0.2 決策
-- 題庫共有 24 題，分成 6 類，每類 4 題。
-- 新建立的 v0.2 session 依房號 deterministic 選出 12 題，每類固定 2 題。
-- `self-image` 每局必出，供「都可以自信值」計算。
-- 同一房號重新整理後必須取得相同題組與順序。
-- 12 題皆為 required。
-- 舊 v0.1 session 維持原本 8 題，不因升版改題。
+### Scenario: 已完成者重新整理
+- WHEN participant 已完成 active questionnaire
+- AND session status 仍為 `open`
+- THEN 系統應載入 latest answers
+- AND 顯示等待主持人 Reveal 的狀態
+- AND participant 仍可選擇回去修改答案
