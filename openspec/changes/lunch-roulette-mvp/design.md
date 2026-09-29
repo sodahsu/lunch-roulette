@@ -6,9 +6,12 @@
 - 約 8 人是主要驗證規模，但不使用固定人數 gate。
 - 手機優先；主持人可用桌機或大螢幕。
 - Reveal 前允許修改；Reveal 後私人 persona result 固定。
-- 公開畫面只顯示 aggregate。
+- 公開畫面只顯示 aggregate，不顯示個人逐題答案。
 - 核心判定 deterministic，可由 unit tests 驗證。
-- v0.2 題目變多，但單局仍控制在 12 題。
+- v0.2 題庫 24 題，但單局固定 12 題。
+- Reveal 必須有「團體 → 個人」兩段高潮：
+  1. 大螢幕先公布今晚約成飯的成功率。
+  2. 主持人再觸發手機同步翻人格卡。
 
 ## 2. Technical baseline
 
@@ -33,7 +36,9 @@ open
   └─ host starts reveal
       ↓
 locked
-  └─ snapshot + participant results written
+  ├─ countdown
+  ├─ host shows dinner success rate
+  └─ host presses "翻出所有人格卡"
       ↓
 revealed
 ```
@@ -49,17 +54,24 @@ revealed
 
 - 不接受新 participant。
 - 不接受 response update。
-- 所有 participant 顯示結算等待。
-- host 執行或恢復 Reveal。
+- participant 手機持續顯示等待畫面。
+- host 可以：
+  - 執行／恢復倒數。
+  - 從 locked responses 計算 aggregate preview。
+  - 顯示「我們這團今晚約成飯的成功率」。
+- 成功率畫面顯示期間 session **仍然是 `locked`**。
+- 任何 persona result 在此階段都不得顯示。
 
 ### `revealed`
 
-- 不接受新 participant 或答案修改。
-- host 顯示 group result。
-- complete participant 顯示 persisted personal result。
+- host 已明確觸發人格翻牌。
+- group snapshot 與 participant results 已建立。
+- complete participant 自動顯示 persisted persona card。
 - incomplete participant 顯示未完成狀態。
 
-`sessions.status` 是 Reveal timing 的單一真相來源。
+`sessions.status` 仍是跨裝置 Reveal timing 與資料可修改性的單一真相來源。
+
+「倒數」與「成功率已顯示」只是 host UI 的局部 subphase，不新增 DB status。
 
 ## 4. Data ownership
 
@@ -90,21 +102,23 @@ revealed
 
 - `answers` 保存 active question answers。
 - `is_complete` 由 active questionnaire 判定。
-- Reveal 前使用 upsert 更新同一筆，不保存舊版本作為有效答案。
+- Reveal 前使用 upsert 更新同一筆。
 
 ### `result_snapshots`
 
-目前只保存：
+保存：
 
 - `session_id`
 - `group_stats`
 - `created_at`
 
-它是公開 aggregate 結果的 persisted source。
+正式 snapshot 只在 host 觸發 persona 翻牌時建立。
+
+locked 成功率畫面使用的是 **in-memory preview**，不是另一份 persisted source of truth。
 
 ### `participant_results`
 
-私人結果使用獨立 table 保存：
+私人結果使用獨立 table：
 
 - `session_id`
 - `participant_id`
@@ -112,17 +126,13 @@ revealed
 - `result`
 - `created_at`
 
-`result` 目前包含 persona、soulmates、opposites。
-
-不要把 `participant_results` 描述成 `result_snapshots` 的欄位；兩者是不同 persistence boundary。
+`result` 包含 persona、soulmates、opposites。
 
 ## 5. Questionnaire versioning and selection
 
 ### v0.1 compatibility
 
-目前資料庫仍存在舊 v0.1 session，因此 client 必須保留原 8 題行為。
-
-v0.1 question ids：
+舊 v0.1 session 保留原 8 題：
 
 - `group-choice`
 - `queue`
@@ -150,11 +160,9 @@ v0.1 question ids：
 
 - 以 `session.code + category + question.id` 產生 deterministic ordering。
 - 每類選前 2 題。
-- identity 類固定包含 `self-image`，另一題由 seed 決定。
-- 12 題再用同一 session code 產生 deterministic order。
-- 不另外把 selected question ids 寫進 DB。
-
-理由：`session.code + questionnaire_version` 已足以重建 active questionnaire，避免多一份 selection source of truth。
+- identity 類固定包含 `self-image`。
+- 12 題再用同一 session code 排出 deterministic order。
+- 不另外 persist selected question ids。
 
 ## 6. Domain ownership
 
@@ -162,7 +170,7 @@ v0.1 question ids：
 
 - `isCompleteResponse()`
 - `calculateGroupStats()`
-- `calculateGroupCompatibility()`
+- `calculateDinnerSuccessRate()`
 - `calculatePersonaScores()`
 - `assignPersona()`
 - `calculateSimilarity()`
@@ -171,23 +179,41 @@ v0.1 question ids：
 
 Supabase adapter 負責 persistence / Realtime；UI 不應自行實作另一套 scoring rule。
 
-## 7. Reveal transaction sequence
+## 7. Two-stage Reveal sequence
 
-1. Host 觸發 Reveal。
-2. Session 由 `open` 更新成 `locked`。
-3. RLS / status rule 阻止後續 response update 與 late join。
-4. Host 讀取 locked session 的 latest responses。
-5. 只取 `is_complete = true` responses 建立 snapshot。
-6. 寫入 `result_snapshots.group_stats`。
-7. 為 complete participants 寫入 `participant_results`。
-8. Session 由 `locked` 更新成 `revealed`。
-9. Realtime 讓所有 clients 切換到結果狀態。
+### Stage A｜團體成功率
 
-Group snapshot 與 participant results 使用 insert-only / ignore-duplicate recovery，讓 locked host refresh 後可以安全續跑，不必放寬 private result RLS。
+1. Host 按「鎖定並揭曉」。
+2. Session 由 `open` → `locked`。
+3. RLS / status rule 阻止 response update 與 late join。
+4. Participant 手機全部進入等待畫面。
+5. Host 執行 3 / 2 / 1 倒數。
+6. Host 讀取 locked session 的 latest responses。
+7. 只用 complete responses 計算 group stats preview。
+8. 大螢幕顯示「我們這團今晚約成飯的成功率」。
+9. Session 仍維持 `locked`。
+10. Persona 尚未 persist，也尚未顯示。
 
-## 8. Group dining compatibility
+### Stage B｜個人人格翻牌
 
-飯局相容度只使用 persisted `group_stats`。
+1. Host 按「翻出所有人格卡」。
+2. 再次從 locked responses 建立正式 deterministic snapshot。
+3. Persist `result_snapshots.group_stats`。
+4. 為 complete participants persist `participant_results`。
+5. Session 由 `locked` → `revealed`。
+6. Realtime 讓所有 participant clients 收到 revealed。
+7. 每支完成答題的手機自動切換成 persona card。
+8. Participant 不需要額外按鈕或 reload。
+
+這個順序確保大螢幕先講「我們這群人」，手機再回答「你這個人」。
+
+## 8. Dinner success rate
+
+UI 名稱：
+
+**「我們這團今晚約成飯的成功率」**
+
+這是遊戲內的 deterministic score，不是統計校準過的真實事件機率或預測模型。
 
 ### Formula
 
@@ -207,30 +233,28 @@ score = round(mean(questionAgreement) * 100)
 
 | Score | Verdict |
 |---:|---|
-| 80–100 | 我們這團可以直接出去吃飯 |
-| 68–79 | 我們這團可以出去吃飯 |
-| 56–67 | 可以出去吃，但不要開放全民表決 |
-| 0–55 | 可以出去吃，但最好先指定隊長 |
+| 80–100 | 今晚直接出門，不要再討論 |
+| 68–79 | 今晚約得成，找一個人負責訂位 |
+| 56–67 | 約得成，但不要再開全民表決 |
+| 0–55 | 有機會約成，先指定飯局隊長 |
 
 少於 2 位 complete participants 時：
 
-- score 顯示為不可視為正式判定的 0。
+- UI 顯示「樣本不足」，不是 `0%`。
 - verdict 使用「先不要急著訂位」。
-- detail 明確說明有效樣本不足。
+- 不把 score 0 解讀成低成功率。
 
 ### Persistence note
 
-目前 `group_stats` 會 persist，但 group compatibility 的 score / verdict 是 client 依 v0.2 formula 從 group stats 重新 derive，**沒有另外存進 snapshot**。
+- locked 成功率 preview：從 locked responses 即時計算，不 persist。
+- final `group_stats`：host 翻 persona 時 persist。
+- revealed 後如需重新顯示成功率，從 persisted `group_stats` deterministic derive。
 
-這代表：
-- 同一版程式 reload 是 deterministic。
-- 若未來修改 compatibility formula，舊 revealed session 的文字／分數理論上可能跟著變。
+如果未來修改成功率公式，舊 revealed session 的 derived score 理論上可能跟著變。
 
-若產品要求「跨未來版本也永久不變」，archive 前需要二選一：
-1. persist compatibility summary；或
-2. 依 `questionnaire_version` 永久保留舊版 compatibility algorithm。
-
-目前尚未有使用者對這個跨版本要求的明確決策，因此保持 active change，不把它寫成已解決。
+若產品要求「跨未來程式版本永久不變」，archive 前需要二選一：
+1. persist success summary；或
+2. 依 `questionnaire_version` 保留舊版 success-rate algorithm。
 
 ## 9. Persona behavior
 
@@ -239,8 +263,8 @@ score = round(mean(questionAgreement) * 100)
 - 各 persona score 加總後取最高。
 - 不使用 threshold。
 - 同分使用固定 `PERSONA_PRIORITY`。
-- complete participant 的 persona result 會 persist 到 `participant_results`。
-- Reveal UX 可以像抽卡，但結果本身不是隨機抽取。
+- Persona 只在 final persona reveal 時 persist。
+- Reveal UX 可以像抽卡，但結果不是隨機抽取。
 
 ## 10. Matching behavior
 
@@ -250,39 +274,39 @@ score = round(mean(questionAgreement) * 100)
 - 不與自己比較。
 - soulmate = highest similarity。
 - opposite = lowest similarity。
-- highest / lowest 並列時全部保留。
+- 並列全部保留。
 - 只有一位 complete participant 時不產生 pairing。
 
 ## 11. Privacy boundary
 
-Public / host：
+Host：
 
 - 可看 participant display names。
 - 可看加入數、完成數。
-- 可看 group aggregate。
+- 可看 aggregate 與 success rate。
 - 不可看 participant per-question answers。
 
 Participant：
 
-- 可讀自己的 response。
-- Reveal 後可讀自己的 persisted participant result。
-- pairing 結果可顯示其他 participant 的 display name，但不公開其逐題答案。
+- open 時可讀自己的 response。
+- locked 時只能看到等待狀態。
+- revealed 後可讀自己的 persisted participant result。
+- Persona card 聚焦 persona、靈魂飯友、飲食天敵。
 
 ## 12. Testing strategy
 
 ### Unit / Vitest
 
-已寫入的 test code 覆蓋：
+Test code 覆蓋：
 
 - 24 題、6 類、每類 4 題。
 - v0.2 每房 12 題、每類 2 題。
 - `self-image` 必出。
-- 相同房號重建相同題組。
-- v0.1 保留原 8 題。
+- v0.1 legacy 8 題。
 - active questionnaire completeness。
 - complete-only group stats。
 - 3 / 8 / 9 participants。
-- group dining compatibility。
+- dinner success rate。
 - persona deterministic / highest score / tie-break。
 - similarity / soulmate / opposite / ties / self exclusion。
 - incomplete exclusion。
@@ -292,18 +316,25 @@ Participant：
 
 ### Playwright
 
-`tests/e2e/lunch-roulette.spec.ts` 已寫 CASE-01～08：
+CASE-01 已改為驗證核心 Reveal 順序：
 
-1. 多人正常流程與同步 persona。
-2. 未滿 8 人仍可 Reveal。
-3. 修改後採 latest response。
-4. 未完成者不阻塞。
-5. Lock 後不可改。
-6. Reveal 後 refresh 結果一致。
-7. Host 公開結果不洩漏個人答案。
-8. 第 9 位可加入。
+```text
+Host lock
+→ 大螢幕成功率
+→ Participant 仍 waiting
+→ Host 翻人格卡
+→ Participant 手機同步 persona
+```
 
-並包含 group dining verdict 的 reveal assertion。
+其餘 CASE-02～08 繼續驗證：
+
+- 未滿 8 人 Reveal。
+- latest response。
+- incomplete 不阻塞。
+- lock 後不可改。
+- refresh 結果一致。
+- public privacy。
+- 第 9 位可加入。
 
 **Runtime status：NOT_RUN。**
 
@@ -317,5 +348,5 @@ Participant：
 4. `npm run build`
 5. `npm run test:e2e`
 6. Anonymous Sign-ins runtime verification
-7. 實際多人 Reveal smoke test
-8. Review compatibility cross-version persistence decision
+7. 實際多人兩段式 Reveal smoke test
+8. Review success-rate cross-version persistence decision
