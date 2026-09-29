@@ -1,53 +1,150 @@
-# lunch-roulette
+# 都可以？ / lunch-roulette
 
-多人即時飲食人格遊戲。
+多人即時飯局人格社交遊戲。
+
+> 8 個人都說自己很好約。最後看看這團今晚到底有多大機會真的約成一頓飯，以及誰才是真的「都可以」。
+
+## Experience
+
+```text
+Host 開房 / QR 加入
+→ 每人回答本局 deterministic 12 題
+→ Host 鎖定
+→ 大螢幕先公布「今晚約成飯的成功率」
+→ session 仍 locked、手機繼續 waiting
+→ Host 按「公開處刑 🎴」
+→ 手機同步翻 Persona collectible card
+→ 靈魂飯友 / 飲食天敵
+```
+
+v0.2 題庫共有 24 題、6 類；每個房間依房號固定選 12 題，每類 2 題。舊 v0.1 房間保留原 8 題。
+
+## Visual direction
+
+**Dark Editorial × Food Personality × Social Experiment**
+
+- 黑色設計展感
+- Electric Blue / Acid Lime / Alert Red
+- Host Control Room
+- A / B 大型選項
+- 第 4 / 8 / 11 題 full-screen pacing interstitial
+- Success Rate 巨型 typography
+- 8 種自有 inline SVG animal Persona
+- Collectible Persona Card
+
+Runtime Persona 圖形位於：
+
+`src/components/PersonaGlyph.vue`
 
 ## Stack
 
 - Vue 3 + Vite + TypeScript
-- Supabase Auth / Postgres / Realtime
+- Supabase Anonymous Auth / Postgres / Realtime
 - Vitest
 - Playwright
 
 ## Real data flow
 
-1. 主持人建立場次，寫入 `sessions`
-2. 參與者匿名登入後加入，寫入 `participants`
-3. 答案寫入 `responses`
-4. DB trigger 同步 `participants.completed_at`
-5. 所有裝置透過 Supabase Realtime 更新場次狀態與完成進度
-6. 主持人鎖定後建立：
-   - `result_snapshots`：公開群體統計
-   - `participant_results`：每位參與者自己的私人結果
-7. Reveal 後重新整理仍讀取同一份資料，不會重新抽人格
+1. Host 建立 `sessions`
+2. Participant 透過 Anonymous Auth 取得 user identity
+3. 加入房間寫入 `participants`
+4. Latest answers upsert 至 `responses`
+5. DB trigger 同步 `participants.completed_at`
+6. Supabase Realtime 同步 session / participant / result 狀態
+7. Host Reveal Stage A：
+   - `open → locked`
+   - locked responses 計算 group preview
+   - 只顯示 Dinner Success Rate
+   - 不提前產生 Persona
+8. Host Reveal Stage B：
+   - 「公開處刑 🎴」
+   - persist `result_snapshots`
+   - persist `participant_results`
+   - `locked → revealed`
+9. Participant 手機自動載入固定 Persona / pairing result
 
-## Supabase setup
+## Supabase
 
-1. 建立 Supabase project
-2. 在 Authentication 啟用 Anonymous Sign-ins
-3. 執行：
-   `supabase/migrations/20260929_initial.sql`
-4. 建立 `.env.local`
+Project ref：
 
-```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
-```
+`hvaxoopyccwsqmhjnibg`
 
-5. 安裝並啟動
+Frontend 使用 publishable key；**不可把 service-role / secret key 放進 frontend**。
+
+啟用本專案前需確認：
+
+1. Authentication → Anonymous Sign-ins 已 Enable
+2. Live schema / RLS 已套用
+3. Realtime 可正常收到 sessions / participants / responses / result tables 變更
+
+目前程式使用：
+
+`supabase.auth.signInAnonymously()`
+
+## Local setup
 
 ```bash
 npm install
 npm run dev
 ```
 
+如要覆寫預設 Supabase project，可建立 `.env.local`：
+
+```env
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+```
+
 ## Verification
 
 ```bash
-npm run typecheck
 npm run test:unit
-npm run test:e2e
+npm run typecheck
 npm run build
+npm run test:e2e
 ```
 
-目前 migration 與前端資料層已準備好；實際雲端資料庫是否可用，以 Supabase project 套用 migration 後的驗證結果為準。
+Playwright 目前包含 CASE-01～10，涵蓋：
+
+- 兩段式 Reveal
+- 未完成者
+- latest response
+- locked 後不可改
+- refresh result consistency
+- public privacy
+- 第 9 位 participant
+- pacing interstitial
+- collectible Persona SVG card
+
+> Test code 已存在不代表 runtime 已 PASS。請以實際命令輸出為準。
+
+## Deployment
+
+`vercel.json` 只允許 `main` 進行 Git deployment：
+
+```json
+{
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true
+    }
+  }
+}
+```
+
+Vite build output：`dist`。
+
+## Specs
+
+Active OpenSpec change：
+
+`openspec/changes/lunch-roulette-mvp/`
+
+主要 capability：
+
+- `live-session`
+- `preference-quiz`
+- `result-reveal`
+
+在 runtime validation 與 success-rate cross-version persistence 決策完成前，change 保持 active，不應宣稱已 archive。
