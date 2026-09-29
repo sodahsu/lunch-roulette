@@ -117,7 +117,7 @@ describe('dinner success rate', () => {
     ])
 
     expect(result.score).toBeGreaterThanOrEqual(80)
-    expect(result.verdict).toContain('可以')
+    expect(result.verdict).toBe('今晚直接出門，不要再討論')
   })
 
   it('keeps the answer playful even when the group is split', () => {
@@ -128,7 +128,7 @@ describe('dinner success rate', () => {
     ])
 
     expect(result.score).toBeLessThan(56)
-    expect(result.verdict).toContain('可以出去吃')
+    expect(result.verdict).toBe('有機會約成，先指定飯局隊長')
     expect(result.detail).toContain('隊長')
   })
 })
