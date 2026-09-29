@@ -74,6 +74,11 @@
 - [x] Host 飲食內戰
 - [x] Host 歷史性共識
 - [x] Persona 手機卡聚焦個人人格與配對，不重複團體成功率
+- [x] 第 4 / 8 / 11 題加入固定節奏事件
+- [x] Participant waiting 依剩餘人數顯示防冷場文案
+- [x] Host lobby 依加入／完成人數顯示防冷場文案
+- [x] 成功率改成三拍揭曉：自我認知 → 實際成功率鋪陳 → 分數與 verdict
+- [x] Persona 翻牌後 Host 顯示「舉手機找飯友／天敵」社交收尾
 
 ## 4. Automated test code
 
@@ -87,6 +92,7 @@
 - [x] CASE-06 refresh 結果一致 test code
 - [x] CASE-07 public privacy test code
 - [x] CASE-08 第 9 位可加入 test code
+- [x] CASE-09 第 4 題節奏事件 test code
 
 > 上述只代表 test code 已寫，不代表 runtime PASS。
 
@@ -114,6 +120,9 @@
 - [ ] 實際驗證成功率畫面出現時 participant 仍停留在 waiting
 - [ ] 實際驗證 host 按翻人格卡後所有完成者同步 persona
 - [ ] 實際驗證 incomplete participant 不會拿到 persona
+- [ ] 實際驗證第 4 / 8 / 11 題節奏提示不影響答題
+- [ ] 實際驗證成功率三拍揭曉沒有多餘停頓
+- [ ] 實際驗證人格翻牌後大螢幕收尾提示可見
 - [ ] 實際多 browser / device Reveal smoke test
 
 ## 7. Archive gate
