@@ -72,6 +72,7 @@
 - [x] 未完成 participant Reveal 後顯示明確無結果狀態
 - [x] 人格卡使用動物角色 emoji
 - [x] 主持人結果顯示「我們這團可以出去吃飯嗎？」與 deterministic 飯局相容度
+- [x] 手機人格卡同步顯示團體飯局 verdict 與相容度
 
 ## 5. Playwright case tests
 - [x] CASE-01 多人正常流程 test code 已寫（NOT_RUN）
