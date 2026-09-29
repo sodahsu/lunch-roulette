@@ -473,7 +473,7 @@ onBeforeUnmount(() => unsubscribe?.())
       <div v-if="session?.status === 'locked' && groupStats" class="dinner-success-reveal">
         <div class="eyebrow">今晚的飯局命運已算出來</div>
         <p class="success-question">🍽️ 我們這團今晚約成飯的成功率</p>
-        <div class="success-score">{{ dinnerSuccess.score }}%</div>
+        <div class="success-score">{{ resultSampleSize > 1 ? dinnerSuccess.score + '%' : '樣本不足' }}</div>
         <h3>{{ dinnerSuccess.verdict }}</h3>
         <p class="lede">{{ dinnerSuccess.detail }}</p>
         <p class="persona-tease">成功率看完了。現在看看問題到底出在誰身上。</p>
@@ -502,7 +502,7 @@ onBeforeUnmount(() => unsubscribe?.())
         <article class="group-verdict-card">
           <span class="result-kicker">🍽️ 今晚約成飯的成功率</span>
           <strong class="group-verdict">{{ dinnerSuccess.verdict }}</strong>
-          <div class="compatibility-score">{{ dinnerSuccess.score }}%</div>
+          <div class="compatibility-score">{{ resultSampleSize > 1 ? dinnerSuccess.score + '%' : '樣本不足' }}</div>
           <p>{{ dinnerSuccess.detail }}</p>
         </article>
 
