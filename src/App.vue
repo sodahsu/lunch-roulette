@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
-import { calculateGroupCompatibility } from './domain/domain'
+import { calculateDinnerSuccessRate } from './domain/domain'
 import type { GroupQuestionStat, Participant, ParticipantResult } from './domain/types'
 import {
   createSession,
@@ -16,6 +16,7 @@ import {
   listParticipants,
   finalizeReveal,
   lockSession,
+  previewLockedGroupStats,
   saveAnswers,
   subscribeToSession,
   type SessionRecord,
@@ -80,8 +81,8 @@ const joinUrl = computed(() => {
 })
 
 const resultSampleSize = computed(() => groupStats.value?.[0]?.sampleSize ?? 0)
-const diningCompatibility = computed(() =>
-  calculateGroupCompatibility(groupStats.value ?? []),
+const dinnerSuccess = computed(() =>
+  calculateDinnerSuccessRate(groupStats.value ?? []),
 )
 
 const selfReportedEasygoing = computed(() => {
@@ -334,8 +335,7 @@ async function reveal() {
     await refreshSessionState()
     await runRevealCountdown()
 
-    groupStats.value = await finalizeReveal(session.value)
-    await refreshSessionState()
+    groupStats.value = await previewLockedGroupStats(session.value)
   })
 }
 
@@ -343,6 +343,13 @@ async function continueReveal() {
   await withBusy(async () => {
     if (!session.value || session.value.status !== 'locked') return
     await runRevealCountdown()
+    groupStats.value = await previewLockedGroupStats(session.value)
+  })
+}
+
+async function revealPersonas() {
+  await withBusy(async () => {
+    if (!session.value || session.value.status !== 'locked') return
     groupStats.value = await finalizeReveal(session.value)
     await refreshSessionState()
   })
@@ -463,9 +470,21 @@ onBeforeUnmount(() => unsubscribe?.())
         </div>
       </div>
 
-      <div v-if="session?.status === 'locked'" class="host-countdown">
+      <div v-if="session?.status === 'locked' && groupStats" class="dinner-success-reveal">
+        <div class="eyebrow">今晚的飯局命運已算出來</div>
+        <p class="success-question">🍽️ 我們這團今晚約成飯的成功率</p>
+        <div class="success-score">{{ dinnerSuccess.score }}%</div>
+        <h3>{{ dinnerSuccess.verdict }}</h3>
+        <p class="lede">{{ dinnerSuccess.detail }}</p>
+        <p class="persona-tease">成功率看完了。現在看看問題到底出在誰身上。</p>
+        <button class="primary persona-reveal-button" type="button" :disabled="busy" @click="revealPersonas">
+          {{ busy ? '正在翻牌…' : '翻出所有人格卡 🎴' }}
+        </button>
+      </div>
+
+      <div v-else-if="session?.status === 'locked'" class="host-countdown">
         <div class="eyebrow">全場結算中</div>
-        <p class="host-joke">正在檢查到底有沒有人是真的「都可以」…</p>
+        <p class="host-joke">正在計算你們今晚到底約不約得成…</p>
         <div class="countdown-number">{{ revealStep }}</div>
         <button
           v-if="!busy"
@@ -478,16 +497,16 @@ onBeforeUnmount(() => unsubscribe?.())
       </div>
 
       <div v-else-if="groupStats" class="group-result host-results">
-        <div class="eyebrow">結果已固定 · 有效樣本 {{ resultSampleSize }} 人</div>
+        <div class="eyebrow">人格卡已同步翻開 · 有效樣本 {{ resultSampleSize }} 人</div>
 
         <article class="group-verdict-card">
-          <span class="result-kicker">🍽️ 我們這團可以出去吃飯嗎？</span>
-          <strong class="group-verdict">{{ diningCompatibility.verdict }}</strong>
-          <div class="compatibility-score">{{ diningCompatibility.score }}%</div>
-          <p>{{ diningCompatibility.detail }}</p>
+          <span class="result-kicker">🍽️ 今晚約成飯的成功率</span>
+          <strong class="group-verdict">{{ dinnerSuccess.verdict }}</strong>
+          <div class="compatibility-score">{{ dinnerSuccess.score }}%</div>
+          <p>{{ dinnerSuccess.detail }}</p>
         </article>
 
-        <h3>你們對自己也有一些誤會。 🎉</h3>
+        <h3>現在請各自面對自己的飲食人格。 🎴</h3>
 
         <div class="host-result-grid">
           <article class="host-result-card">
@@ -528,8 +547,8 @@ onBeforeUnmount(() => unsubscribe?.())
 
         <div class="match-card">
           <span>🍽️ 我們這團</span>
-          <strong>{{ diningCompatibility.verdict }}</strong>
-          <small>飯局相容度 {{ diningCompatibility.score }}%</small>
+          <strong>{{ dinnerSuccess.verdict }}</strong>
+          <small>飯局相容度 {{ dinnerSuccess.score }}%</small>
         </div>
 
         <div class="match-card">
