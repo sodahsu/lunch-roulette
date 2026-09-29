@@ -31,7 +31,7 @@ session 仍然 locked
 ↓
 手機仍然不能看到 persona
 ↓
-Host：翻出所有人格卡
+Host：公開處刑 🎴
 ↓
 persist group snapshot + participant results
 ↓
@@ -47,8 +47,8 @@ session = revealed
 - 成功率為 deterministic game score，不宣稱是統計校準的真實機率模型。
 - `previewLockedGroupStats()`：locked 時只讀 responses 計算 aggregate preview，不提前 persist persona。
 - Host Reveal 改成兩段：
-  1. 倒數後只顯示成功率。
-  2. Host 按「翻出所有人格卡」後才呼叫 `finalizeReveal()`。
+  1. 倒數後以三拍揭曉成功率：自我認知 →「實際成功率是……」→ 分數與 verdict。
+  2. Host 按「公開處刑 🎴」後才呼叫 `finalizeReveal()`。
 - 成功率畫面出現時 session 保持 `locked`。
 - Participant 在 locked 全程維持等待畫面。
 - final persona reveal 後才切 `revealed`。
@@ -64,7 +64,13 @@ session = revealed
   - persona 尚不存在
   - Host 翻牌
   - participant 才同步 persona
-- OpenSpec proposal / live-session / result-reveal / design / tasks 已同步。
+- 防冷場節奏已實作：
+  - 第 4 / 8 / 11 題固定節奏事件。
+  - Participant waiting 依剩餘人數顯示趣味文案。
+  - Host lobby 依加入／完成人數顯示趣味文案。
+  - Persona 翻牌後大螢幕顯示「舉手機找靈魂飯友／飲食天敵」收尾。
+- Playwright 新增 CASE-09 驗證第 4 題節奏事件。
+- OpenSpec preference-quiz / live-session / result-reveal / design / tasks 已同步。
 
 ## Stable Contract
 
@@ -72,7 +78,7 @@ session = revealed
 |---|---|
 | `open → locked → revealed` | 保留 |
 | 成功率畫面屬於 `locked` 階段 | 必須 |
-| Host 未翻人格卡前 participant 不得看到 persona | 必須 |
+| Host 未觸發公開處刑前 participant 不得看到 persona | 必須 |
 | `finalizeReveal()` 只由 persona reveal 觸發 | 必須 |
 | locked 後禁止 answer update / late join | 保留 |
 | public host 畫面不顯示個人逐題答案 | 保留 |
@@ -118,6 +124,7 @@ tests/e2e/lunch-roulette.spec.ts
 | Playwright | NOT_RUN |
 | Anonymous Sign-ins | UNKNOWN |
 | 真實多裝置兩段 Reveal | NOT_RUN |
+| 防冷場 pacing 實機節奏 | NOT_RUN |
 | Vercel Demo | NOT_STARTED |
 
 本機接手後依序：
