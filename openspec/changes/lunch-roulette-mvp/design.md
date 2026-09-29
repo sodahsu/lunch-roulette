@@ -104,6 +104,7 @@ Reveal 後的固定結果。
 
 - `isCompleteResponse()`
 - `calculateGroupStats()`
+- `calculateGroupCompatibility()`
 - `calculatePersonaScores()`
 - `assignPersona()`
 - `calculateSimilarity()`
@@ -132,7 +133,24 @@ Supabase adapter 只負責讀寫與 Realtime；不得把人格計分規則散落
 - participant result 可顯示自己的 persona 與配對姓名。
 - 配對計算使用 participant id，顯示時才轉成 display_name。
 
-## 8. Personality behavior
+## 8. Questionnaire selection
+
+- v0.2 題庫共有 24 題，分成 6 類。
+- 每個新 session 依 `session.code` deterministic 從每類抽 2 題，共 12 題。
+- `self-image` 為固定錨點題，每局必出。
+- session 保存 `questionnaire_version`；v0.1 保留原 8 題，v0.2 才啟用 24→12 題庫。
+- 題組 selection 不另寫 DB 欄位；房號 + questionnaire version 即可重建，避免 duplicate source of truth。
+
+## 9. Group dining compatibility
+
+- 只使用公開 aggregate group stats。
+- 每題以最多人選擇的比例代表該題群體共識度。
+- 全部可用題目的共識度取平均，再轉成 0–100 整數分數。
+- 兩位以上 complete participants 才顯示群體 verdict。
+- verdict 保持遊戲感，但核心結果 deterministic，不使用 AI 自由生成。
+- 主持人結果頁優先回答：「我們這團可以出去吃飯嗎？」
+
+## 10. Personality behavior
 
 「隨機出現人格」定義為 Reveal UX，而不是每次重新整理重新抽一張：
 
@@ -142,7 +160,7 @@ Supabase adapter 只負責讀寫與 Realtime；不得把人格計分規則散落
 v0.1 使用 `src/domain/questions.ts` 定義的 8 種 persona 與 option score，不使用 threshold。
 Persona 取總分最高者；若 persona scores 平手，使用固定 `PERSONA_PRIORITY` 做穩定 tie-break。
 
-## 9. Matching behavior
+## 11. Matching behavior
 
 - similarity 只比較完成答題的 participant。
 - 自己不與自己比較。
@@ -151,7 +169,7 @@ Persona 取總分最高者；若 persona scores 平手，使用固定 `PERSONA_P
 - 若多人並列最高或最低，可一起顯示，避免任意挑一人。
 - 若可比較的人數不足，省略該配對結果。
 
-## 10. Testing strategy
+## 12. Testing strategy
 
 ### Unit tests — Vitest
 
@@ -224,7 +242,7 @@ host/group result page 不可看到特定 participant 的每題選擇。
 
 第 9 位 participant 可正常加入並作答；是否做更高併發保證不在本 MVP 範圍。
 
-## 11. Validation gate
+## 13. Validation gate
 
 完成一個功能 slice 前至少通過：
 
