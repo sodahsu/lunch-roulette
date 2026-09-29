@@ -105,7 +105,7 @@
 - [x] CASE-07 public privacy test code
 - [x] CASE-08 第 9 位可加入 test code
 - [x] CASE-09 第 4 題節奏事件 test code
-- [ ] CASE-10 Persona SVG / collectible card regression test code
+- [x] CASE-10 Persona SVG / collectible card regression test code
 
 > 上述只代表 test code 已寫，不代表 runtime PASS。
 
