@@ -84,8 +84,9 @@ Frontend 使用 publishable key；**不可把 service-role / secret key 放進 f
 ## Local setup
 
 ```bash
-npm install
-npm run dev
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
 如要覆寫預設 Supabase project，可建立 `.env.local`：
@@ -98,10 +99,10 @@ VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ## Verification
 
 ```bash
-npm run test:unit
-npm run typecheck
-npm run build
-npm run test:e2e
+pnpm test:unit
+pnpm typecheck
+pnpm build
+pnpm test:e2e
 ```
 
 Playwright 目前包含 CASE-01～10，涵蓋：
