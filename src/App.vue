@@ -505,7 +505,29 @@ async function revealPersonas() {
   })
 }
 
+// 示意結果頁：?demo=result[&persona=key]，不連資料庫，供設計檢視與分享預覽
+function showDemoResult(personaParam: string | null) {
+  const keys = Object.keys(PERSONAS) as PersonaKey[]
+  const persona = keys.includes(personaParam as PersonaKey) ? (personaParam as PersonaKey) : 'foodFanatic'
+  const person = (id: string, display_name: string): Participant => ({
+    id, session_id: 'demo', user_id: id, display_name, completed_at: new Date().toISOString(),
+  })
+  participants.value = [person('demo-me', 'Soda'), person('demo-soul', 'Amy'), person('demo-enemy', 'Ben')]
+  participant.value = participants.value[0]!
+  personalResult.value = {
+    persona,
+    soulmates: [{ participantId: 'demo-soul', similarity: 0.83 }],
+    opposites: [{ participantId: 'demo-enemy', similarity: 0.08 }],
+  }
+  screen.value = 'result'
+}
+
 onMounted(() => {
+  const params = new URL(window.location.href).searchParams
+  if (params.get('demo') === 'result') {
+    showDemoResult(params.get('persona'))
+    return
+  }
   void restoreFromUrl().catch(fail)
 })
 

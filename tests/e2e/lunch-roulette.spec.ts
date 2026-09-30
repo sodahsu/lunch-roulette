@@ -359,3 +359,12 @@ test('CASE-12 結束後主持人可再開一局，參加者可加入新的一局
     await closeActors(host, amy)
   }
 })
+
+test('CASE-13 示意結果頁可用 persona 參數切換，且顯示飯友頭貼與名字', async ({ page }) => {
+  await page.goto('/?demo=result&persona=glutton')
+  await expect(page.getByRole('heading', { name: '全都要選手' })).toBeVisible()
+  await expect(page.locator('img.persona-art')).toBeVisible()
+  await expect(page.locator('.match-card').first()).toContainText('Amy')
+  await expect(page.locator('.match-card.enemy')).toContainText('Ben')
+  await expect(page.locator('.match-people img')).toHaveCount(2)
+})
