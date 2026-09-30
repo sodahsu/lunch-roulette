@@ -5,6 +5,13 @@ import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
 import { calculateDinnerSuccessRate, RARE_CARD_REASON } from './domain/domain'
+import {
+  calculateFoodConsensus,
+  decodeFoodAvoid,
+  encodeFoodAvoid,
+  FOOD_AVOID_ID,
+  FOOD_OPTIONS,
+} from './domain/foods'
 import type { GroupQuestionStat, Participant, ParticipantResult, PersonaKey } from './domain/types'
 import {
   createSession,
@@ -25,7 +32,7 @@ import {
   type SessionRecord,
 } from './lib/session-service'
 
-type Screen = 'landing' | 'join' | 'quiz' | 'waiting' | 'host' | 'revealing' | 'result'
+type Screen = 'landing' | 'join' | 'quiz' | 'food' | 'waiting' | 'host' | 'revealing' | 'result'
 
 const PERSONA_DISPLAY: Record<PersonaKey, { code: string; label: string }> = {
   peacekeeper: { code: '01', label: 'PEACEKEEPER' },
@@ -94,6 +101,15 @@ const joinUrl = computed(() => {
   return url.toString()
 })
 
+const foodAvoid = ref<string[]>([])
+// 忌口是題庫外的獨立統計，不能混進「飲食內戰／歷史性共識」的題目挑選
+const questionStats = computed(() =>
+  (groupStats.value ?? []).filter((stat) => stat.questionId !== FOOD_AVOID_ID),
+)
+const foodConsensus = computed(() =>
+  calculateFoodConsensus(groupStats.value?.find((stat) => stat.questionId === FOOD_AVOID_ID)),
+)
+
 const resultSampleSize = computed(() => groupStats.value?.[0]?.sampleSize ?? 0)
 const dinnerSuccess = computed(() =>
   calculateDinnerSuccessRate(
@@ -159,7 +175,7 @@ const selfReportedEasygoing = computed(() => {
 
 const unanimousStat = computed(() => {
   if (resultSampleSize.value < 2) return null
-  return groupStats.value?.find((stat) =>
+  return questionStats.value.find((stat) =>
     Object.values(stat.counts).some((count) => count === stat.sampleSize),
   ) ?? null
 })
@@ -170,7 +186,7 @@ const splitStat = computed(() => {
   let best: GroupQuestionStat | null = null
   let bestGap = Number.POSITIVE_INFINITY
 
-  for (const stat of groupStats.value ?? []) {
+  for (const stat of questionStats.value) {
     const counts = Object.values(stat.counts).sort((a, b) => b - a)
     if (counts.length < 2) continue
     const gap = Math.abs(counts[0]! - counts[1]!)
@@ -276,6 +292,7 @@ async function restoreFromUrl() {
       name.value = participant.value.display_name
       const ownResponse = await getOwnResponse(session.value.id, participant.value.id)
       if (ownResponse) answers.value = ownResponse.answers
+      foodAvoid.value = decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) ?? []
 
       const firstUnanswered = activeQuestions.value.findIndex(
         (question) => question.required && !answers.value[question.id],
@@ -289,7 +306,7 @@ async function restoreFromUrl() {
 
     if (session.value.status === 'open') {
       if (isHost.value && !participant.value) screen.value = 'host'
-      else if (participant.value) screen.value = ownResponseIsComplete() ? 'waiting' : 'quiz'
+      else if (participant.value) screen.value = !ownResponseIsComplete() ? 'quiz' : answers.value[FOOD_AVOID_ID] ? 'waiting' : 'food'
       else screen.value = 'join'
     }
   })
@@ -361,6 +378,7 @@ function resetRound() {
   answers.value = {}
   questionIndex.value = 0
   groupStats.value = null
+  foodAvoid.value = []
   personalResult.value = null
   isHost.value = false
   revealStep.value = 3
@@ -439,6 +457,22 @@ async function nextQuestion() {
       return
     }
 
+    screen.value = 'food'
+  })
+}
+
+function toggleFood(id: string) {
+  if (session.value?.status !== 'open') return
+  foodAvoid.value = foodAvoid.value.includes(id)
+    ? foodAvoid.value.filter((item) => item !== id)
+    : [...foodAvoid.value, id]
+}
+
+async function submitFood() {
+  if (!session.value || !participant.value) return
+  await withBusy(async () => {
+    answers.value = { ...answers.value, [FOOD_AVOID_ID]: encodeFoodAvoid(foodAvoid.value) }
+    await saveAnswers(session.value!, participant.value!.id, answers.value)
     screen.value = 'waiting'
     await refreshSessionState()
   })
@@ -521,6 +555,10 @@ function showDemoResult(personaParam: string | null, rare = false) {
     soulmates: [{ participantId: 'demo-soul', similarity: 0.83 }],
     opposites: [{ participantId: 'demo-enemy', similarity: 0.08 }],
   }
+  // 示意：三人排除的聯集之外剩下的類別
+  groupStats.value = [
+    { questionId: FOOD_AVOID_ID, counts: { hotpot: 1, spicy: 2, bbq: 1, vegetarian: 1 }, sampleSize: 3 },
+  ]
   screen.value = 'result'
 }
 
@@ -625,6 +663,34 @@ onBeforeUnmount(() => {
         <button class="secondary" type="button" :disabled="questionIndex === 0" @click="previousQuestion">上一題</button>
         <button class="primary" type="button" :disabled="!currentAnswer || busy" @click="nextQuestion">
           {{ questionIndex === activeQuestions.length - 1 ? '交卷' : '下一題' }}
+        </button>
+      </div>
+    </section>
+
+    <section v-else-if="screen === 'food'" class="panel quiz-panel">
+      <div class="quiz-top"><span>最後一步</span></div>
+      <div class="progress-track"><div class="progress-bar" :style="{ width: '100%' }" /></div>
+      <h2 class="question">有哪些是你不吃或吃不了的？</h2>
+      <p class="lede">沒勾的都算你能接受。全組都沒排除的，揭曉時會列成「大家都能吃」清單。</p>
+      <div class="choice-list food-list">
+        <button
+          v-for="food in FOOD_OPTIONS"
+          :key="food.id"
+          type="button"
+          class="choice"
+          :class="{ selected: foodAvoid.includes(food.id) }"
+          :aria-pressed="foodAvoid.includes(food.id)"
+          :disabled="session?.status !== 'open'"
+          @click="toggleFood(food.id)"
+        >
+          <span class="choice-label">{{ food.label }}</span>
+          <span class="choice-emoji" aria-hidden="true">{{ food.emoji }}</span>
+        </button>
+      </div>
+      <div class="bottom-actions inline">
+        <button class="secondary" type="button" @click="screen = 'quiz'">回上一題</button>
+        <button class="primary" type="button" :disabled="busy" @click="submitFood">
+          {{ foodAvoid.length === 0 ? '我都能吃，交卷' : '排除 ' + foodAvoid.length + ' 項，交卷' }}
         </button>
       </div>
     </section>
@@ -760,6 +826,25 @@ onBeforeUnmount(() => {
           </article>
         </div>
 
+        <article v-if="foodConsensus" class="food-consensus" data-testid="food-consensus">
+          <span class="result-kicker">🍽️ 大家都能吃</span>
+          <template v-if="foodConsensus.safe.length">
+            <ul class="food-chips">
+              <li v-for="food in foodConsensus.safe" :key="food.id">{{ food.emoji }} {{ food.label }}</li>
+            </ul>
+            <p>{{ foodConsensus.sampleSize }} 人都沒排除的類別，挑一個就不會有人被迫吃不想吃的。</p>
+          </template>
+          <template v-else>
+            <strong>沒有全員都能接受的類別</strong>
+            <ul class="food-chips">
+              <li v-for="item in foodConsensus.leastVetoed" :key="item.food.id">
+                {{ item.food.emoji }} {{ item.food.label }} · {{ item.vetoCount }} 人排除
+              </li>
+            </ul>
+            <p>這是被排除人數最少的類別，至少犧牲最少人。</p>
+          </template>
+        </article>
+
         <article class="final-social-challenge">
           <span class="result-kicker">🎴 最後任務</span>
           <strong>全部把手機舉起來。</strong>
@@ -840,6 +925,25 @@ onBeforeUnmount(() => {
         <h2>你沒有答完</h2>
         <p class="persona-tagline">這次不硬判人格。下局記得交卷，才會拿到人格卡和飯友配對。</p>
       </template>
+
+      <article v-if="foodConsensus" class="food-consensus" data-testid="food-consensus">
+        <span class="result-kicker">🍽️ 大家都能吃</span>
+        <template v-if="foodConsensus.safe.length">
+          <ul class="food-chips">
+            <li v-for="food in foodConsensus.safe" :key="food.id">{{ food.emoji }} {{ food.label }}</li>
+          </ul>
+          <p>{{ foodConsensus.sampleSize }} 人都沒排除的類別，挑一個就不會有人被迫吃不想吃的。</p>
+        </template>
+        <template v-else>
+          <strong>沒有全員都能接受的類別</strong>
+          <ul class="food-chips">
+            <li v-for="item in foodConsensus.leastVetoed" :key="item.food.id">
+              {{ item.food.emoji }} {{ item.food.label }} · {{ item.vetoCount }} 人排除
+            </li>
+          </ul>
+          <p>這是被排除人數最少的類別，至少犧牲最少人。</p>
+        </template>
+      </article>
 
       <div class="bottom-actions">
         <button class="secondary" type="button" @click="playAgainAsPlayer">加入新的一局 ↻</button>

@@ -1419,3 +1419,34 @@ input:focus {
     transition-duration: .001ms !important;
   }
 }
+
+/* 大家都能吃：共識餐點清單 */
+.food-consensus {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.16));
+  border-radius: 16px;
+  text-align: left;
+}
+.food-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.food-chips li {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-weight: 700;
+}
+.food-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.food-list .choice {
+  min-height: 44px;
+}

@@ -1,3 +1,4 @@
+import { calculateFoodAvoidStat } from './foods'
 import { PERSONA_PRIORITY, PERSONAS, QUESTIONS } from './questions'
 import type {
   AnswerValue,
@@ -250,8 +251,10 @@ export function buildResultSnapshot(
     }
   }
 
+  // 忌口彙總附在題目統計之後；沒人填（舊場次）就不附，結果頁據此隱藏區塊
+  const foodStat = calculateFoodAvoidStat(complete)
   return {
-    groupStats: calculateGroupStats(complete, questions),
+    groupStats: [...calculateGroupStats(complete, questions), ...(foodStat ? [foodStat] : [])],
     participantResults,
   }
 }

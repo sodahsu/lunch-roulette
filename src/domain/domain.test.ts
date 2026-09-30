@@ -22,6 +22,15 @@ import {
   RARE_CARD_GUARANTEE_REASON,
   RARE_CARD_REASON,
 } from './domain'
+import {
+  FOOD_AVOID_ID,
+  FOOD_AVOID_NONE,
+  FOOD_OPTIONS,
+  calculateFoodAvoidStat,
+  calculateFoodConsensus,
+  decodeFoodAvoid,
+  encodeFoodAvoid,
+} from './foods'
 import type { GroupQuestionStat, PersonaKey, ResponseRecord } from './types'
 
 const sessionQuestions = selectQuestionsForSession('ABC123', 'v0.2')
@@ -343,5 +352,59 @@ describe('rare card guarantee', () => {
   it('is reproducible for the same participants', () => {
     const ids = ['a-1', 'a-2', 'a-3', 'a-4']
     expect(rareIds(ids)).toEqual(rareIds(ids))
+  })
+})
+
+describe('food consensus', () => {
+  const withFood = (id: string, food: string | undefined, complete = true) =>
+    response(id, food === undefined ? allFirst : { ...allFirst, [FOOD_AVOID_ID]: food }, complete)
+
+  it('round-trips selections and tells "no restriction" apart from "unanswered"', () => {
+    expect(encodeFoodAvoid([])).toBe(FOOD_AVOID_NONE)
+    expect(decodeFoodAvoid(FOOD_AVOID_NONE)).toEqual([])
+    expect(decodeFoodAvoid(undefined)).toBeUndefined()
+    expect(decodeFoodAvoid(encodeFoodAvoid(['spicy', 'hotpot', 'bogus']))).toEqual(['hotpot', 'spicy'])
+  })
+
+  it('lists only foods that nobody ruled out', () => {
+    const stat = calculateFoodAvoidStat([
+      withFood('a', 'hotpot,spicy'),
+      withFood('b', 'bbq'),
+      withFood('c', FOOD_AVOID_NONE),
+    ])!
+    expect(stat.sampleSize).toBe(3)
+    const consensus = calculateFoodConsensus(stat)!
+    const ids = consensus.safe.map((food) => food.id)
+    expect(ids).not.toContain('hotpot')
+    expect(ids).not.toContain('bbq')
+    expect(ids).not.toContain('spicy')
+    expect(ids).toContain('japanese')
+  })
+
+  it('skips people who did not answer instead of treating them as "eats anything"', () => {
+    const stat = calculateFoodAvoidStat([withFood('a', 'hotpot'), withFood('b', undefined)])!
+    expect(stat.sampleSize).toBe(1)
+    expect(calculateFoodAvoidStat([withFood('a', undefined)])).toBeNull()
+  })
+
+  it('falls back to the least-vetoed foods when everything is ruled out', () => {
+    const all = FOOD_OPTIONS.map((food) => food.id)
+    const consensus = calculateFoodConsensus(
+      calculateFoodAvoidStat([
+        withFood('a', all.join(',')),
+        withFood('b', all.filter((id) => id !== 'noodles').join(',')),
+      ]),
+    )!
+    expect(consensus.safe).toEqual([])
+    expect(consensus.leastVetoed.map((item) => item.food.id)).toEqual(['noodles'])
+    expect(consensus.leastVetoed[0]!.vetoCount).toBe(1)
+  })
+
+  it('appends the food stat to the snapshot without disturbing question stats', () => {
+    const snapshot = buildResultSnapshot([withFood('a', 'hotpot'), withFood('b', 'none')], sessionQuestions)
+    expect(snapshot.groupStats.at(-1)!.questionId).toBe(FOOD_AVOID_ID)
+    expect(snapshot.groupStats).toHaveLength(sessionQuestions.length + 1)
+    const legacy = buildResultSnapshot([withFood('a', undefined)], sessionQuestions)
+    expect(legacy.groupStats).toHaveLength(sessionQuestions.length)
   })
 })
