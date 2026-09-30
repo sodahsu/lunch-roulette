@@ -153,7 +153,7 @@ test('CASE-03 Reveal 前反覆修改，重新整理仍採最後答案', async ({
 
   try {
     await answerAll(participant.page, 0)
-    await participant.page.getByRole('button', { name: '我想改答案' }).click()
+    await participant.page.getByRole('button', { name: '修改答案 ↗' }).click()
 
     const choices = participant.page.locator('.choice')
     await choices.nth(1).click()
@@ -163,7 +163,7 @@ test('CASE-03 Reveal 前反覆修改，重新整理仍採最後答案', async ({
 
     await participant.page.reload()
     await expect(participant.page.getByRole('heading', { name: '你答完了。先不要偷看別人。' })).toBeVisible()
-    await participant.page.getByRole('button', { name: '我想改答案' }).click()
+    await participant.page.getByRole('button', { name: '修改答案 ↗' }).click()
 
     await expect(participant.page.locator('.choice').nth(1)).toHaveClass(/selected/)
 
@@ -283,6 +283,8 @@ test('CASE-09 答題中會出現節奏事件', async ({ browser }) => {
     for (let index = 0; index < 3; index += 1) {
       await participant.page.locator('.choice').first().click()
       await participant.page.getByRole('button', { name: '下一題' }).click()
+      // 等 saveAnswers 完成、題號前進，避免在舊題目上重複點選
+      await expect(participant.page.getByText(new RegExp(`第 ${index + 2} / \\d+ 題`))).toBeVisible()
     }
 
     await expect(participant.page.getByText('📡 場面觀察')).toBeVisible()
