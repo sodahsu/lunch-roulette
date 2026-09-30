@@ -58,23 +58,14 @@ export function calculateFoodAvoidStat(responses: ResponseRecord[]): GroupQuesti
 }
 
 export interface FoodConsensus {
-  // 全員都沒排除
+  // 全員都沒排除；空陣列代表本場沒有任何安全牌
   safe: FoodOption[]
-  // safe 為空時的退路：被排除人數最少的類別，附人數
-  leastVetoed: { food: FoodOption; vetoCount: number }[]
   sampleSize: number
 }
 
 export function calculateFoodConsensus(stat: GroupQuestionStat | null | undefined): FoodConsensus | null {
   if (!stat || stat.sampleSize === 0) return null
 
-  const vetoCount = (food: FoodOption) => stat.counts[food.id] ?? 0
-  const safe = FOOD_OPTIONS.filter((food) => vetoCount(food) === 0)
-  if (safe.length > 0) return { safe, leastVetoed: [], sampleSize: stat.sampleSize }
-
-  const min = Math.min(...FOOD_OPTIONS.map(vetoCount))
-  const leastVetoed = FOOD_OPTIONS
-    .filter((food) => vetoCount(food) === min)
-    .map((food) => ({ food, vetoCount: min }))
-  return { safe: [], leastVetoed, sampleSize: stat.sampleSize }
+  const safe = FOOD_OPTIONS.filter((food) => (stat.counts[food.id] ?? 0) === 0)
+  return { safe, sampleSize: stat.sampleSize }
 }
