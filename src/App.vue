@@ -301,7 +301,7 @@ async function restoreFromUrl() {
         firstUnanswered === -1 ? Math.max(0, activeQuestions.value.length - 1) : firstUnanswered
     }
 
-    attachRealtime()
+    await attachRealtime()
     await refreshSessionState()
 
     if (session.value.status === 'open') {
@@ -341,12 +341,24 @@ async function refreshSessionState() {
   }
 }
 
-function attachRealtime() {
+function attachRealtime(): Promise<void> {
   unsubscribe?.()
-  if (!session.value) return
-  unsubscribe = subscribeToSession(session.value.id, () => {
-    void refreshSessionState().catch(fail)
+  if (!session.value) return Promise.resolve()
+
+  let resolveSubscribed: (() => void) | undefined
+  const subscribed = new Promise<void>((resolve) => {
+    resolveSubscribed = resolve
   })
+  unsubscribe = subscribeToSession(
+    session.value.id,
+    () => {
+      void refreshSessionState().catch(fail)
+    },
+    () => resolveSubscribed?.(),
+  )
+
+  // 即時頻道建立需要非同步握手；重新開局後若太早讓參加者加入，主持人會漏掉第一筆事件。
+  return Promise.race([subscribed, wait(1500)]).then(() => undefined)
 }
 
 async function startHost() {
@@ -356,9 +368,9 @@ async function startHost() {
     isHost.value = true
     setRoomInUrl(session.value.code)
     await updateJoinQr()
-    screen.value = 'host'
-    attachRealtime()
+    await attachRealtime()
     await refreshSessionState()
+    screen.value = 'host'
   })
 }
 
@@ -415,8 +427,8 @@ async function joinRoom() {
     if (session.value.status !== 'open') throw new Error('這一局已經開始揭曉囉。')
     participant.value = await joinSession(session.value.id, name.value.trim())
     setRoomInUrl(session.value.code)
+    await attachRealtime()
     screen.value = 'quiz'
-    attachRealtime()
     await refreshSessionState()
   })
 }
@@ -854,7 +866,7 @@ onBeforeUnmount(() => {
         <p class="host-result-footer">手機已同步翻牌。剩下的交給你們互相吐槽。</p>
 
         <div class="bottom-actions">
-          <button class="primary" type="button" :disabled="busy" @click="playAgainAsHost">再開一局 ↻</button>
+          <button class="primary" type="button" :disabled="busy" @click="playAgainAsHost">重新開局 ↻</button>
         </div>
       </div>
 

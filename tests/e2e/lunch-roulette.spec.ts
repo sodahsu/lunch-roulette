@@ -346,7 +346,7 @@ test('CASE-12 結束後主持人可再開一局，參加者可加入新的一局
     await reveal(host.page)
     await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
 
-    await host.page.getByRole('button', { name: /再開一局/ }).click()
+    await host.page.getByRole('button', { name: /重新開局/ }).click()
     const heading = host.page.locator('h2').filter({ hasText: '房號' })
     await expect(heading).toHaveText(new RegExp(`房號\\s*(?!${host.code})[A-Z2-9]{6}`))
     const newCode = (await heading.textContent())!.match(/[A-Z2-9]{6}/)![0]
