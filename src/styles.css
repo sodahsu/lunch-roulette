@@ -242,8 +242,10 @@ input:focus {
 }
 
 .back-link {
-  margin: 0 0 28px;
-  padding: 0;
+  margin: 0 0 18px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px 0 0;
   color: var(--muted);
   background: transparent;
   font-weight: 800;
@@ -732,7 +734,7 @@ input:focus {
 
 .compact-button {
   width: fit-content;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 14px;
 }
 
@@ -1117,7 +1119,7 @@ input:focus {
 .match-card span {
   color: var(--muted);
   font-family: "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .06em;
 }
