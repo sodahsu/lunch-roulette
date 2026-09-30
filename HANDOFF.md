@@ -523,182 +523,58 @@ Create this as a collectible identity-card hero asset, not a full card UI. Show 
 
 ---
 
-## 6.2 八個 Persona 生圖 Prompt
+## 6.2 十個 Persona 生圖 Prompt
 
-### 01｜和平飯友 🦦 Otter
+以下動物 identity 必須與 runtime `src/domain/questions.ts` 一致。
 
-人格：
-
-> 吃什麼都可以，拜託不要再討論了。
-
-在 Shared Style Prompt 後追加：
-
+### 01｜和平飯友 🐻‍❄️ Polar Bear
 ```text
-Character: an otter representing the Peacekeeper dining personality.
-
-Pose and metaphor: calm seated posture, gently holding two different food plates as if trying to keep both sides happy, relaxed shoulders, subtle tired-but-patient expression, balancing conflicting choices without drama.
-
-Personality feeling: diplomatic, agreeable, quietly exhausted by endless discussion.
-
-Food cues: two contrasting meal choices presented symmetrically, minimal and abstract rather than realistic food photography.
-
-Accent: restrained electric blue with a tiny warm neutral accent.
-
-Avoid making the otter cute or childish; it should feel like a witty editorial character from a contemporary design exhibition.
+Character: a polar bear representing the Peacekeeper dining personality. Calmly balancing two conflicting food choices with patient, diplomatic body language. Editorial, composed, slightly tired by group discussion. Shared electric-blue system with restrained cool-white accents. No childish mascot styling.
 ```
 
 ### 02｜逆風美食家 🐺 Wolf
-
-人格：
-
-> 大家往東，我偏偏往西。
-
-追加：
-
 ```text
-Character: a wolf representing the Contrarian dining personality.
-
-Pose and metaphor: the wolf confidently stepping in the opposite direction from a set of abstract arrows or plates, one paw casually pointing away from the group choice, sharp composed posture rather than aggressive attack.
-
-Personality feeling: independent, opinionated, cool, knowingly difficult, enjoys choosing differently.
-
-Food cues: one distinctive plate separated from several identical plates.
-
-Accent: restrained alert red against the shared black and electric-blue system.
-
-Keep the attitude editorial and stylish, not villainous, violent, furry-fandom, or cartoonish.
+Character: a wolf representing the Contrarian dining personality. Confidently moving against a group direction, choosing one distinct plate away from several identical choices. Independent, stylish, knowingly difficult. Restrained alert-red accent within the shared dark system.
 ```
 
 ### 03｜挑食王 🐈 Cat
-
-人格：
-
-> 不是我難搞，是選項真的不行。
-
-追加：
-
 ```text
-Character: a cat representing the Picky Eater personality.
-
-Pose and metaphor: composed cat inspecting a plate with suspicious precision, one paw slightly pushing an unacceptable ingredient away, elegant unimpressed expression.
-
-Personality feeling: selective, discerning, high standards, dry humor, absolutely convinced the problem is the food rather than the person.
-
-Food cues: carefully separated ingredients, one rejected garnish or suspicious item.
-
-Accent: cool silver with a restrained acid-lime detail.
-
-Avoid princess imagery, childish fussiness, angry tantrums, or overt luxury branding.
+Character: a cat representing the Picky Eater personality. Precisely inspecting a plate and rejecting one ingredient with controlled, unimpressed body language. Selective, discerning, dry humor. Cool silver with a restrained acid-lime detail.
 ```
 
-### 04｜新店敢死隊 🦊 Fox
-
-人格：
-
-> Google 評論只有三則？走啊。
-
-追加：
-
+### 04｜新店敢死隊 🐧 Penguin
 ```text
-Character: a fox representing the Adventurer dining personality.
-
-Pose and metaphor: forward-leaning fox about to enter an unknown doorway or reach for a mysterious covered dish, alert ears, curious confident stance, a sense of voluntary risk.
-
-Personality feeling: exploratory, impulsive, curious, first-to-try, slightly reckless but charismatic.
-
-Food cues: mystery dish, unfamiliar menu shapes, small unknown doorway or location marker used only as abstract symbols.
-
-Accent: electric blue plus restrained warm orange.
-
-Do not make it fantasy-adventure, treasure-hunt, anime, or children's storybook.
+Character: a penguin representing the Adventurer dining personality. Leaning forward toward an unfamiliar covered dish or unknown doorway, curious and voluntarily taking the risk. Exploratory, charismatic, first-to-try. Electric blue with restrained warm orange.
 ```
 
-### 05｜CP 值守門員 🐿️ Squirrel
-
-人格：
-
-> 不是不能吃貴，是要值得。
-
-追加：
-
+### 05｜CP 值守門員 🦉 Owl
 ```text
-Character: a squirrel representing the Value Hunter dining personality.
-
-Pose and metaphor: focused squirrel comparing two plates with a tiny abstract balance-scale gesture, one premium-looking plate and one practical plate, analytical but not miserly.
-
-Personality feeling: sharp, rational, value-sensitive, proud of finding the best tradeoff.
-
-Food cues: neatly arranged portions, subtle token or geometric value markers without currency symbols or text.
-
-Accent: electric blue with restrained amber.
-
-Avoid accountant clichés, piles of coins, cheap-shopping imagery, or cartoon acorns as the main joke.
+Character: an owl representing the Value Hunter dining personality. Comparing two meals with analytical focus and a minimal balance metaphor. Rational, value-sensitive, sharp rather than cheap. Electric blue with restrained amber.
 ```
 
-### 06｜五百公尺極限派 🐢 Turtle
-
-人格：
-
-> 超過兩個路口，就是遠。
-
-追加：
-
+### 06｜五百公尺極限派 🦥 Sloth
 ```text
-Character: a turtle representing the Homebody / short-distance dining personality.
-
-Pose and metaphor: turtle comfortably settled at a tiny table extremely close to its shell, while a distant glowing restaurant-like shape sits far away in the background, clearly uninterested in traveling.
-
-Personality feeling: comfortable, stubborn about distance, efficient, dryly self-aware.
-
-Food cues: nearby simple meal versus distant premium-looking meal.
-
-Accent: acid lime within the shared dark and electric-blue system.
-
-Avoid sleepy old-person stereotypes, childish turtle mascot styling, or outdoor hiking imagery.
+Character: a sloth representing the Homebody dining personality. Comfortably settled beside an extremely nearby meal while a better-looking option sits absurdly far away. Distance-averse, efficient, dryly self-aware. Acid lime within the shared dark system.
 ```
 
-### 07｜美食狂熱者 🐻 Bear
-
-人格：
-
-> 好吃的話，排四十分鐘也可以。
-
-追加：
-
+### 07｜美食狂熱者 🐯 Tiger
 ```text
-Character: a bear representing the Food Fanatic personality.
-
-Pose and metaphor: focused bear waiting patiently behind a minimal queue barrier while staring intensely at one exceptional dish in the distance, clearly willing to suffer for good food.
-
-Personality feeling: passionate, committed, food-obsessed, serious about taste.
-
-Food cues: one visually magnetic hero dish, subtle queue markers, no restaurant branding.
-
-Accent: electric blue with a restrained deep orange or red detail.
-
-Avoid gluttony stereotypes, messy overeating, chef costumes, or comedic fat-character treatment.
+Character: a tiger representing the Food Fanatic personality. Waiting with intense focus for one exceptional dish, clearly willing to queue, travel or pay more for quality. Passionate and serious about taste. Electric blue with restrained deep orange.
 ```
 
-### 08｜真・都可以 🐶 Dog
-
-人格：
-
-> 傳說中的真的都可以。
-
-追加：
-
+### 08｜真・都可以 🐰 Rabbit
 ```text
-Character: a dog representing the Truly Easygoing dining personality.
+Character: a rabbit representing the Truly Easygoing dining personality. Relaxed among several very different food choices, genuinely comfortable with all of them. Open, low-friction, calm rather than indecisive. Clean electric-blue treatment.
+```
 
-Pose and metaphor: relaxed confident dog surrounded by several different food choices, genuinely comfortable with all of them, open posture, no indecision or anxiety.
+### 09｜全都要選手 🦊 Fox
+```text
+Character: a fox representing the All-in Eater personality. Energetically gathering several different dishes toward itself, delighted by abundance without becoming a messy overeating joke. Decisive, appetite-driven, playful but sophisticated. Restrained orange accent.
+```
 
-Personality feeling: adaptable, cheerful without being childish, low-friction, socially easy, the rare person who actually means 'anything is fine'.
-
-Food cues: several clearly different meal silhouettes arranged with equal visual weight.
-
-Accent: the cleanest and strongest electric blue treatment in the full series.
-
-Avoid generic happy puppy mascot energy; make it calm, stylish, contemporary and editorial.
+### 10｜點菜總管 🐼 Panda
+```text
+Character: a panda representing the Order Captain dining personality. Organizing multiple dishes into a clear table plan with confident, composed gestures. Takes responsibility for ordering and resolves indecision without looking authoritarian. Electric blue with restrained amber-red detail.
 ```
 
 ---
@@ -708,19 +584,21 @@ Avoid generic happy puppy mascot energy; make it calm, stylish, contemporary and
 如果生成工具能一次產生多張／多角色，可使用：
 
 ```text
-Create a coherent series of eight distinct animal dining-personality characters for the same dark editorial social-experiment game.
+Create a coherent series of ten distinct animal dining-personality characters for the same dark editorial social-experiment game.
 
 Characters:
-1. Otter — Peacekeeper: balancing two conflicting food choices.
+1. Polar Bear — Peacekeeper: balancing conflicting food choices.
 2. Wolf — Contrarian: confidently choosing the opposite direction.
 3. Cat — Picky Eater: precisely rejecting one ingredient.
-4. Fox — Adventurer: eager to try an unknown restaurant or mystery dish.
-5. Squirrel — Value Hunter: comparing value between two meals.
-6. Turtle — Homebody: choosing the meal that is closest.
-7. Bear — Food Fanatic: willing to wait for an exceptional dish.
-8. Dog — Truly Easygoing: genuinely comfortable with every option.
+4. Penguin — Adventurer: eager to try an unknown dish or place.
+5. Owl — Value Hunter: analytically comparing value between two meals.
+6. Sloth — Homebody: choosing the meal that requires the least travel.
+7. Tiger — Food Fanatic: willing to wait or travel for exceptional food.
+8. Rabbit — Truly Easygoing: genuinely comfortable with every option.
+9. Fox — All-in Eater: happily wanting several dishes at once.
+10. Panda — Order Captain: confidently organizing the group's order.
 
-All eight must share exactly the same camera angle, scale, lighting, soft 3D matte sticker material, dark editorial art direction, electric-blue visual system, clean background, sophisticated graphic language and collectible-card sensibility.
+All ten must share exactly the same camera angle, scale, lighting, soft 3D matte sticker material, dark editorial art direction, electric-blue visual system, clean background, sophisticated graphic language and collectible-card sensibility.
 
 They must be immediately distinguishable by silhouette and posture but clearly belong to one designed family.
 
@@ -730,7 +608,6 @@ No text, no letters, no numbers, no logos, no UI, no watermarks, no rainbow pale
 ```
 
 ---
-
 ## 6.4 Landing Hero Prompt
 
 用途：首頁主視覺；文字全部由前端排版。
