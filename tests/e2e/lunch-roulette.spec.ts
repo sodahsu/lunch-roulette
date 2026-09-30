@@ -52,6 +52,10 @@ async function answerAll(page: Page, optionIndex = 0) {
     await next.click()
 
     if (label.includes('交卷')) {
+      // 最後題之後多了忌口步驟：optionIndex 0 不排除任何食物，1 排除火鍋
+      await expect(page.getByRole('heading', { name: '有哪些是你不吃或吃不了的？' })).toBeVisible()
+      if (optionIndex === 1) await page.getByRole('button', { name: /火鍋/ }).click()
+      await page.getByRole('button', { name: /交卷/ }).click()
       await expect(page.getByRole('heading', { name: '你答完了。先不要偷看別人。' })).toBeVisible()
       return
     }
@@ -404,4 +408,13 @@ test('CASE-15 每一場至少有一位拿到稀有卡，並寫出稀有原因', 
   } finally {
     await closeActors(host, amy, ben)
   }
+})
+
+test('CASE-16 示意結果頁列出全員都沒排除的餐點，被排除的不出現', async ({ page }) => {
+  await page.goto('/?demo=result')
+  const box = page.getByTestId('food-consensus')
+  await expect(box).toBeVisible()
+  await expect(box).toContainText('日式')
+  await expect(box).not.toContainText('火鍋')
+  await expect(box).not.toContainText('重辣')
 })
