@@ -4,7 +4,8 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "allowImportingTsExtensions": true,
+    "target": "ES2022",
+    "noEmit": true,
     "types": ["node"]
   },
   "include": ["vite.config.ts", "playwright.config.ts"]
