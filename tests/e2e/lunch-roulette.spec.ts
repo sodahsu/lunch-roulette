@@ -368,3 +368,17 @@ test('CASE-13 示意結果頁可用 persona 參數切換，且顯示飯友頭貼
   await expect(page.locator('.match-card.enemy')).toContainText('Ben')
   await expect(page.locator('.match-people img')).toHaveCount(2)
 })
+
+test('CASE-14 稀有卡顯示金色閃卡標示，一般卡不顯示', async ({ page }) => {
+  await page.goto('/?demo=result&persona=easygoing&rare=1')
+  await expect(page.locator('.persona-card.rare')).toBeVisible()
+  await expect(page.locator('.rare-badge')).toContainText('頂級稀有')
+  await expect(page.getByText(/3% 的頂級稀有卡/)).toBeVisible()
+  await expect(page.locator('.rare-reason')).toContainText('稀有原因')
+  await expect(page.locator('.rare-reason')).toContainText('純屬運氣')
+
+  await page.goto('/?demo=result&persona=easygoing')
+  await expect(page.locator('.persona-card')).toBeVisible()
+  await expect(page.locator('.persona-card.rare')).toHaveCount(0)
+}
+)

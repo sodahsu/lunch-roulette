@@ -17,6 +17,9 @@ import {
   calculatePersonaScores,
   calculateSimilarity,
   isCompleteResponse,
+  isRareCard,
+  RARE_CARD_RATE,
+  RARE_CARD_REASON,
 } from './domain'
 import type { GroupQuestionStat, PersonaKey, ResponseRecord } from './types'
 
@@ -274,5 +277,32 @@ describe('result snapshot', () => {
     expect(buildResultSnapshot(rows, sessionQuestions)).toEqual(
       buildResultSnapshot(rows, sessionQuestions),
     )
+  })
+})
+
+describe('rare card', () => {
+  it('is deterministic per participant', () => {
+    expect(isRareCard('participant-1')).toBe(isRareCard('participant-1'))
+  })
+
+  it('records the reason on rare results only', () => {
+    const id = Array.from({ length: 2000 }, (_, index) => `p-${index}`).find(isRareCard)!
+    const plain = Array.from({ length: 2000 }, (_, index) => `p-${index}`).find((x) => !isRareCard(x))!
+    const build = (pid: string) =>
+      buildParticipantResult(pid, [{ session_id: 's', participant_id: pid, answers: allFirst, is_complete: true, updated_at: '' }], sessionQuestions)
+    expect(build(id)).toMatchObject({ rare: true, rareReason: RARE_CARD_REASON })
+    expect(build(plain).rare).toBe(false)
+    expect(build(plain).rareReason).toBeUndefined()
+  })
+
+  it('hits about 3% of random participant ids', () => {
+    const total = 20000
+    let hits = 0
+    for (let index = 0; index < total; index += 1) {
+      if (isRareCard(crypto.randomUUID())) hits += 1
+    }
+    const rate = hits / total
+    expect(rate).toBeGreaterThan(RARE_CARD_RATE * 0.7)
+    expect(rate).toBeLessThan(RARE_CARD_RATE * 1.3)
   })
 })

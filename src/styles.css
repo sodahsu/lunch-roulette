@@ -1089,6 +1089,93 @@ input:focus {
 .persona-card[data-persona='glutton'] { --persona-accent: var(--orange); }
 .persona-card[data-persona='orderCaptain'] { --persona-accent: var(--amber); }
 
+/* 頂級稀有卡：旋轉的金色閃卡外框 + 掃光 */
+@property --foil-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.persona-card.rare {
+  position: relative;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(#0d0d10, #0d0d10) padding-box,
+    conic-gradient(from var(--foil-angle), #fff3b0, #d4a017, #fff8d6, #b8860b, #ffe27a, #fff3b0) border-box;
+  box-shadow:
+    0 0 0 1px rgba(255, 226, 122, .35),
+    0 0 42px rgba(255, 200, 60, .42),
+    0 30px 100px rgba(0, 0, 0, .5);
+  animation: foil-spin 5s linear infinite;
+}
+
+.persona-card.rare::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 244, 190, .34) 50%, transparent 62%);
+  background-size: 250% 100%;
+  mix-blend-mode: screen;
+  animation: foil-sweep 3.6s ease-in-out infinite;
+}
+
+.persona-card.rare .persona-art {
+  border-color: rgba(255, 226, 122, .55);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 214, 90, .34), transparent 64%),
+    #0c0c0f;
+}
+
+.persona-card.rare .persona-copy h2 {
+  background: linear-gradient(90deg, #fff3b0, #ffd15a, #fff8d6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rare-badge {
+  color: #ffd15a;
+  letter-spacing: .08em;
+}
+
+.rare-announce {
+  margin: 0 0 12px;
+  color: #ffd15a;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.rare-announce p {
+  margin: 0;
+}
+
+.rare-reason {
+  margin-top: 6px !important;
+  color: rgba(255, 226, 150, .78);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+@keyframes foil-spin {
+  to { --foil-angle: 360deg; }
+}
+
+@keyframes foil-sweep {
+  0% { background-position: 130% 0; }
+  60%, 100% { background-position: -30% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .persona-card.rare,
+  .persona-card.rare::after {
+    animation: none;
+  }
+}
+
 .persona-card-head {
   display: flex;
   align-items: center;

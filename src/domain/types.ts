@@ -79,6 +79,10 @@ export interface PairingResult {
 
 export interface ParticipantResult {
   persona: PersonaKey
+  // 頂級稀有卡；舊資料沒有這個欄位，視為 false
+  rare?: boolean
+  // 稀有判定的原因；純機率，與作答內容無關，如實寫出
+  rareReason?: string
   soulmates: PairingResult[]
   opposites: PairingResult[]
 }

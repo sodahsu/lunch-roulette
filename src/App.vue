@@ -4,7 +4,7 @@ import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
-import { calculateDinnerSuccessRate } from './domain/domain'
+import { calculateDinnerSuccessRate, RARE_CARD_REASON } from './domain/domain'
 import type { GroupQuestionStat, Participant, ParticipantResult, PersonaKey } from './domain/types'
 import {
   createSession,
@@ -506,7 +506,7 @@ async function revealPersonas() {
 }
 
 // 示意結果頁：?demo=result[&persona=key]，不連資料庫，供設計檢視與分享預覽
-function showDemoResult(personaParam: string | null) {
+function showDemoResult(personaParam: string | null, rare = false) {
   const keys = Object.keys(PERSONAS) as PersonaKey[]
   const persona = keys.includes(personaParam as PersonaKey) ? (personaParam as PersonaKey) : 'foodFanatic'
   const person = (id: string, display_name: string): Participant => ({
@@ -516,6 +516,8 @@ function showDemoResult(personaParam: string | null) {
   participant.value = participants.value[0]!
   personalResult.value = {
     persona,
+    rare,
+    rareReason: rare ? RARE_CARD_REASON : undefined,
     soulmates: [{ participantId: 'demo-soul', similarity: 0.83 }],
     opposites: [{ participantId: 'demo-enemy', similarity: 0.08 }],
   }
@@ -525,7 +527,7 @@ function showDemoResult(personaParam: string | null) {
 onMounted(() => {
   const params = new URL(window.location.href).searchParams
   if (params.get('demo') === 'result') {
-    showDemoResult(params.get('persona'))
+    showDemoResult(params.get('persona'), params.get('rare') === '1')
     return
   }
   void restoreFromUrl().catch(fail)
@@ -781,10 +783,15 @@ onBeforeUnmount(() => {
     <section v-else-if="screen === 'result'" class="panel result-panel">
       <template v-if="meResult">
         <div class="eyebrow persona-result-label">你的飲食人格 / DINNER IDENTITY</div>
-        <article class="persona-card" :data-persona="meResult.persona">
+        <div v-if="meResult.rare" class="rare-announce">
+          <p>✨ 恭喜，你抽到 3% 的頂級稀有卡 ✨</p>
+          <p class="rare-reason"><strong>稀有原因：</strong>{{ meResult.rareReason ?? RARE_CARD_REASON }}</p>
+        </div>
+        <article class="persona-card" :class="{ rare: meResult.rare }" :data-persona="meResult.persona">
           <header class="persona-card-head">
             <span>TYPE {{ PERSONA_DISPLAY[meResult.persona].code }}</span>
-            <span>DINNER IDENTITY</span>
+            <span v-if="meResult.rare" class="rare-badge">★ SSR · 頂級稀有</span>
+            <span v-else>DINNER IDENTITY</span>
           </header>
 
           <div class="persona-visual">

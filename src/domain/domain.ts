@@ -167,6 +167,23 @@ export function calculateSimilarity(
   return same / comparable.length
 }
 
+export const RARE_CARD_RATE = 0.03
+export const RARE_CARD_REASON = `揭曉時系統幫每個人抽一次 ${Math.round(RARE_CARD_RATE * 100)}% 的籤，你抽中了。跟你答了什麼無關，純屬運氣。`
+
+function rareFields(participantId: string): { rare: boolean; rareReason?: string } {
+  return isRareCard(participantId) ? { rare: true, rareReason: RARE_CARD_REASON } : { rare: false }
+}
+
+// 以參加者 ID 雜湊決定，同一人重算永遠同一結果；ID 為隨機 UUID，所以對每個人等同 3% 抽獎
+export function isRareCard(participantId: string): boolean {
+  let hash = 2166136261
+  for (const char of `rare-card:${participantId}`) {
+    hash ^= char.charCodeAt(0)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0) / 2 ** 32 < RARE_CARD_RATE
+}
+
 export function buildParticipantResult(
   participantId: string,
   responses: ResponseRecord[],
@@ -186,7 +203,7 @@ export function buildParticipantResult(
     }))
 
   if (comparisons.length === 0) {
-    return { persona: assignPersona(current.answers, questions), soulmates: [], opposites: [] }
+    return { persona: assignPersona(current.answers, questions), ...rareFields(participantId), soulmates: [], opposites: [] }
   }
 
   const similarities = comparisons.map((item) => item.similarity)
@@ -195,6 +212,7 @@ export function buildParticipantResult(
 
   return {
     persona: assignPersona(current.answers, questions),
+    ...rareFields(participantId),
     soulmates: comparisons.filter((item) => item.similarity === max),
     opposites: comparisons.filter((item) => item.similarity === min),
   }
