@@ -107,7 +107,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Playwright 目前包含 CASE-01～16，涵蓋：
+Playwright 目前包含 CASE-01～18（CASE-17 / 18 已加入），涵蓋：
 
 - 兩段式 Reveal
 - 未完成者
@@ -122,6 +122,8 @@ Playwright 目前包含 CASE-01～16，涵蓋：
 - 結束後重新開局
 - 稀有卡與每場保底
 - food consensus 示意流程
+- Host 10 人結果總覽與 responsive layout
+- 音效切換與靜音偏好持久化
 
 > Test code 已存在不代表 runtime 已 PASS。請以實際命令輸出為準。
 
@@ -155,4 +157,4 @@ Active OpenSpec change：
 - `result-reveal`
 - `food-consensus`
 
-在 runtime validation 與 success-rate cross-version persistence 決策完成前，change 保持 active，不應宣稱已 archive。
+success-rate cross-version persistence 決策已完成；目前 change 仍因最新 HEAD 的 runtime / integration validation 與 archive readiness review 未完成而保持 active，不應宣稱已 archive。
