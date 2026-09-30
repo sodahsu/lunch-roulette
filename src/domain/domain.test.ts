@@ -387,7 +387,7 @@ describe('food consensus', () => {
     expect(calculateFoodAvoidStat([withFood('a', undefined)])).toBeNull()
   })
 
-  it('falls back to the least-vetoed foods when everything is ruled out', () => {
+  it('returns no safe foods when every category is ruled out by someone', () => {
     const all = FOOD_OPTIONS.map((food) => food.id)
     const consensus = calculateFoodConsensus(
       calculateFoodAvoidStat([
@@ -396,8 +396,7 @@ describe('food consensus', () => {
       ]),
     )!
     expect(consensus.safe).toEqual([])
-    expect(consensus.leastVetoed.map((item) => item.food.id)).toEqual(['noodles'])
-    expect(consensus.leastVetoed[0]!.vetoCount).toBe(1)
+    expect(consensus.sampleSize).toBe(2)
   })
 
   it('appends the food stat to the snapshot without disturbing question stats', () => {
