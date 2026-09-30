@@ -168,20 +168,25 @@ export function calculateSimilarity(
 }
 
 export const RARE_CARD_RATE = 0.03
+export const RARE_CARD_GUARANTEE_REASON = '本場每人都抽了 3% 的籤但沒人中，所以系統保底：從全場挑出抽籤結果最接近中籤的你。你是被保底選中的，跟你答了什麼無關。'
 export const RARE_CARD_REASON = `揭曉時系統幫每個人抽一次 ${Math.round(RARE_CARD_RATE * 100)}% 的籤，你抽中了。跟你答了什麼無關，純屬運氣。`
 
 function rareFields(participantId: string): { rare: boolean; rareReason?: string } {
   return isRareCard(participantId) ? { rare: true, rareReason: RARE_CARD_REASON } : { rare: false }
 }
 
-// 以參加者 ID 雜湊決定，同一人重算永遠同一結果；ID 為隨機 UUID，所以對每個人等同 3% 抽獎
-export function isRareCard(participantId: string): boolean {
+// 以參加者 ID 雜湊出 [0,1) 的抽籤值；同一人重算永遠同一個值，ID 為隨機 UUID 所以等同抽獎
+export function rareRoll(participantId: string): number {
   let hash = 2166136261
   for (const char of `rare-card:${participantId}`) {
     hash ^= char.charCodeAt(0)
     hash = Math.imul(hash, 16777619)
   }
-  return (hash >>> 0) / 2 ** 32 < RARE_CARD_RATE
+  return (hash >>> 0) / 2 ** 32
+}
+
+export function isRareCard(participantId: string): boolean {
+  return rareRoll(participantId) < RARE_CARD_RATE
 }
 
 export function buildParticipantResult(
@@ -229,6 +234,21 @@ export function buildResultSnapshot(
       buildParticipantResult(response.participant_id, complete, questions),
     ]),
   )
+
+  // 每一場至少要有一張稀有卡：沒人抽中時，保底給抽籤值最小（最接近中籤）的人；平手取 ID 較小者以維持可重現
+  const hasRare = Object.values(participantResults).some((result) => result.rare)
+  if (!hasRare && complete.length > 0) {
+    const [lucky] = complete
+      .map((response) => response.participant_id)
+      .sort((a, b) => rareRoll(a) - rareRoll(b) || (a < b ? -1 : 1))
+    if (lucky) {
+      participantResults[lucky] = {
+        ...participantResults[lucky]!,
+        rare: true,
+        rareReason: RARE_CARD_GUARANTEE_REASON,
+      }
+    }
+  }
 
   return {
     groupStats: calculateGroupStats(complete, questions),

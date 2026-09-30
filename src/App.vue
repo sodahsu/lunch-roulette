@@ -784,7 +784,7 @@ onBeforeUnmount(() => {
       <template v-if="meResult">
         <div class="eyebrow persona-result-label">你的飲食人格 / DINNER IDENTITY</div>
         <div v-if="meResult.rare" class="rare-announce">
-          <p>✨ 恭喜，你抽到 3% 的頂級稀有卡 ✨</p>
+          <p>✨ 恭喜，你拿到本場的頂級稀有卡 ✨</p>
           <p class="rare-reason"><strong>稀有原因：</strong>{{ meResult.rareReason ?? RARE_CARD_REASON }}</p>
         </div>
         <article class="persona-card" :class="{ rare: meResult.rare }" :data-persona="meResult.persona">

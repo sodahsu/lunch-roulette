@@ -19,6 +19,7 @@ import {
   isCompleteResponse,
   isRareCard,
   RARE_CARD_RATE,
+  RARE_CARD_GUARANTEE_REASON,
   RARE_CARD_REASON,
 } from './domain'
 import type { GroupQuestionStat, PersonaKey, ResponseRecord } from './types'
@@ -304,5 +305,43 @@ describe('rare card', () => {
     const rate = hits / total
     expect(rate).toBeGreaterThan(RARE_CARD_RATE * 0.7)
     expect(rate).toBeLessThan(RARE_CARD_RATE * 1.3)
+  })
+})
+
+describe('rare card guarantee', () => {
+  const respond = (id: string) => ({
+    session_id: 's',
+    participant_id: id,
+    answers: allFirst,
+    is_complete: true,
+    updated_at: '',
+  })
+  const rareIds = (ids: string[]) =>
+    Object.entries(buildResultSnapshot(ids.map(respond), sessionQuestions).participantResults)
+      .filter(([, result]) => result.rare)
+      .map(([id]) => id)
+
+  it('gives every session at least one rare card, even for a single player', () => {
+    for (let session = 0; session < 300; session += 1) {
+      const size = 1 + (session % 8)
+      const ids = Array.from({ length: size }, (_, index) => `s${session}-p${index}`)
+      expect(rareIds(ids).length).toBeGreaterThanOrEqual(1)
+    }
+  })
+
+  it('uses the honest guarantee reason only when nobody won the 3% draw', () => {
+    const noWinners = Array.from({ length: 8 }, (_, index) => `g-${index}`).filter((id) => !isRareCard(id))
+    const [luckyId] = rareIds(noWinners)
+    const result = buildResultSnapshot(noWinners.map(respond), sessionQuestions).participantResults[luckyId!]!
+    expect(result.rareReason).toBe(RARE_CARD_GUARANTEE_REASON)
+
+    const winner = Array.from({ length: 2000 }, (_, index) => `w-${index}`).find(isRareCard)!
+    const natural = buildResultSnapshot([respond(winner), respond('x-plain-1')], sessionQuestions)
+    expect(natural.participantResults[winner]!.rareReason).toBe(RARE_CARD_REASON)
+  })
+
+  it('is reproducible for the same participants', () => {
+    const ids = ['a-1', 'a-2', 'a-3', 'a-4']
+    expect(rareIds(ids)).toEqual(rareIds(ids))
   })
 })

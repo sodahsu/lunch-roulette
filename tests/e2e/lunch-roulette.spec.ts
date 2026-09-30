@@ -373,7 +373,7 @@ test('CASE-14 稀有卡顯示金色閃卡標示，一般卡不顯示', async ({ 
   await page.goto('/?demo=result&persona=easygoing&rare=1')
   await expect(page.locator('.persona-card.rare')).toBeVisible()
   await expect(page.locator('.rare-badge')).toContainText('頂級稀有')
-  await expect(page.getByText(/3% 的頂級稀有卡/)).toBeVisible()
+  await expect(page.getByText(/本場的頂級稀有卡/)).toBeVisible()
   await expect(page.locator('.rare-reason')).toContainText('稀有原因')
   await expect(page.locator('.rare-reason')).toContainText('純屬運氣')
 
@@ -382,3 +382,26 @@ test('CASE-14 稀有卡顯示金色閃卡標示，一般卡不顯示', async ({ 
   await expect(page.locator('.persona-card.rare')).toHaveCount(0)
 }
 )
+
+test('CASE-15 每一場至少有一位拿到稀有卡，並寫出稀有原因', async ({ browser }) => {
+  const host = await createHost(browser)
+  const amy = await joinParticipant(browser, host.code, 'Amy')
+  const ben = await joinParticipant(browser, host.code, 'Ben')
+
+  try {
+    await Promise.all([answerAll(amy.page, 0), answerAll(ben.page, 1)])
+    await reveal(host.page)
+    await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+    await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+
+    const rareCount =
+      (await amy.page.locator('.persona-card.rare').count()) +
+      (await ben.page.locator('.persona-card.rare').count())
+    expect(rareCount).toBeGreaterThanOrEqual(1)
+
+    const rarePage = (await amy.page.locator('.persona-card.rare').count()) > 0 ? amy.page : ben.page
+    await expect(rarePage.locator('.rare-reason')).toContainText('稀有原因')
+  } finally {
+    await closeActors(host, amy, ben)
+  }
+})
