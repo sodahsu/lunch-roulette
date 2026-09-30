@@ -45,14 +45,19 @@ async function answerAll(page: Page, optionIndex = 0) {
     await expect(choices.first()).toBeVisible()
     await choices.nth(optionIndex).click()
 
+    const progress = page.getByText(/第 \d+ \/ \d+ 題/)
+    const before = await progress.textContent()
     const next = page.getByRole('button', { name: /下一題|交卷/ })
     const label = (await next.textContent()) ?? ''
     await next.click()
 
     if (label.includes('交卷')) {
-      await expect(page.getByRole('heading', { name: '等大家一下' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: '你答完了。先不要偷看別人。' })).toBeVisible()
       return
     }
+
+    // saveAnswers 是非同步的：等題號真的換了再點下一題，避免在舊題目上重複點選
+    await expect(progress).not.toHaveText(before ?? '')
   }
 
   throw new Error('Questionnaire did not finish within 20 questions')
@@ -153,9 +158,11 @@ test('CASE-03 Reveal 前反覆修改，重新整理仍採最後答案', async ({
     const choices = participant.page.locator('.choice')
     await choices.nth(1).click()
     await participant.page.getByRole('button', { name: '下一題' }).click()
+    // 題號前進代表 saveAnswers 已完成；否則 reload 會中斷還在傳送的請求
+    await expect(participant.page.getByText(/第 2 \/ \d+ 題/)).toBeVisible()
 
     await participant.page.reload()
-    await expect(participant.page.getByRole('heading', { name: '等大家一下' })).toBeVisible()
+    await expect(participant.page.getByRole('heading', { name: '你答完了。先不要偷看別人。' })).toBeVisible()
     await participant.page.getByRole('button', { name: '我想改答案' }).click()
 
     await expect(participant.page.locator('.choice').nth(1)).toHaveClass(/selected/)

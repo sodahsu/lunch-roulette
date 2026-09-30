@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { buildResultSnapshot, calculateGroupStats, isCompleteResponse } from '../domain/domain'
 import { selectQuestionsForSession } from '../domain/questions'
+import type { Json } from './database.types'
 import type {
   Participant,
   ParticipantResult,
@@ -103,10 +104,17 @@ export async function joinSession(sessionId: string, displayName: string): Promi
     return data as Participant
   }
 
-  const { data, error } = await supabase
+  // insert 不能帶 RETURNING：SELECT policy 的 can_access_session 為 stable，看不到同語句剛寫入的列，會回 42501
+  const { error: insertError } = await supabase
     .from('participants')
     .insert({ session_id: sessionId, user_id: userId, display_name: displayName })
-    .select()
+  if (insertError) throw insertError
+
+  const { data, error } = await supabase
+    .from('participants')
+    .select('*')
+    .eq('session_id', sessionId)
+    .eq('user_id', userId)
     .single()
 
   if (error) throw error
@@ -178,7 +186,7 @@ export async function finalizeReveal(session: SessionRecord): Promise<GroupQuest
   const { error: groupError } = await supabase
     .from('result_snapshots')
     .upsert(
-      { session_id: session.id, group_stats: snapshot.groupStats },
+      { session_id: session.id, group_stats: snapshot.groupStats as unknown as Json },
       { onConflict: 'session_id', ignoreDuplicates: true },
     )
   if (groupError) throw groupError
@@ -190,19 +198,17 @@ export async function finalizeReveal(session: SessionRecord): Promise<GroupQuest
       session_id: session.id,
       participant_id: participantId,
       user_id: person.user_id,
-      result,
+      result: result as unknown as Json,
     }]
   })
 
-  if (resultRows.length > 0) {
-    const { error: personalError } = await supabase
-      .from('participant_results')
-      .upsert(resultRows, {
-        onConflict: 'session_id,participant_id',
-        ignoreDuplicates: true,
-      })
-    if (personalError) throw personalError
-  }
+  // 不能用 upsert(ignoreDuplicates)：ON CONFLICT 會套用 SELECT policy，而 host 依設計讀不到別人的個人結果。
+  // 改逐筆 insert，重複鍵（23505）代表先前已寫入，視為成功以維持冪等。
+  const insertResults = await Promise.all(
+    resultRows.map((row) => supabase.from('participant_results').insert(row)),
+  )
+  const personalError = insertResults.map((r) => r.error).find((e) => e && e.code !== '23505')
+  if (personalError) throw personalError
 
   const { error: revealError } = await supabase
     .from('sessions')
