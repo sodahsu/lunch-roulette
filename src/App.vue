@@ -78,18 +78,13 @@ const progress = computed(() => {
 const meResult = computed(() => {
   return personalResult.value
 })
-const soulmateNames = computed(() => {
-  if (!meResult.value) return []
-  return meResult.value.soulmates
-    .map((pair) => participants.value.find((item) => item.id === pair.participantId)?.display_name)
-    .filter(Boolean)
-})
-const oppositeNames = computed(() => {
-  if (!meResult.value) return []
-  return meResult.value.opposites
-    .map((pair) => participants.value.find((item) => item.id === pair.participantId)?.display_name)
-    .filter(Boolean)
-})
+function pairedPeople(pairs: { participantId: string }[]) {
+  return pairs
+    .map((pair) => participants.value.find((item) => item.id === pair.participantId))
+    .filter((person): person is Participant => Boolean(person))
+}
+const soulmates = computed(() => (meResult.value ? pairedPeople(meResult.value.soulmates) : []))
+const opposites = computed(() => (meResult.value ? pairedPeople(meResult.value.opposites) : []))
 
 const joinUrl = computed(() => {
   if (!session.value) return ''
@@ -789,11 +784,23 @@ onBeforeUnmount(() => {
           <div class="match-grid">
             <div class="match-card">
               <span>MATCH / 靈魂飯友</span>
-              <strong>{{ soulmateNames.length ? soulmateNames.join('、') : 'NO MATCH YET' }}</strong>
+              <ul v-if="soulmates.length" class="match-people">
+                <li v-for="person in soulmates" :key="person.id">
+                  <img class="avatar avatar-match" :src="avatarFor(person.id)" alt="" />
+                  <strong>{{ person.display_name }}</strong>
+                </li>
+              </ul>
+              <strong v-else>NO MATCH YET</strong>
             </div>
             <div class="match-card enemy">
               <span>ENEMY / 飲食天敵</span>
-              <strong>{{ oppositeNames.length ? oppositeNames.join('、') : 'NO ENEMY YET' }}</strong>
+              <ul v-if="opposites.length" class="match-people">
+                <li v-for="person in opposites" :key="person.id">
+                  <img class="avatar avatar-match" :src="avatarFor(person.id)" alt="" />
+                  <strong>{{ person.display_name }}</strong>
+                </li>
+              </ul>
+              <strong v-else>NO ENEMY YET</strong>
             </div>
           </div>
         </article>
