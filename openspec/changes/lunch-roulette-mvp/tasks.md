@@ -144,6 +144,15 @@
 - [ ] 實際驗證 reduced-motion
 - [ ] 實際多 browser / device Reveal smoke test
 
+## 6b. Food consensus（大家都能吃）
+
+- [x] domain：`src/domain/foods.ts`、`buildResultSnapshot` 附加 `food-avoid` stat
+- [x] 單元測試涵蓋編碼、共識、退路、未回答略過、snapshot 附加
+- [x] 忌口步驟與結果頁區塊（host / participant）
+- [x] 示意頁 e2e（CASE-16）
+- [ ] 實際驗證多人流程：忌口步驟、揭曉後清單一致（需 Supabase，e2e CASE-01～12、15 已改 helper 但未跑）
+- [ ] 實際驗證最後一題交卷後、忌口未填時被揭曉的行為（該人被略過，不算未完成）
+
 ## 7. Archive gate
 
 - [x] OpenSpec proposal / design / capability specs 已同步兩段式 Reveal
