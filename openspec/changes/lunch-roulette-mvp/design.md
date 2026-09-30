@@ -128,7 +128,7 @@ locked 成功率畫面使用的是 **in-memory preview**，不是另一份 persi
 - `result`
 - `created_at`
 
-`result` 包含 persona、soulmates、opposites。
+`result` 包含 persona、rare、rareReason、soulmates、opposites；rare 欄位屬 Reveal 結果的一部分，但判定與作答內容無關。
 
 ## 5. Questionnaire versioning and selection
 
