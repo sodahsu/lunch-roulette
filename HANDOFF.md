@@ -695,8 +695,8 @@ Avoid all readable text, logos, UI, watermarks, childish mascot styling, rainbow
 
 每一批 Persona 資產生成後，不要只挑「最好看」的單張，要先檢查整組一致性：
 
-- [ ] 8 隻動物一眼可辨識。
-- [ ] 8 張相同鏡位／光線／材質。
+- [ ] 10 隻動物一眼可辨識。
+- [ ] 10 張相同鏡位／光線／材質。
 - [ ] 角色大小差異合理，不會有一張突然超近景。
 - [ ] 黑 / 白 / Electric Blue 是共同主系統。
 - [ ] Accent 只做局部識別。
@@ -707,7 +707,7 @@ Avoid all readable text, logos, UI, watermarks, childish mascot styling, rainbow
 - [ ] 能安全裁成 1:1 / 4:5。
 - [ ] Persona 名稱與角色視覺語意一致。
 - [ ] 圖片留有足夠 negative space 給前端排字。
-- [ ] 全系列放在一起時像同一場設計展，而不是八個不同 prompt 拼起來。
+- [ ] 全系列放在一起時像同一場設計展，而不是十個不同 prompt 拼起來。
 
 ---
 
@@ -723,12 +723,16 @@ Avoid all readable text, logos, UI, watermarks, childish mascot styling, rainbow
 - `specs/live-session/spec.md`
 - `specs/preference-quiz/spec.md`
 - `specs/result-reveal/spec.md`
+- `specs/food-consensus/spec.md`
 
 FACT：
 
 - 兩段式 Reveal 已進 spec。
 - 防冷場 pacing 已進 spec。
 - v0.2 24 → 12 題題組已進 spec。
+- 稀有卡 deterministic 3% + 每場保底已進 spec。
+- Host revealed overview 權限與 participant privacy 已進 spec。
+- 全域音效 / 靜音持久化的可觀察行為已進 spec。
 
 PENDING：
 
