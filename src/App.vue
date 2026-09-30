@@ -544,7 +544,7 @@ onBeforeUnmount(() => {
       <h1 class="display-title" aria-label="都可以？">
         <span>都</span><span>可</span><span>以</span><span>？</span>
       </h1>
-      <p class="lede landing-lede">8 個人都說自己很好約。今晚看看誰在說謊。</p>
+      <p class="lede landing-lede">8 個人都說「都可以」，一問去哪吃就全員裝死。今晚來抓內鬼。</p>
       <div class="action-stack landing-actions">
         <button class="primary" type="button" :disabled="busy" @click="startJoin">加入飯局 →</button>
         <button class="secondary host-mode-button" type="button" aria-label="我是主持人，開新局" :disabled="busy" @click="startHost">HOST MODE / 開新局</button>
