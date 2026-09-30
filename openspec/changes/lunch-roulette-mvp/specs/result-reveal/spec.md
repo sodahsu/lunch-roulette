@@ -105,7 +105,7 @@ The system SHALL present public reveal information only as aggregates.
 - AND 不得顯示某位 participant 的逐題答案
 
 ## Requirement: Persona 使用 deterministic scoring
-The system SHALL assign one of the configured eight personas using only the participant's active-question answers and configured v0.2 scoring rules.
+The system SHALL assign one of the configured ten personas using only the participant's active-question answers and configured v0.2 scoring rules.
 
 ### Scenario: Persona scoring
 - WHEN participant 為 complete

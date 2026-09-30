@@ -11,7 +11,7 @@
 - [x] v0.2 每房 deterministic 選 12 題，每類 2 題
 - [x] `self-image` 每局必出
 - [x] v0.1 legacy session 保留原 8 題
-- [x] Persona 固定 8 種、最高分制、固定 `PERSONA_PRIORITY` tie-break
+- [x] Persona 固定 10 種、最高分制、固定 `PERSONA_PRIORITY` tie-break
 - [x] Persona v0.2 不使用 threshold
 - [x] Similarity 使用 active questions 的答案完全一致率
 - [x] 團體指標正式命名「我們這團今晚約成飯的成功率」
@@ -89,7 +89,7 @@
 - [x] 第 4 / 8 / 11 題 full-screen interstitial
 - [x] Success Rate 大型 typography reveal
 - [x] 「公開處刑 🎴」final reveal CTA
-- [x] 8 種 Persona inline SVG animal glyph system
+- [x] 10 種 Persona runtime asset 與 inline SVG fallback system
 - [x] Collectible Persona Card：TYPE / subtype / MATCH / ENEMY
 - [x] Mobile responsive visual system
 - [x] focus-visible / prefers-reduced-motion
@@ -108,7 +108,13 @@
 - [x] CASE-07 public privacy test code
 - [x] CASE-08 第 9 位可加入 test code
 - [x] CASE-09 第 4 題節奏事件 test code
-- [x] CASE-10 Persona SVG / collectible card regression test code
+- [x] CASE-10 Persona collectible card regression test code
+- [x] CASE-11 房號不存在與 URL 清理 test code
+- [x] CASE-12 結束後重新開局 test code
+- [x] CASE-13 示意 Persona 結果 test code
+- [x] CASE-14 一般卡與稀有卡顯示 test code
+- [x] CASE-15 每場稀有卡保底與原因 test code
+- [x] CASE-16 food consensus 示意流程 test code
 
 > 上述只代表 test code 已寫，不代表 runtime PASS。
 
@@ -127,10 +133,10 @@
 
 - [x] 確認 Supabase Anonymous Sign-ins provider 已 Enable（2026-09-30 於 Dashboard 開啟；註冊 API 回傳 token）
 - [x] 依賴安裝成功並產生 lockfile（專案已遷移至 pnpm，lockfile 為 `pnpm-lock.yaml`）
-- [x] `npm run test:unit`（28 項通過）
-- [x] `npm run typecheck`
-- [x] `npm run build`
-- [x] `npm run test:e2e`（15 項通過；含 10 人格、稀有卡保底、房號不存在、再開一局）
+- [x] `pnpm test:unit`（33 項通過；2026-09-30）
+- [x] `pnpm typecheck`（2026-09-30）
+- [x] `pnpm build`（2026-09-30）
+- [x] `pnpm test:e2e`（16 項通過；2026-09-30）
 - [ ] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
 - [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
 - [x] 實際驗證成功率畫面出現時 participant 仍停留在 waiting（e2e CASE-01）
@@ -155,7 +161,7 @@
 
 ## 7. Archive gate
 
-- [x] OpenSpec proposal / design / capability specs 已同步兩段式 Reveal
+- [x] OpenSpec proposal / design / capability specs 已同步兩段式 Reveal 與 food consensus
 - [x] 已修正 `result_snapshots` 與 `participant_results` ownership 描述
 - [x] 成功率跨未來程式版本採 `questionnaire_version → algorithm version` 固定 mapping
 - [x] 不新增 success-summary persistence；舊版 algorithm 由 code 保留

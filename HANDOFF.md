@@ -113,7 +113,7 @@ session = revealed
 
 ### Persona / Matching
 
-- [x] 8 種 Persona。
+- [x] 10 種 Persona。
 - [x] 動物 emoji persona identity。
 - [x] Option score 加總。
 - [x] Highest score wins。
@@ -283,7 +283,7 @@ Host 大螢幕：
 
 目前程式已改為正式 Dark Editorial 視覺系統。以下規格是目前 code 的視覺 contract；仍需 browser / device runtime QA 才能標記視覺驗收 PASS。
 
-目前 runtime Persona 資產使用 `src/components/PersonaGlyph.vue` 的 8 組自有 inline SVG animal glyph，不依賴外部圖片或 CDN。後面的 Prompt Library 保留作為未來升級成生成插畫時的 source brief，不是目前 runtime dependency。
+目前 runtime 支援 10 種 Persona；優先使用 `src/assets/personas/*.webp`，缺圖時由 `src/components/PersonaGlyph.vue` 提供 inline SVG fallback，不依賴外部圖片 CDN。後面的 Prompt Library 保留作為未來資產升級的 source brief，不是目前 runtime dependency。
 
 ## Target Direction
 
@@ -442,7 +442,7 @@ ENEMY   KEVIN
 - [x] 卡片使用統一黑 / 白 / Electric Blue 系統。
 - [x] 每個 Persona 只換局部識別色。
 - [x] 不做 8 張完全不同的彩虹 theme。
-- [x] 8 個 Persona 目前使用同一套 inline SVG 幾何／材質語言。
+- [x] 10 個 runtime Persona 使用一致的 asset / inline SVG fallback 視覺語言。
 - [x] Runtime glyph 採 editorial geometric animal，不走兒童卡通。
 - [x] Persona Card 已採 collectible identity card composition；實機 screenshot QA 待驗證。
 - [ ] 手機 375px 小尺寸仍需 runtime QA。
@@ -464,7 +464,7 @@ ENEMY   KEVIN
 ## 6.1 Visual Prompt Library｜可直接拿去生圖
 
 這一節是 **visual generation source brief**。  
-目前只是交接用 prompt，不代表資產已生成或已整合進程式。
+目前只是交接用 prompt，不代表資產已生成或已整合進程式。下方 prompt library 仍是早期 8 個角色的 legacy source brief，不代表目前 10 個 runtime Persona 的完整資產規格。
 
 ### 使用規則
 
@@ -865,7 +865,8 @@ PENDING：
 已寫：
 
 - [x] Vitest domain tests。
-- [x] Playwright CASE-01～09。
+- [x] Playwright CASE-01～16 test code。
+- [x] CASE-11～16 覆蓋失效房號、重新開局、示意 Persona、稀有卡與 food consensus。
 
 重點：
 
@@ -901,12 +902,12 @@ Host 公開處刑
 
 | 驗證 | 狀態 |
 |---|---|
-| `npm install` | NOT_RUN |
-| lockfile 產生 | NOT_RUN |
-| `npm run test:unit` | NOT_RUN |
-| `npm run typecheck` | NOT_RUN |
-| `npm run build` | NOT_RUN |
-| `npm run test:e2e` | NOT_RUN |
+| `pnpm install --frozen-lockfile` | VERIFIED（2026-09-30） |
+| lockfile 產生 | 已存在並通過 frozen install |
+| `pnpm test:unit` | VERIFIED：33 項通過（2026-09-30） |
+| `pnpm typecheck` | VERIFIED（2026-09-30） |
+| `pnpm build` | VERIFIED（2026-09-30） |
+| `pnpm test:e2e` | VERIFIED：16 項通過（2026-09-30） |
 | Supabase project health | VERIFIED: ACTIVE_HEALTHY |
 | Supabase Security Advisor | VERIFIED: 0 security lints |
 | Anonymous Sign-ins runtime | UNKNOWN：目前 auth.users 尚無 anonymous user evidence |
@@ -919,13 +920,12 @@ Host 公開處刑
 
 ```bash
 git status
-git switch main
-git pull --ff-only
-npm install
-npm run test:unit
-npm run typecheck
-npm run build
-npm run test:e2e
+git switch soda
+pnpm install --frozen-lockfile
+pnpm test:unit
+pnpm typecheck
+pnpm build
+pnpm test:e2e
 ```
 
 ### Local execution blocker
@@ -994,7 +994,7 @@ Root `vercel.json` intent：
 
 - Import `sodahsu/lunch-roulette`
 - Vite
-- Build：`npm run build`
+- Build：`pnpm build`
 - Output：`dist`
 - Production branch：`main`
 - Env：
