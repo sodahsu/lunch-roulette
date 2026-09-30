@@ -405,3 +405,18 @@ test('CASE-15 每一場至少有一位拿到稀有卡，並寫出稀有原因', 
     await closeActors(host, amy, ben)
   }
 })
+
+
+test('CASE-16 音效控制可切換並記住靜音設定', async ({ page }) => {
+  await page.goto('/')
+  const toggle = page.getByRole('button', { name: '關閉音效' })
+  await expect(toggle).toBeVisible()
+  await toggle.click()
+  await expect(page.getByRole('button', { name: '開啟音效' })).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: '開啟音效' })).toBeVisible()
+
+  await page.getByRole('button', { name: '開啟音效' }).click()
+  await expect(page.getByRole('button', { name: '關閉音效' })).toBeVisible()
+})
