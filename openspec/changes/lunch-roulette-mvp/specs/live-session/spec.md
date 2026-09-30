@@ -111,3 +111,22 @@ The system SHALL keep participants waiting through the group-success reveal and 
 - AND participant 手機不得提前翻牌
 - AND host 可以重新計算同一份 locked responses 的成功率並繼續 Reveal
 - AND 不需要重新開一局
+
+## Requirement: 使用者可控制音效且靜音偏好會保留
+The system SHALL provide a global audio control for presentation cues without changing session state, answers, scoring or reveal results.
+
+### Scenario: 切換靜音
+- WHEN 使用者關閉音效
+- THEN 持續中的 lobby loop 應停止
+- AND 後續短音效與 Reveal cue 不應播放
+
+### Scenario: 重新載入
+- WHEN 使用者已設定靜音
+- AND 重新載入頁面
+- THEN 系統應恢復該瀏覽器的靜音設定
+
+### Scenario: Mobile autoplay 限制
+- WHEN 瀏覽器要求使用者互動後才能建立或 resume AudioContext
+- THEN 系統應等待合法的使用者 gesture 解鎖音訊
+- AND 音訊失敗不得阻塞答題、鎖定或 Reveal 主流程
+
