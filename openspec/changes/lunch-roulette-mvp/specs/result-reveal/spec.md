@@ -133,6 +133,25 @@ The system SHALL assign one of the configured ten personas using only the partic
 - THEN 系統應依固定 `PERSONA_PRIORITY` 選出結果
 - AND 相同 answers 與相同 rules 必須得到相同 persona
 
+## Requirement: 稀有卡為與作答內容無關的 deterministic 抽籤結果
+The system SHALL mark rare Persona cards independently from questionnaire answers and SHALL guarantee at least one rare card whenever at least one complete participant exists.
+
+### Scenario: Participant 抽中稀有卡
+- WHEN complete participant 的 deterministic rare roll 低於 3%
+- THEN persisted participant result 應標記為 rare
+- AND 應保存「純屬運氣、與作答內容無關」的稀有原因
+
+### Scenario: 全場沒有人自然抽中
+- WHEN 至少一位 complete participant 存在
+- AND 沒有任何 complete participant 的 deterministic rare roll 低於 3%
+- THEN 系統應把 rare roll 最接近中籤者標記為本場保底稀有卡
+- AND 平手時應使用穩定且可重現的 participant identity 排序
+- AND 稀有原因應明確說明這是本場保底，與答案內容無關
+
+### Scenario: 相同 participant result 重建
+- WHEN 使用相同 participant identity 與相同完整 responses 重建結果
+- THEN rare 判定與 rare reason 應保持一致
+
 ## Requirement: Pairing 只比較 complete participants
 The system SHALL calculate participant similarity only among complete responses from the same active questionnaire.
 
