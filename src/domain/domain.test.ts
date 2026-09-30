@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  PERSONAS,
   PERSONA_PRIORITY,
   QUESTION_BANK,
   QUESTION_CATEGORIES,
@@ -12,11 +13,12 @@ import {
   buildResultSnapshot,
   calculateDinnerSuccessRate,
   calculateGroupStats,
+  calculateMaxPersonaScores,
   calculatePersonaScores,
   calculateSimilarity,
   isCompleteResponse,
 } from './domain'
-import type { GroupQuestionStat, ResponseRecord } from './types'
+import type { GroupQuestionStat, PersonaKey, ResponseRecord } from './types'
 
 const sessionQuestions = selectQuestionsForSession('ABC123', 'v0.2')
 const allFirst = Object.fromEntries(sessionQuestions.map((q) => [q.id, q.options[0]!.id]))
@@ -155,10 +157,31 @@ describe('persona assignment', () => {
     expect(assignPersona(allFirst, sessionQuestions)).toBe(assignPersona(allFirst, sessionQuestions))
   })
 
-  it('chooses one of the highest-scoring personas', () => {
+  it('chooses the persona with the highest score rate against its attainable maximum', () => {
     const scores = calculatePersonaScores(allFirst, sessionQuestions)
+    const max = calculateMaxPersonaScores(sessionQuestions)
+    const rate = (key: PersonaKey) => (max[key] > 0 ? scores[key] / max[key] : 0)
     const persona = assignPersona(allFirst, sessionQuestions)
-    expect(scores[persona]).toBe(Math.max(...Object.values(scores)))
+    const best = Math.max(...(Object.keys(scores) as PersonaKey[]).map(rate))
+    expect(rate(persona)).toBe(best)
+  })
+
+  it('can assign every one of the ten personas across different rooms', () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let seed = 20260930
+    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32)
+    const seen = new Set<PersonaKey>()
+
+    for (let index = 0; index < 4000; index += 1) {
+      const code = Array.from({ length: 6 }, () => chars[Math.floor(rnd() * chars.length)]).join('')
+      const questions = selectQuestionsForSession(code, 'v0.2')
+      const answers = Object.fromEntries(
+        questions.map((question) => [question.id, question.options[Math.floor(rnd() * question.options.length)]!.id]),
+      )
+      seen.add(assignPersona(answers, questions))
+    }
+
+    expect([...seen].sort()).toEqual(Object.keys(PERSONAS).sort())
   })
 
   it('uses the configured priority as a stable tie breaker', () => {

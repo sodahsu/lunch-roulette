@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
-import { avatarFor } from './lib/avatars'
+import { avatarFor, personaArt } from './lib/avatars'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
 import { calculateDinnerSuccessRate } from './domain/domain'
 import type { GroupQuestionStat, Participant, ParticipantResult, PersonaKey } from './domain/types'
@@ -36,6 +36,8 @@ const PERSONA_DISPLAY: Record<PersonaKey, { code: string; label: string }> = {
   homebody: { code: '06', label: 'HOME RADIUS TYPE' },
   foodFanatic: { code: '07', label: 'FOOD FANATIC' },
   easygoing: { code: '08', label: 'TRULY EASYGOING' },
+  glutton: { code: '09', label: 'ALL-IN EATER' },
+  orderCaptain: { code: '10', label: 'ORDER CAPTAIN' },
 }
 
 const screen = ref<Screen>('landing')
@@ -769,7 +771,13 @@ onBeforeUnmount(() => {
           </header>
 
           <div class="persona-visual">
-            <PersonaGlyph :persona="meResult.persona" />
+            <img
+              v-if="personaArt(meResult.persona)"
+              class="persona-art"
+              :src="personaArt(meResult.persona)"
+              :alt="PERSONAS[meResult.persona].name"
+            />
+            <PersonaGlyph v-else :persona="meResult.persona" />
           </div>
 
           <div class="persona-copy">

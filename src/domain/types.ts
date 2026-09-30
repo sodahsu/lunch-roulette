@@ -34,6 +34,8 @@ export type PersonaKey =
   | 'homebody'
   | 'foodFanatic'
   | 'easygoing'
+  | 'glutton'
+  | 'orderCaptain'
 
 export interface PersonaDefinition {
   key: PersonaKey

@@ -124,14 +124,32 @@ export function calculatePersonaScores(
   return scores
 }
 
+// 各人格在本局題目中能拿到的最高分；用來把分數換算成「達成率」，
+// 否則選項多、配分廣的人格（如真・都可以）會壓過其他人格
+export function calculateMaxPersonaScores(questions: Question[] = QUESTIONS): Record<PersonaKey, number> {
+  const max = Object.fromEntries(
+    Object.keys(PERSONAS).map((key) => [key, 0]),
+  ) as Record<PersonaKey, number>
+
+  for (const question of questions) {
+    for (const key of Object.keys(max) as PersonaKey[]) {
+      max[key] += Math.max(0, ...question.options.map((option) => option.scores[key] ?? 0))
+    }
+  }
+
+  return max
+}
+
 export function assignPersona(
   answers: Record<string, AnswerValue>,
   questions: Question[] = QUESTIONS,
 ): PersonaKey {
   const scores = calculatePersonaScores(answers, questions)
+  const max = calculateMaxPersonaScores(questions)
+  const rate = (key: PersonaKey) => (max[key] > 0 ? scores[key] / max[key] : 0)
   const priority = new Map(PERSONA_PRIORITY.map((key, index) => [key, index]))
   const ranked = (Object.keys(scores) as PersonaKey[]).sort((a, b) => {
-    const delta = scores[b] - scores[a]
+    const delta = rate(b) - rate(a)
     if (delta !== 0) return delta
     return (priority.get(a) ?? 999) - (priority.get(b) ?? 999)
   })

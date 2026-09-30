@@ -14,3 +14,14 @@ export function avatarFor(id: string): string {
   for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
   return AVATARS[hash % AVATARS.length]!
 }
+
+const personaFiles = import.meta.glob<string>('../assets/personas/*.webp', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
+// 檔名即 PersonaKey，缺圖時回傳 undefined 由呼叫端退回 SVG
+export function personaArt(key: string): string | undefined {
+  return personaFiles[`../assets/personas/${key}.webp`]
+}

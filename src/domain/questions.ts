@@ -6,16 +6,19 @@ import type {
 } from './types'
 
 export const PERSONAS: Record<PersonaKey, PersonaDefinition> = {
-  peacekeeper: { key: 'peacekeeper', emoji: '🦦', name: '和平飯友', tagline: '吃什麼都可以，拜託不要再討論了。' },
-  contrarian: { key: 'contrarian', emoji: '🐺', name: '逆風美食家', tagline: '大家往東，我偏偏往西。' },
-  picky: { key: 'picky', emoji: '🐈', name: '挑食王', tagline: '不是我難搞，是選項真的不行。' },
-  adventurer: { key: 'adventurer', emoji: '🦊', name: '新店敢死隊', tagline: 'Google 評論只有三則？走啊。' },
-  valueHunter: { key: 'valueHunter', emoji: '🐿️', name: 'CP 值守門員', tagline: '不是不能吃貴，是要值得。' },
-  homebody: { key: 'homebody', emoji: '🐢', name: '五百公尺極限派', tagline: '超過兩個路口，就是遠。' },
-  foodFanatic: { key: 'foodFanatic', emoji: '🐻', name: '美食狂熱者', tagline: '好吃的話，排四十分鐘也可以。' },
-  easygoing: { key: 'easygoing', emoji: '🐶', name: '真・都可以', tagline: '傳說中的真的都可以。' },
+  peacekeeper: { key: 'peacekeeper', emoji: '🐻‍❄️', name: '和平飯友', tagline: '碗在空中飛，我心如止水，吃什麼都可以。' },
+  contrarian: { key: 'contrarian', emoji: '🐺', name: '逆風美食家', tagline: '大家吃火鍋，我端著沙拉逆風而行。' },
+  picky: { key: 'picky', emoji: '🐈', name: '挑食王', tagline: '朕看過菜單了，全部退下。' },
+  adventurer: { key: 'adventurer', emoji: '🐧', name: '新店敢死隊', tagline: 'Google 評論只有三則？旗子我都插好了。' },
+  valueHunter: { key: 'valueHunter', emoji: '🦉', name: 'CP 值守門員', tagline: '先讓我按一下計算機，再決定要不要愛你。' },
+  homebody: { key: 'homebody', emoji: '🦥', name: '五百公尺極限派', tagline: '超過兩個路口就是遠征，我選擇躺著等外送。' },
+  foodFanatic: { key: 'foodFanatic', emoji: '🐯', name: '美食狂熱者', tagline: '排四十分鐘？我已經在店門口吼了。' },
+  easygoing: { key: 'easygoing', emoji: '🐰', name: '真・都可以', tagline: '我真的都可以，兔兔發誓，不騙你。' },
+  glutton: { key: 'glutton', emoji: '🦊', name: '全都要選手', tagline: '菜單上的我全都要，誰付錢等一下再說。' },
+  orderCaptain: { key: 'orderCaptain', emoji: '🐼', name: '點菜總管', tagline: '桌上我來排，誰敢亂動我的蒸籠。' },
 }
 
+// 同分時的排序：越前面越優先；新人格放後段，必須真的分數較高才會勝出
 export const PERSONA_PRIORITY: PersonaKey[] = [
   'easygoing',
   'foodFanatic',
@@ -24,6 +27,8 @@ export const PERSONA_PRIORITY: PersonaKey[] = [
   'homebody',
   'contrarian',
   'peacekeeper',
+  'glutton',
+  'orderCaptain',
   'picky',
 ]
 
@@ -76,7 +81,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '7 個人都同意，只有你真的不想吃。',
     required: true,
     options: [
-      { id: 'majority', label: '民主萬歲，我跟', emoji: '🕊️', scores: { peacekeeper: 2, easygoing: 3 } },
+      { id: 'majority', label: '民主萬歲，我跟', emoji: '🕊️', scores: { peacekeeper: 2, easygoing: 3, orderCaptain: 1 } },
       { id: 'one-vote', label: '一票也是票', emoji: '🐺', scores: { contrarian: 3, picky: 1 } },
     ],
   },
@@ -86,8 +91,8 @@ export const QUESTION_BANK: Question[] = [
     prompt: '已經討論 20 分鐘還沒決定。',
     required: true,
     options: [
-      { id: 'wait-more', label: '再陪大家討論一下', emoji: '🙂', scores: { peacekeeper: 3, easygoing: 1 } },
-      { id: 'declare', label: '我現在直接指定一家', emoji: '📣', scores: { contrarian: 2, picky: 1 } },
+      { id: 'wait-more', label: '再陪大家討論一下', emoji: '🙂', scores: { peacekeeper: 3, easygoing: 1, orderCaptain: 1 } },
+      { id: 'declare', label: '我現在直接指定一家', emoji: '📣', scores: { contrarian: 2, picky: 1, orderCaptain: 3 } },
     ],
   },
 
@@ -117,7 +122,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '要走 18 分鐘，但朋友保證「真的超好吃」。',
     required: true,
     options: [
-      { id: 'worth-it', label: '18 分鐘而已，走', emoji: '🥾', scores: { foodFanatic: 2, adventurer: 2 } },
+      { id: 'worth-it', label: '18 分鐘而已，走', emoji: '🥾', scores: { foodFanatic: 2, adventurer: 2, glutton: 1 } },
       { id: 'too-far', label: '18 分鐘已經是旅行', emoji: '🐢', scores: { homebody: 3 } },
     ],
   },
@@ -127,7 +132,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '外面突然下大雨，但想吃的店在 600 公尺外。',
     required: true,
     options: [
-      { id: 'umbrella', label: '撐傘照去', emoji: '☔', scores: { foodFanatic: 2, adventurer: 1 } },
+      { id: 'umbrella', label: '撐傘照去', emoji: '☔', scores: { foodFanatic: 2, adventurer: 1, glutton: 1 } },
       { id: 'nearby', label: '最近的店突然都變好吃了', emoji: '🏠', scores: { homebody: 3, easygoing: 1 } },
     ],
   },
@@ -148,7 +153,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '大家突然說今天要吃一人 $1,200。',
     required: true,
     options: [
-      { id: 'occasionally', label: '偶爾可以啦', emoji: '💳', scores: { foodFanatic: 2, easygoing: 1 } },
+      { id: 'occasionally', label: '偶爾可以啦', emoji: '💳', scores: { foodFanatic: 2, easygoing: 1, glutton: 3 } },
       { id: 'too-much', label: '你們剛剛不是說隨便吃嗎', emoji: '🚨', scores: { valueHunter: 3, contrarian: 1 } },
     ],
   },
@@ -158,7 +163,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '有一道很貴的招牌菜，大家說「點來分啦」。',
     required: true,
     options: [
-      { id: 'order', label: '點啊，來都來了', emoji: '🍖', scores: { foodFanatic: 2, adventurer: 1, easygoing: 1 } },
+      { id: 'order', label: '點啊，來都來了', emoji: '🍖', scores: { foodFanatic: 2, adventurer: 1, easygoing: 1, glutton: 3, orderCaptain: 1 } },
       { id: 'calculate', label: '先算一下每個人多少', emoji: '🧮', scores: { valueHunter: 3 } },
     ],
   },
@@ -168,8 +173,8 @@ export const QUESTION_BANK: Question[] = [
     prompt: '朋友說 AA，結果他一個人點了全桌最貴的。',
     required: true,
     options: [
-      { id: 'let-go', label: '算了，這次就這樣', emoji: '🙂', scores: { peacekeeper: 2, easygoing: 2 } },
-      { id: 'remember', label: '我會記得這件事', emoji: '👁️', scores: { valueHunter: 2, picky: 1 } },
+      { id: 'let-go', label: '算了，這次就這樣', emoji: '🙂', scores: { peacekeeper: 2, easygoing: 2, orderCaptain: 2 } },
+      { id: 'remember', label: '我會記得這件事', emoji: '👁️', scores: { valueHunter: 2, picky: 1, orderCaptain: 1 } },
     ],
   },
 
@@ -189,7 +194,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '菜單上有一道你完全看不懂是什麼。',
     required: true,
     options: [
-      { id: 'order-blind', label: '就是它了', emoji: '🤩', scores: { adventurer: 3 } },
+      { id: 'order-blind', label: '就是它了', emoji: '🤩', scores: { adventurer: 3, glutton: 2 } },
       { id: 'search-first', label: '先 Google 再說', emoji: '🔎', scores: { picky: 2, valueHunter: 1 } },
     ],
   },
@@ -199,7 +204,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '老闆小聲說：「今天有隱藏料理。」',
     required: true,
     options: [
-      { id: 'secret', label: '不用解釋，來一份', emoji: '🔥', scores: { adventurer: 3, foodFanatic: 2 } },
+      { id: 'secret', label: '不用解釋，來一份', emoji: '🔥', scores: { adventurer: 3, foodFanatic: 2, glutton: 2 } },
       { id: 'menu-only', label: '我想先知道那到底是什麼', emoji: '🤨', scores: { picky: 2 } },
     ],
   },
@@ -209,7 +214,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '店看起來很破，但 Google 評論 4.9。',
     required: true,
     options: [
-      { id: 'trust-rating', label: '這種通常才是神店', emoji: '🥹', scores: { adventurer: 2, foodFanatic: 2 } },
+      { id: 'trust-rating', label: '這種通常才是神店', emoji: '🥹', scores: { adventurer: 2, foodFanatic: 2, glutton: 1 } },
       { id: 'trust-eyes', label: '我先相信我的眼睛', emoji: '🧼', scores: { picky: 2, homebody: 1 } },
     ],
   },
@@ -230,8 +235,8 @@ export const QUESTION_BANK: Question[] = [
     prompt: '店員上錯菜，但那盤看起來超好吃。',
     required: true,
     options: [
-      { id: 'tell-staff', label: '先跟店員說', emoji: '🙋', scores: { peacekeeper: 2, easygoing: 1 } },
-      { id: 'tempted', label: '先不要動，我需要掙扎一下', emoji: '😈', scores: { adventurer: 1, foodFanatic: 2 } },
+      { id: 'tell-staff', label: '先跟店員說', emoji: '🙋', scores: { peacekeeper: 2, easygoing: 1, orderCaptain: 2 } },
+      { id: 'tempted', label: '先不要動，我需要掙扎一下', emoji: '😈', scores: { adventurer: 1, foodFanatic: 2, glutton: 3 } },
     ],
   },
   {
@@ -240,7 +245,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '店很好吃，但老闆會一直坐下來跟你聊天。',
     required: true,
     options: [
-      { id: 'human-touch', label: '很有人情味啊', emoji: '🥰', scores: { easygoing: 2, peacekeeper: 1 } },
+      { id: 'human-touch', label: '很有人情味啊', emoji: '🥰', scores: { easygoing: 2, peacekeeper: 1, orderCaptain: 2 } },
       { id: 'just-eat', label: '我真的只是來吃飯', emoji: '😨', scores: { homebody: 1, picky: 2 } },
     ],
   },
@@ -250,7 +255,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '餐廳超好吃，但椅子難坐到像在受刑。',
     required: true,
     options: [
-      { id: 'mouth-first', label: '嘴巴開心就好', emoji: '🍜', scores: { foodFanatic: 3 } },
+      { id: 'mouth-first', label: '嘴巴開心就好', emoji: '🍜', scores: { foodFanatic: 3, glutton: 2 } },
       { id: 'body-rights', label: '屁股也有人權', emoji: '🪑', scores: { homebody: 2, picky: 1 } },
     ],
   },
@@ -272,7 +277,7 @@ export const QUESTION_BANK: Question[] = [
     required: true,
     options: [
       { id: 'others', label: '通常是別人', emoji: '🧑‍🤝‍🧑', scores: { contrarian: 1, picky: 2 } },
-      { id: 'maybe-me', label: '好啦，可能有一點是我', emoji: '🪞', scores: { easygoing: 2, peacekeeper: 1 } },
+      { id: 'maybe-me', label: '好啦，可能有一點是我', emoji: '🪞', scores: { easygoing: 2, peacekeeper: 1, orderCaptain: 2 } },
     ],
   },
   {
@@ -281,7 +286,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '你說「都可以」的時候，是真的都可以嗎？',
     required: true,
     options: [
-      { id: 'honest', label: '真的，我沒差', emoji: '👼', scores: { easygoing: 3, peacekeeper: 1 } },
+      { id: 'honest', label: '真的，我沒差', emoji: '👼', scores: { easygoing: 3, peacekeeper: 1, orderCaptain: 1 } },
       { id: 'secret-answer', label: '其實心裡有一個答案', emoji: '🤥', scores: { picky: 2, contrarian: 1 } },
     ],
   },
@@ -291,7 +296,7 @@ export const QUESTION_BANK: Question[] = [
     prompt: '最後真的吃到你不想吃的，你會？',
     required: true,
     options: [
-      { id: 'fine', label: '也可以啦，吃就吃', emoji: '🙂', scores: { easygoing: 3, peacekeeper: 1 } },
+      { id: 'fine', label: '也可以啦，吃就吃', emoji: '🙂', scores: { easygoing: 3, peacekeeper: 1, orderCaptain: 1 } },
       { id: 'keep-score', label: '表面沒事，但我會記得', emoji: '😶', scores: { picky: 2, valueHunter: 1 } },
     ],
   },

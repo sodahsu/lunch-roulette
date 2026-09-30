@@ -1086,6 +1086,8 @@ input:focus {
 .persona-card[data-persona='valueHunter'] { --persona-accent: var(--amber); }
 .persona-card[data-persona='homebody'] { --persona-accent: var(--lime); }
 .persona-card[data-persona='foodFanatic'] { --persona-accent: #ff6b3d; }
+.persona-card[data-persona='glutton'] { --persona-accent: var(--orange); }
+.persona-card[data-persona='orderCaptain'] { --persona-accent: var(--amber); }
 
 .persona-card-head {
   display: flex;
@@ -1108,6 +1110,18 @@ input:focus {
 
 .persona-visual > * {
   border-radius: 14px;
+}
+
+.persona-art {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 10px;
+  object-fit: contain;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--persona-accent) 26%, transparent), transparent 62%),
+    #0c0c0f;
+  border: 1px solid var(--line);
 }
 
 .persona-copy {
