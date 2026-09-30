@@ -46,7 +46,8 @@ The system SHALL list, on both the host result view and each participant result 
 ### Scenario: 沒有共識類別
 - WHEN 每個類別都至少被一人排除
 - THEN 顯示「沒有全員都能接受的類別」
-- AND 列出排除人數最少的類別與人數
+- AND 不得把「排除人數最少」的類別包裝成全員共識或推薦答案
+- AND 結果頁應明確提示本場沒有安全牌
 
 ### Scenario: 未回答者
 - WHEN 部分 participant 沒有回答忌口
