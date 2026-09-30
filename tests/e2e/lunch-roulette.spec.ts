@@ -418,3 +418,17 @@ test('CASE-16 示意結果頁列出全員都沒排除的餐點，被排除的不
   await expect(box).not.toContainText('火鍋')
   await expect(box).not.toContainText('重辣')
 })
+
+test('CASE-18 音效控制可切換並記住靜音設定', async ({ page }) => {
+  await page.goto('/')
+  const toggle = page.getByRole('button', { name: '關閉音效' })
+  await expect(toggle).toBeVisible()
+  await toggle.click()
+  await expect(page.getByRole('button', { name: '開啟音效' })).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: '開啟音效' })).toBeVisible()
+
+  await page.getByRole('button', { name: '開啟音效' }).click()
+  await expect(page.getByRole('button', { name: '關閉音效' })).toBeVisible()
+})

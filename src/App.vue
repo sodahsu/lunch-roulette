@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
+import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
 import { calculateDinnerSuccessRate, RARE_CARD_REASON } from './domain/domain'
 import {
@@ -66,6 +67,7 @@ const qrCodeDataUrl = ref('')
 const copiedLink = ref(false)
 const successRevealBeat = ref(0)
 const quizInterstitialVisible = ref(false)
+const audioMuted = ref(isAudioMuted())
 let quizInterstitialTimer: number | null = null
 let unsubscribe: (() => void) | null = null
 
@@ -362,6 +364,7 @@ function attachRealtime(): Promise<void> {
 }
 
 async function startHost() {
+  await enableAudioFromGesture()
   await withBusy(async () => {
     session.value = await createSession()
     roomCode.value = session.value.code
@@ -369,6 +372,8 @@ async function startHost() {
     setRoomInUrl(session.value.code)
     await updateJoinQr()
     await attachRealtime()
+    screen.value = 'host'
+    if (!audioMuted.value) startLobbyLoop()
     await refreshSessionState()
     screen.value = 'host'
   })
@@ -412,7 +417,21 @@ function playAgainAsPlayer() {
   screen.value = 'join'
 }
 
-function startJoin() {
+async function enableAudioFromGesture() {
+  await unlockAudio()
+  if (!audioMuted.value && (screen.value === 'landing' || screen.value === 'host')) startLobbyLoop()
+}
+
+function toggleAudio() {
+  audioMuted.value = !audioMuted.value
+  setAudioMuted(audioMuted.value)
+  if (!audioMuted.value && (screen.value === 'landing' || screen.value === 'host')) startLobbyLoop()
+}
+
+async function startJoin() {
+  await enableAudioFromGesture()
+  stopLobbyLoop()
+  playCue('reveal')
   screen.value = 'join'
 }
 
@@ -437,6 +456,7 @@ function choose(optionId: string) {
   const question = currentQuestion.value
   if (!question || session.value?.status !== 'open') return
   answers.value = { ...answers.value, [question.id]: optionId }
+  playCue('click')
 }
 
 function triggerQuizInterstitial() {
@@ -505,8 +525,10 @@ function wait(ms: number) {
 }
 
 async function runRevealCountdown() {
+  stopLobbyLoop()
   for (const step of [3, 2, 1]) {
     revealStep.value = step
+    playCue('countdown')
     await wait(850)
   }
 }
@@ -515,11 +537,13 @@ async function runDinnerSuccessReveal() {
   if (!session.value) return
 
   groupStats.value = await previewLockedGroupStats(session.value)
+  playCue('suspense')
   successRevealBeat.value = 1
   await wait(1300)
   successRevealBeat.value = 2
   await wait(1200)
   successRevealBeat.value = 3
+  playCue('victory')
 }
 
 async function reveal() {
@@ -527,6 +551,7 @@ async function reveal() {
     if (!session.value || session.value.status !== 'open') return
 
     successRevealBeat.value = 0
+    playCue('lock')
     await lockSession(session.value)
     await refreshSessionState()
     await runRevealCountdown()
@@ -547,6 +572,7 @@ async function revealPersonas() {
   await withBusy(async () => {
     if (!session.value || session.value.status !== 'locked') return
     groupStats.value = await finalizeReveal(session.value)
+    playCue('reveal')
     await refreshSessionState()
   })
 }
@@ -584,6 +610,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopLobbyLoop()
   unsubscribe?.()
   if (quizInterstitialTimer !== null) window.clearTimeout(quizInterstitialTimer)
 })
@@ -591,6 +618,15 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="app-shell">
+    <button
+      class="audio-toggle"
+      type="button"
+      :aria-label="audioMuted ? '開啟音效' : '關閉音效'"
+      :title="audioMuted ? '開啟音效' : '關閉音效'"
+      @click="toggleAudio"
+    >
+      {{ audioMuted ? '🔇' : '🔊' }}
+    </button>
     <Transition name="interstitial">
       <aside
         v-if="quizInterstitialVisible && quizEvent"

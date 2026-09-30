@@ -94,6 +94,10 @@
 - [x] Mobile responsive visual system
 - [x] focus-visible / prefers-reduced-motion
 - [x] Dark document theme metadata
+- [x] 音效系統：Host lobby loop、答題 click、lock、3/2/1、suspense、result reveal / victory
+- [x] 全域音效開關並以 localStorage 記住靜音設定
+- [x] Audio 由使用者互動解鎖，避免 mobile autoplay 失敗
+- [x] Lobby loop 只在 landing / Host 使用，進入答題與 Reveal 會停止，避免多裝置長時間疊音
 
 ## 4. Automated test code
 
@@ -115,6 +119,7 @@
 - [x] CASE-14 一般卡與稀有卡顯示 test code
 - [x] CASE-15 每場稀有卡保底與原因 test code
 - [x] CASE-16 food consensus 示意流程 test code
+- [x] CASE-18 音效控制可切換並記住靜音設定
 
 > 上述只代表 test code 已寫，不代表 runtime PASS。
 
@@ -149,6 +154,8 @@
 - [ ] 實際驗證 Persona SVG 在手機小尺寸清楚可辨識（人格卡已改用插圖，需實機確認）
 - [ ] 實際驗證 reduced-motion
 - [ ] 實際多 browser / device Reveal smoke test
+- [ ] 實機驗證 iOS / Android 首次互動後音訊成功解鎖
+- [ ] 實機驗證多人現場只有 Host 持續播放 lobby BGM，participant 僅短音效
 
 ## 6b. Food consensus（大家都能吃）
 
