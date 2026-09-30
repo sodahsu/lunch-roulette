@@ -1003,7 +1003,7 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 - Anonymous Auth 已於 2026-09-30 驗證可用；Supabase project 為 ACTIVE_HEALTHY。2026-10-01 已確認 Host-only revealed participant overview RLS policy 存在。Security Advisor 目前有 Anonymous Sign-ins 與 leaked-password-protection warnings，屬已知警告，不應寫成 0 lint。
 - 真機多人同步未驗證。
 - Dark visual redesign 已實作，但尚未完成 browser / device runtime QA。
-- Vercel production demo 尚未建立；2026-09-29 查核 Vercel team 目前只有 `beloved-agent`，沒有 `lunch-roulette` project，且目前 Vercel connector 沒有可用的 create-project / deploy action。
+- Vercel：2026-10-01 GitHub 對目前 `main` 回報 `Vercel = pending`，target 指向 `lunch-roulette` deployment；但目前連接的 Vercel workspace 仍只列出 `beloved-agent`，無法從此 connector 驗證該 deployment 的 project ownership / production readiness。因此不可再寫成「完全沒有部署」，也不可宣稱 production demo 已驗證可用。
 - 2026-10-01 remote branches 已重新驗證：`main`、`chore/vercel-main-only`、`feat/lunch-roulette-mvp`、`feat/reveal-sync-show`。分支清理屬 repo hygiene，不影響本次規格與程式一致性判定。
 
 ## Verdict
