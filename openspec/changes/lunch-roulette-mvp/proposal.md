@@ -38,9 +38,11 @@
   - 飲食人格。
   - 靈魂飯友。
   - 飲食天敵。
-- 核心題組、人格、配對與成功率皆採 deterministic 規則。
+  - 大家都能吃的餐點。
+- 完成答題後 participant 另提交獨立的 `food-avoid` 忌口資料；結果只保存各類排除計數，不影響人格、配對或成功率。
+- 核心題組、人格、配對、成功率與 food consensus 皆採 deterministic 規則。
 - UI 採 Dark Editorial × Food Personality × Social Experiment；Host / Quiz / Reveal / Persona Card 共用同一套高對比視覺系統。
-- Persona runtime asset 使用 8 種自有 inline SVG animal glyph，不依賴外部生成圖或 CDN。
+- Runtime 支援 10 種 Persona；人格圖片由 `src/assets/personas/*.webp` 提供，缺圖時由 inline SVG fallback，不依賴外部 CDN。
 
 ### Out of scope
 
@@ -57,6 +59,7 @@
 1. `live-session`：開房、加入、進度、鎖定、兩段式 Reveal 與 Realtime 同步。
 2. `preference-quiz`：版本化題組、房間固定抽題、作答與修改。
 3. `result-reveal`：成功率、群體統計、人格卡與配對結果。
+4. `food-consensus`：交卷前忌口、揭曉後全員可接受餐點與不洩漏個人選擇的 aggregate。
 
 ## v0.2 decisions
 
@@ -65,7 +68,7 @@
 - 每局：依房號 deterministic 選 12 題，每類 2 題。
 - `self-image` 每局必出。
 - 舊 v0.1 場次仍使用原本 8 題。
-- Persona：8 種人格，option score 加總，最高分勝出，同分使用固定 `PERSONA_PRIORITY`。
+- Persona：10 種人格，option score 加總，最高分勝出，同分使用固定 `PERSONA_PRIORITY`。
 - Persona 不使用 threshold。
 - Similarity：雙方 active questions 的答案完全一致率。
 - 今晚約成飯的成功率：由 locked responses 的 aggregate deterministic 計算。

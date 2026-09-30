@@ -259,7 +259,7 @@ score = round(mean(questionAgreement) * 100)
 
 ## 9. Persona behavior
 
-- 共 8 種 persona。
+- 共 10 種 persona。
 - 只使用 active questions 的 option scores。
 - 各 persona score 加總後取最高。
 - 不使用 threshold。
@@ -382,16 +382,18 @@ Final persona reveal 完成後，Host 顯示最後任務：
 
 ### Persona collectible card
 
-`src/components/PersonaGlyph.vue` 提供 8 種一致視覺系統的 inline SVG animal glyph：
+Runtime 支援 10 種一致視覺系統的 Persona asset：優先載入 `src/assets/personas/*.webp`，缺圖時由 `src/components/PersonaGlyph.vue` 提供 inline SVG fallback：
 
-- Otter / Peacekeeper
-- Wolf / Contrarian
-- Cat / Picky Eater
-- Fox / Adventurer
-- Squirrel / Value Hunter
-- Turtle / Homebody
-- Bear / Food Fanatic
-- Dog / Truly Easygoing
+- Peacekeeper
+- Contrarian
+- Picky Eater
+- Adventurer
+- Value Hunter
+- Homebody
+- Food Fanatic
+- Truly Easygoing
+- All-in Eater
+- Order Captain
 
 Persona 結果卡顯示：
 
@@ -430,9 +432,11 @@ Test code 覆蓋：
 - incomplete exclusion。
 - snapshot deterministic rebuild。
 
-**Runtime status：NOT_RUN。**
+**Runtime status：33 項 unit tests 通過（2026-09-30）；typecheck 與 build 亦通過。**
 
 ### Playwright
+
+Playwright 目前實際包含 CASE-01～16。
 
 CASE-01 驗證核心 Reveal 順序：
 
@@ -444,29 +448,19 @@ Host lock
 → Participant 手機同步 persona
 ```
 
-CASE-09 驗證第 4 題會出現固定節奏事件。
+CASE-02～10 覆蓋未滿 8 人、latest response、incomplete、lock 後不可改、refresh、privacy、第 9 位、pacing 與 Persona card；CASE-11～16 另覆蓋失效房號、重新開局、示意 Persona、稀有卡與 food consensus。
 
-其餘 CASE-02～08 繼續驗證：
-
-- 未滿 8 人 Reveal。
-- latest response。
-- incomplete 不阻塞。
-- lock 後不可改。
-- refresh 結果一致。
-- public privacy。
-- 第 9 位可加入。
-
-**Runtime status：NOT_RUN。**
+**Runtime status：16 項 E2E tests 通過（2026-09-30）；多裝置與真機驗證仍待執行。**
 
 ## 15. Validation gate
 
 在此 change 可 archive 前至少需要：
 
-1. `npm install`
-2. `npm run test:unit`
-3. `npm run typecheck`
-4. `npm run build`
-5. `npm run test:e2e`
+1. `pnpm install --frozen-lockfile`
+2. `pnpm test:unit`
+3. `pnpm typecheck`
+4. `pnpm build`
+5. `pnpm test:e2e`
 6. Anonymous Sign-ins runtime verification
 7. 實際多人兩段式 Reveal smoke test
 8. Review success-rate cross-version persistence decision

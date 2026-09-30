@@ -15,9 +15,10 @@ Host 開房 / QR 加入
 → Host 按「公開處刑 🎴」
 → 手機同步翻 Persona collectible card
 → 靈魂飯友 / 飲食天敵
+→ 結果頁列出大家都能吃的餐點
 ```
 
-v0.2 題庫共有 24 題、6 類；每個房間依房號固定選 12 題，每類 2 題。舊 v0.1 房間保留原 8 題。
+v0.2 題庫共有 24 題、6 類；每個房間依房號固定選 12 題，每類 2 題。舊 v0.1 房間保留原 8 題。完成答題後另有獨立的忌口步驟；結果只保存各類排除計數，不影響 Persona、配對或成功率。
 
 ## Visual direction
 
@@ -29,12 +30,12 @@ v0.2 題庫共有 24 題、6 類；每個房間依房號固定選 12 題，每�
 - A / B 大型選項
 - 第 4 / 8 / 11 題 full-screen pacing interstitial
 - Success Rate 巨型 typography
-- 8 種自有 inline SVG animal Persona
+- 10 種 Persona runtime asset（圖片缺失時退回 inline SVG）
 - Collectible Persona Card
 
 Runtime Persona 圖形位於：
 
-`src/components/PersonaGlyph.vue`
+`src/assets/personas/`（缺圖時退回 `src/components/PersonaGlyph.vue`）
 
 ## Stack
 
@@ -105,7 +106,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Playwright 目前包含 CASE-01～10，涵蓋：
+Playwright 目前包含 CASE-01～16，涵蓋：
 
 - 兩段式 Reveal
 - 未完成者
@@ -115,7 +116,11 @@ Playwright 目前包含 CASE-01～10，涵蓋：
 - public privacy
 - 第 9 位 participant
 - pacing interstitial
-- collectible Persona SVG card
+- collectible Persona card 與 10 種 Persona
+- 房號不存在與 URL 清理
+- 結束後重新開局
+- 稀有卡與每場保底
+- food consensus 示意流程
 
 > Test code 已存在不代表 runtime 已 PASS。請以實際命令輸出為準。
 
@@ -147,5 +152,6 @@ Active OpenSpec change：
 - `live-session`
 - `preference-quiz`
 - `result-reveal`
+- `food-consensus`
 
 在 runtime validation 與 success-rate cross-version persistence 決策完成前，change 保持 active，不應宣稱已 archive。
