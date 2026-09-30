@@ -332,3 +332,30 @@ test('CASE-11 房號不存在時提醒使用者，並清掉失效的網址房號
     await context.close()
   }
 })
+
+test('CASE-12 結束後主持人可再開一局，參加者可加入新的一局', async ({ browser }) => {
+  const host = await createHost(browser)
+  const amy = await joinParticipant(browser, host.code, 'Amy')
+
+  try {
+    await answerAll(amy.page, 0)
+    await reveal(host.page)
+    await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+
+    await host.page.getByRole('button', { name: /再開一局/ }).click()
+    const heading = host.page.locator('h2').filter({ hasText: '房號' })
+    await expect(heading).toHaveText(new RegExp(`房號\\s*(?!${host.code})[A-Z2-9]{6}`))
+    const newCode = (await heading.textContent())!.match(/[A-Z2-9]{6}/)![0]
+    expect(newCode).not.toBe(host.code)
+    await expect(joinedMetric(host.page)).toHaveText('0')
+
+    await amy.page.getByRole('button', { name: /加入新的一局/ }).click()
+    await expect(amy.page.getByRole('heading', { name: '先報上名來' })).toBeVisible()
+    await amy.page.getByLabel('房號').fill(newCode!)
+    await amy.page.getByRole('button', { name: '加入這一局' }).click()
+    await expect(amy.page.getByText(/第 1 \/ \d+ 題/)).toBeVisible()
+    await expect(joinedMetric(host.page)).toHaveText('1')
+  } finally {
+    await closeActors(host, amy)
+  }
+})

@@ -347,6 +347,43 @@ async function startHost() {
   })
 }
 
+// 開下一局前清掉上一局的全部狀態；暱稱保留，玩家不用重打
+function resetRound() {
+  unsubscribe?.()
+  unsubscribe = null
+  if (quizInterstitialTimer !== null) {
+    window.clearTimeout(quizInterstitialTimer)
+    quizInterstitialTimer = null
+  }
+  quizInterstitialVisible.value = false
+  session.value = null
+  participant.value = null
+  participants.value = []
+  completedCount.value = 0
+  answers.value = {}
+  questionIndex.value = 0
+  groupStats.value = null
+  personalResult.value = null
+  isHost.value = false
+  revealStep.value = 3
+  successRevealBeat.value = 0
+  qrCodeDataUrl.value = ''
+  copiedLink.value = false
+  roomCode.value = ''
+  errorMessage.value = ''
+  clearRoomInUrl()
+}
+
+async function playAgainAsHost() {
+  resetRound()
+  await startHost()
+}
+
+function playAgainAsPlayer() {
+  resetRound()
+  screen.value = 'join'
+}
+
 function startJoin() {
   screen.value = 'join'
 }
@@ -703,6 +740,10 @@ onBeforeUnmount(() => {
         </article>
 
         <p class="host-result-footer">手機已同步翻牌。剩下的交給你們互相吐槽。</p>
+
+        <div class="bottom-actions">
+          <button class="primary" type="button" :disabled="busy" @click="playAgainAsHost">再開一局 ↻</button>
+        </div>
       </div>
 
       <div v-else class="bottom-actions">
@@ -749,6 +790,10 @@ onBeforeUnmount(() => {
         <h2>你沒有答完</h2>
         <p class="persona-tagline">這次不硬判人格。下局記得交卷，才會拿到人格卡和飯友配對。</p>
       </template>
+
+      <div class="bottom-actions">
+        <button class="secondary" type="button" @click="playAgainAsPlayer">加入新的一局 ↻</button>
+      </div>
     </section>
 
     <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
