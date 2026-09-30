@@ -313,3 +313,22 @@ test('CASE-10 Persona collectible card 會 render 動物向量與 TYPE', async (
     await closeActors(host, participant)
   }
 })
+
+test('CASE-11 房號不存在時提醒使用者，並清掉失效的網址房號', async ({ browser }) => {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+
+  try {
+    await page.goto('/?room=ZZZZZZ')
+    await expect(page.getByRole('alert')).toContainText('找不到房號 ZZZZZZ')
+    await expect(page.getByRole('heading', { name: '先報上名來' })).toBeVisible()
+    expect(new URL(page.url()).searchParams.has('room')).toBe(false)
+
+    await page.getByLabel('房號').fill('yyyyyy')
+    await page.getByLabel('暱稱').fill('Nobody')
+    await page.getByRole('button', { name: '加入這一局' }).click()
+    await expect(page.getByRole('alert')).toContainText('找不到房號 YYYYYY')
+  } finally {
+    await context.close()
+  }
+})

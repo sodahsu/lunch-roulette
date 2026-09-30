@@ -45,15 +45,24 @@ export async function createSession(): Promise<SessionRecord> {
   return data as SessionRecord
 }
 
+export class SessionNotFoundError extends Error {
+  constructor(code: string) {
+    super(`找不到房號 ${code}，請確認房號是否正確，或請主持人重新開一局。`)
+    this.name = 'SessionNotFoundError'
+  }
+}
+
 export async function getSessionByCode(code: string): Promise<SessionRecord> {
   await ensureUserId()
+  const normalized = code.trim().toUpperCase()
   const { data, error } = await supabase
     .from('sessions')
     .select('*')
-    .eq('code', code.toUpperCase())
-    .single()
+    .eq('code', normalized)
+    .maybeSingle()
 
   if (error) throw error
+  if (!data) throw new SessionNotFoundError(normalized)
   return data as SessionRecord
 }
 

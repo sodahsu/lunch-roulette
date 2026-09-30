@@ -19,6 +19,7 @@ import {
   lockSession,
   previewLockedGroupStats,
   saveAnswers,
+  SessionNotFoundError,
   subscribeToSession,
   type SessionRecord,
 } from './lib/session-service'
@@ -214,6 +215,12 @@ async function withBusy(task: () => Promise<void>) {
   }
 }
 
+function clearRoomInUrl() {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('room')
+  window.history.replaceState({}, '', url)
+}
+
 function setRoomInUrl(code: string) {
   const url = new URL(window.location.href)
   url.searchParams.set('room', code)
@@ -253,7 +260,16 @@ async function restoreFromUrl() {
   await withBusy(async () => {
     roomCode.value = code.toUpperCase()
     const userId = await ensureUserId()
-    session.value = await getSessionByCode(roomCode.value)
+    try {
+      session.value = await getSessionByCode(roomCode.value)
+    } catch (error) {
+      if (!(error instanceof SessionNotFoundError)) throw error
+      // 網址上的房號已失效：清掉它，回到加入畫面讓使用者重新輸入
+      clearRoomInUrl()
+      session.value = null
+      screen.value = 'join'
+      throw error
+    }
     isHost.value = session.value.host_user_id === userId
     participant.value = await getOwnParticipant(session.value.id)
     if (isHost.value) await updateJoinQr()
