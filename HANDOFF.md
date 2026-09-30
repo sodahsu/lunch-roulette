@@ -441,7 +441,7 @@ ENEMY   KEVIN
 
 - [x] 卡片使用統一黑 / 白 / Electric Blue 系統。
 - [x] 每個 Persona 只換局部識別色。
-- [x] 不做 8 張完全不同的彩虹 theme。
+- [x] 不做 10 張完全不同的彩虹 theme。
 - [x] 10 個 runtime Persona 使用一致的 asset / inline SVG fallback 視覺語言。
 - [x] Runtime glyph 採 editorial geometric animal，不走兒童卡通。
 - [x] Persona Card 已採 collectible identity card composition；實機 screenshot QA 待驗證。
@@ -464,12 +464,12 @@ ENEMY   KEVIN
 ## 6.1 Visual Prompt Library｜可直接拿去生圖
 
 這一節是 **visual generation source brief**。  
-目前只是交接用 prompt，不代表資產已生成或已整合進程式。下方 prompt library 仍是早期 8 個角色的 legacy source brief，不代表目前 10 個 runtime Persona 的完整資產規格。
+這一節是目前 10 個 runtime Persona 的資產 source brief；runtime 仍優先使用 `src/assets/personas/*.webp`，缺圖時使用 inline SVG fallback。
 
 ### 使用規則
 
 1. 角色圖本身 **不要產生文字**；Persona 名稱、TYPE、MATCH、ENEMY 全由前端疊字。
-2. 所有 8 個角色必須維持：
+2. 所有 10 個角色必須維持：
    - 相同鏡位。
    - 相同材質。
    - 相同燈光。
@@ -484,7 +484,7 @@ ENEMY   KEVIN
 4. 不要讓角色變成兒童吉祥物。
 5. 不要生成品牌 UI、App screenshot、Logo、浮水印或可讀文字。
 6. Persona card 最終會放在手機，因此角色輪廓在小尺寸必須仍可辨識。
-7. 如果一次產生整組，優先要求 **one coherent visual system, eight clearly distinct characters**，不要八張各自發揮。
+7. 如果一次產生整組，優先要求 **one coherent visual system, ten clearly distinct characters**，不要十張各自發揮。
 8. 如果分開生圖，每次都要帶上 Shared Style Prompt。
 
 ---
@@ -865,8 +865,8 @@ PENDING：
 已寫：
 
 - [x] Vitest domain tests。
-- [x] Playwright CASE-01～16 test code。
-- [x] CASE-11～16 覆蓋失效房號、重新開局、示意 Persona、稀有卡與 food consensus。
+- [x] Playwright CASE-01～18 test code（CASE-17 / 18 已加入；最新 HEAD 尚未完整重跑）。
+- [x] CASE-11～16 覆蓋失效房號、重新開局、示意 Persona、稀有卡與 food consensus；CASE-17 / 18 覆蓋 Host overview responsive layout 與音效偏好。
 
 重點：
 
@@ -907,7 +907,7 @@ Host 公開處刑
 | `pnpm test:unit` | VERIFIED：33 項通過（2026-09-30） |
 | `pnpm typecheck` | VERIFIED（2026-09-30） |
 | `pnpm build` | VERIFIED（2026-09-30） |
-| `pnpm test:e2e` | VERIFIED：16 項通過（2026-09-30） |
+| `pnpm test:e2e` | PREVIOUSLY VERIFIED：較早 HEAD 16 項通過（2026-09-30）；最新 HEAD 已新增 CASE-17 / 18，需重跑 |
 | Supabase project health | VERIFIED: ACTIVE_HEALTHY |
 | Supabase Security Advisor | VERIFIED: 0 security lints |
 | Anonymous Sign-ins runtime | UNKNOWN：目前 auth.users 尚無 anonymous user evidence |
@@ -1098,7 +1098,7 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 
 此技術決策已完成；OpenSpec archive 現在只被 runtime / integration validation 阻擋。
 
-**OpenSpec archive = NOT_READY（runtime validation only）**
+**OpenSpec archive = NOT_READY（最新 HEAD runtime / integration validation + archive readiness）**
 
 ---
 
@@ -1116,8 +1116,8 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 
 ### NOT_RUN / UNKNOWN
 
-- Runtime tests 尚未執行；本次 local container 的 DNS 與 npm cache 不足以完成 install。
-- Anonymous Auth enable 狀態仍未知；Supabase project 本身已 VERIFIED ACTIVE_HEALTHY，Security Advisor 0 lint。
+- 2026-09-30 較早 HEAD 曾完成 unit / typecheck / build / 16 項 E2E；最新 HEAD 已加入 Host overview、CASE-17 / 18 與規格收斂，2026-10-01 本環境因 GitHub DNS 無法重新 clone / install，因此最新 HEAD 尚未完整重跑。
+- Anonymous Auth enable 狀態仍未知；Supabase project 已 VERIFIED ACTIVE_HEALTHY；2026-10-01 已確認 Host-only revealed participant overview RLS policy 存在。Security Advisor 目前有 Anonymous Sign-ins 與 leaked-password-protection warnings，不應再寫成 0 lint。
 - 真機多人同步未驗證。
 - Dark visual redesign 已實作，但尚未完成 browser / device runtime QA。
 - Vercel production demo 尚未建立；2026-09-29 查核 Vercel team 目前只有 `beloved-agent`，沒有 `lunch-roulette` project，且目前 Vercel connector 沒有可用的 create-project / deploy action。
