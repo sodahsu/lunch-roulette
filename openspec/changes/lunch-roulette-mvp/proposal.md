@@ -36,13 +36,16 @@
   - 歷史性共識。
 - 完成答題者手機顯示：
   - 飲食人格。
+  - 稀有卡狀態與稀有原因（若有）。
   - 靈魂飯友。
   - 飲食天敵。
   - 大家都能吃的餐點。
 - 完成答題後 participant 另提交獨立的 `food-avoid` 忌口資料；結果只保存各類排除計數，不影響人格、配對或成功率。
-- 核心題組、人格、配對、成功率與 food consensus 皆採 deterministic 規則。
+- 核心題組、人格、配對、成功率、food consensus 與稀有卡抽籤皆採 deterministic 規則。
 - UI 採 Dark Editorial × Food Personality × Social Experiment；Host / Quiz / Reveal / Persona Card 共用同一套高對比視覺系統。
 - Runtime 支援 10 種 Persona；人格圖片由 `src/assets/personas/*.webp` 提供，缺圖時由 inline SVG fallback，不依賴外部 CDN。
+- Revealed 後 authenticated host 可查看同房人格總覽；participant 仍只能取得自己的 persisted result。
+- 音效只作為 pacing / presentation layer；使用者可全域靜音，偏好在瀏覽器端保留，且音訊失敗不得阻塞遊戲主流程。
 
 ### Out of scope
 
@@ -70,6 +73,7 @@
 - 舊 v0.1 場次仍使用原本 8 題。
 - Persona：10 種人格，option score 加總，最高分勝出，同分使用固定 `PERSONA_PRIORITY`。
 - Persona 不使用 threshold。
+- 稀有卡：每位 complete participant 使用 participant identity 做 3% deterministic rare roll；若全場無自然中籤，保底給 rare roll 最接近中籤者，與答案內容無關。
 - Similarity：雙方 active questions 的答案完全一致率。
 - 今晚約成飯的成功率：由 locked responses 的 aggregate deterministic 計算。
 - Dinner-success algorithm 依 `questionnaire_version` 固定 mapping；v0.1 / v0.2 目前都使用 `v1`。
@@ -79,6 +83,6 @@
 
 ## Change status
 
-目前 code 與 OpenSpec change 已包含上述 v0.2 行為，但 runtime validation 尚未完整執行。
+目前 code 與 OpenSpec change 已同步上述 v0.2 行為；2026-10-01 已完成已知 contract drift 收斂，但最新 HEAD 的 runtime / integration validation 尚未完整重跑。
 
 此 change 保持 active；在 unit / typecheck / build / E2E、Anonymous Auth 與必要整合驗證完成前，不應 archive 成已驗證的現行規格。
