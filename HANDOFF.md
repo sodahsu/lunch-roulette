@@ -1,6 +1,6 @@
 ---
 title: "Lunch Roulette《都可以？》｜AI 工作交接"
-date: "2026-09-29"
+date: "2026-10-01"
 handoff_status: ready_for_handoff
 ---
 
@@ -10,7 +10,7 @@ handoff_status: ready_for_handoff
 
 **交付定位：**核心多人遊戲、兩段式 Reveal、防冷場 pacing、Dark Editorial 視覺與 OpenSpec 已實作；下一步重點是 runtime / 多裝置 / 部署驗證，不要再把視覺改版列為未開始。
 
-**功能實作快照 HEAD（本次 HANDOFF 更新前）：** `7981d6b257507973b46d46038c1aa874b733fa3d`
+**目前 main 基準（2026-10-01 一致性收斂前）：** `1421a6c7bc369dab2e68293c580908ab33c3160b`
 
 ```yaml
 handoff_purpose: implementation_and_validation
@@ -734,10 +734,11 @@ FACT：
 - Host revealed overview 權限與 participant privacy 已進 spec。
 - 全域音效 / 靜音持久化的可觀察行為已進 spec。
 
-PENDING：
+STATUS：
 
-- 視覺 dark-editorial redesign **尚未寫進正式 OpenSpec capability requirement**。
-- 若下一輪開始實作視覺，需同步 design/tasks；純視覺 token 可留 design，若改變 interaction behavior 則同步 capability spec。
+- Dark Editorial 視覺已實作，視覺 token / asset ownership / responsive 策略記錄於 `design.md` 與 `tasks.md`。
+- 會影響可觀察互動 contract 的部分（Reveal、Host overview、音效控制）已同步 capability spec；純視覺 token 不重複寫進 capability requirement。
+- 剩餘工作是 browser / device runtime QA，不是重新設計。
 
 ---
 
@@ -993,16 +994,16 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 - 防冷場 pacing 已寫。
 - Test code 已寫。
 - OpenSpec 已同步目前 gameplay。
-- 本交接已補上下一輪 dark editorial 視覺需求。
+- Dark Editorial 視覺已實作；本交接與 OpenSpec 已同步目前 runtime contract 與資產 identity。
 
 ### NOT_RUN / UNKNOWN
 
 - 2026-09-30 較早 HEAD 曾完成 unit / typecheck / build / 16 項 E2E；最新 HEAD 已加入 Host overview、CASE-17 / 18 與規格收斂，2026-10-01 本環境因 GitHub DNS 無法重新 clone / install，因此最新 HEAD 尚未完整重跑。
-- Anonymous Auth enable 狀態仍未知；Supabase project 已 VERIFIED ACTIVE_HEALTHY；2026-10-01 已確認 Host-only revealed participant overview RLS policy 存在。Security Advisor 目前有 Anonymous Sign-ins 與 leaked-password-protection warnings，不應再寫成 0 lint。
+- Anonymous Auth 已於 2026-09-30 驗證可用；Supabase project 為 ACTIVE_HEALTHY。2026-10-01 已確認 Host-only revealed participant overview RLS policy 存在。Security Advisor 目前有 Anonymous Sign-ins 與 leaked-password-protection warnings，屬已知警告，不應寫成 0 lint。
 - 真機多人同步未驗證。
 - Dark visual redesign 已實作，但尚未完成 browser / device runtime QA。
 - Vercel production demo 尚未建立；2026-09-29 查核 Vercel team 目前只有 `beloved-agent`，沒有 `lunch-roulette` project，且目前 Vercel connector 沒有可用的 create-project / deploy action。
-- remote branches 已重新驗證，仍有 `chore/vercel-main-only`、`feat/lunch-roulette-mvp`、`feat/reveal-sync-show`、`spec/openspec-lunch-roulette-mvp` 與 `main`；目前連接器沒有 delete-branch action。
+- 2026-10-01 remote branches 已重新驗證：`main`、`chore/vercel-main-only`、`feat/lunch-roulette-mvp`、`feat/reveal-sync-show`。分支清理屬 repo hygiene，不影響本次規格與程式一致性判定。
 
 ## Verdict
 
