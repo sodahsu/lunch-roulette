@@ -403,7 +403,7 @@ Persona 結果卡顯示：
 - MATCH / 靈魂飯友
 - ENEMY / 飲食天敵
 
-目前正式 runtime asset 是自有 inline SVG，不依賴外部生成圖或 CDN。HANDOFF 內的生圖 Prompt Library 保留為未來資產升級來源，不是目前 runtime dependency。
+目前正式 runtime asset 優先使用 repository 內的 `src/assets/personas/*.webp`；缺圖時才退回自有 inline SVG，兩者都不依賴外部 CDN。HANDOFF 的生圖 Prompt Library 已同步為相同 10 Persona identity，作為後續資產重生成來源。
 
 ### Responsive / accessibility
 
