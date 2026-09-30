@@ -125,22 +125,22 @@
 
 ## 6. Runtime validation — pending
 
-- [ ] 確認 Supabase Anonymous Sign-ins provider 已 Enable
-- [ ] `npm install` 成功並產生 lockfile
-- [ ] `npm run test:unit`
-- [ ] `npm run typecheck`
-- [ ] `npm run build`
-- [ ] `npm run test:e2e`
+- [x] 確認 Supabase Anonymous Sign-ins provider 已 Enable（2026-09-30 於 Dashboard 開啟；註冊 API 回傳 token）
+- [x] 依賴安裝成功並產生 lockfile（專案已遷移至 pnpm，lockfile 為 `pnpm-lock.yaml`）
+- [x] `npm run test:unit`（28 項通過）
+- [x] `npm run typecheck`
+- [x] `npm run build`
+- [x] `npm run test:e2e`（15 項通過；含 10 人格、稀有卡保底、房號不存在、再開一局）
 - [ ] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
 - [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
-- [ ] 實際驗證成功率畫面出現時 participant 仍停留在 waiting
-- [ ] 實際驗證 host 按翻人格卡後所有完成者同步 persona
-- [ ] 實際驗證 incomplete participant 不會拿到 persona
-- [ ] 實際驗證第 4 / 8 / 11 題節奏提示不影響答題
+- [x] 實際驗證成功率畫面出現時 participant 仍停留在 waiting（e2e CASE-01）
+- [x] 實際驗證 host 按翻人格卡後所有完成者同步 persona（e2e CASE-01）
+- [x] 實際驗證 incomplete participant 不會拿到 persona（e2e CASE-04）
+- [ ] 實際驗證第 4 / 8 / 11 題節奏提示不影響答題（e2e CASE-09 只涵蓋第 4 題）
 - [ ] 實際驗證成功率三拍揭曉沒有多餘停頓
 - [ ] 實際驗證人格翻牌後大螢幕收尾提示可見
-- [ ] 實際驗證 Dark Visual 在 375 / 768 / 大螢幕不裁切
-- [ ] 實際驗證 Persona SVG 在手機小尺寸清楚可辨識
+- [ ] 實際驗證 Dark Visual 在 375 / 768 / 大螢幕不裁切（360 / 375 / 390 / 768 已自動檢查無橫向溢出、觸控目標 ≥44px；大螢幕與實機未驗）
+- [ ] 實際驗證 Persona SVG 在手機小尺寸清楚可辨識（人格卡已改用插圖，需實機確認）
 - [ ] 實際驗證 reduced-motion
 - [ ] 實際多 browser / device Reveal smoke test
 
