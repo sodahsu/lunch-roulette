@@ -254,6 +254,20 @@ export async function getPersonalResult(
   return (data?.result as ParticipantResult | undefined) ?? null
 }
 
+export type ParticipantResultRow = {
+  participant_id: string
+  result: ParticipantResult
+}
+
+export async function listParticipantResults(sessionId: string): Promise<ParticipantResultRow[]> {
+  const { data, error } = await supabase
+    .from('participant_results')
+    .select('participant_id, result')
+    .eq('session_id', sessionId)
+  if (error) throw error
+  return (data ?? []) as unknown as ParticipantResultRow[]
+}
+
 export function subscribeToSession(
   sessionId: string,
   onChange: () => void,

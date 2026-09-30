@@ -432,3 +432,40 @@ test('CASE-18 音效控制可切換並記住靜音設定', async ({ page }) => {
   await page.getByRole('button', { name: '開啟音效' }).click()
   await expect(page.getByRole('button', { name: '關閉音效' })).toBeVisible()
 })
+
+test('CASE-17 十人結果總覽 demo 可在 Orca 直接查看', async ({ page }) => {
+  await page.goto('/?demo=result&view=overview')
+  await expect(page.getByTestId('result-overview')).toBeVisible()
+  await expect(page.getByTestId('overview-card')).toHaveCount(10)
+  await expect(page.getByTestId('overview-card-code').first()).toHaveText('P01')
+  await expect(page.getByTestId('overview-card-code').last()).toHaveText('P10')
+  await expect(page.getByTestId('overview-card-status')).toHaveCount(10)
+  await expect(page.getByTestId('overview-summary-completed')).toContainText('10 / 10')
+  await expect(page.getByTestId('overview-summary-rare')).toContainText('1')
+  await expect(page.getByTestId('overview-summary-success')).toContainText('100%')
+  await expect(page.getByTestId('overview-consensus')).toContainText('日式')
+
+  for (const viewport of [
+    { width: 390, height: 844, minColumns: 1 },
+    { width: 768, height: 900, minColumns: 2 },
+    { width: 1280, height: 900, minColumns: 3 },
+  ]) {
+    await page.setViewportSize(viewport)
+    const geometry = await page.locator('[data-testid="overview-card-grid"]').evaluate((grid) => {
+      const style = getComputedStyle(grid)
+      const cards = [...grid.querySelectorAll('[data-testid="overview-card"]')]
+      return {
+        columns: style.gridTemplateColumns.split(' ').length,
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        cardsWithinViewport: cards.every((card) => {
+          const rect = card.getBoundingClientRect()
+          return rect.left >= 0 && rect.right <= window.innerWidth
+        }),
+      }
+    })
+    expect(geometry.columns).toBeGreaterThanOrEqual(viewport.minColumns)
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth)
+    expect(geometry.cardsWithinViewport).toBe(true)
+  }
+})

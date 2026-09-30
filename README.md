@@ -63,6 +63,7 @@ Runtime Persona 圖形位於：
    - persist `participant_results`
    - `locked → revealed`
 9. Participant 手機自動載入固定 Persona / pairing result
+10. Revealed 後，Host 可用 `/?room=<ROOM_CODE>&view=overview` 查看同房 complete participants 的 Persona 總覽；participant 仍只能讀自己的 result
 
 ## Supabase
 

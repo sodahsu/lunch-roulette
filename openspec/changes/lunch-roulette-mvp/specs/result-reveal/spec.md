@@ -88,6 +88,21 @@ The system SHALL not persist or display participant persona cards until the host
 - AND persona card 應顯示 persona、靈魂飯友與飲食天敵
 - AND 不要求 participant 再按任何按鈕
 
+## Requirement: Host 可查看同房參加者人格總覽
+The system SHALL expose the complete participant persona overview only to the authenticated host after the session is revealed.
+
+### Scenario: Host 開啟房號人格總覽
+- WHEN authenticated host opens `/?room=<ROOM_CODE>&view=overview` and session status is `revealed`
+- THEN the system SHALL join participants with persisted participant results by `participant_id`
+- AND SHALL show complete participants' display names, persona and rare-card status
+- AND SHALL keep incomplete participants visible without inventing a persona result
+- AND SHALL not expose soulmate / enemy details from another participant's private result
+
+### Scenario: Participant 嘗試開啟主持人人格總覽
+- WHEN a participant opens the same room URL with `view=overview`
+- THEN the system SHALL show only that participant's own result
+- AND SHALL not query or render other participants' persisted results
+
 ## Requirement: Group stats 必須保存正式 Reveal 當下的 aggregate
 The system SHALL persist group statistics when the host triggers the final persona reveal.
 

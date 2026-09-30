@@ -19,6 +19,7 @@ import {
   getSessionByCode,
   getGroupStats,
   getPersonalResult,
+  listParticipantResults,
   getOwnParticipant,
   getOwnResponse,
   ensureUserId,
@@ -33,7 +34,14 @@ import {
   type SessionRecord,
 } from './lib/session-service'
 
-type Screen = 'landing' | 'join' | 'quiz' | 'food' | 'waiting' | 'host' | 'revealing' | 'result'
+type Screen = 'landing' | 'join' | 'quiz' | 'food' | 'waiting' | 'host' | 'revealing' | 'result' | 'overview'
+
+type OverviewCard = {
+  code: string
+  participant: Participant
+  result: Pick<ParticipantResult, 'persona' | 'rare' | 'rareReason'> | null
+  status: 'complete' | 'incomplete' | 'pending'
+}
 
 const PERSONA_DISPLAY: Record<PersonaKey, { code: string; label: string }> = {
   peacekeeper: { code: '01', label: 'PEACEKEEPER' },
@@ -48,6 +56,10 @@ const PERSONA_DISPLAY: Record<PersonaKey, { code: string; label: string }> = {
   orderCaptain: { code: '10', label: 'ORDER CAPTAIN' },
 }
 
+const initialUrl = new URL(window.location.href)
+const hasRoomParam = initialUrl.searchParams.has('room')
+const requestedRoomOverview = ref(initialUrl.searchParams.get('view') === 'overview')
+const restoringFromUrl = ref(hasRoomParam)
 const screen = ref<Screen>('landing')
 const busy = ref(false)
 const errorMessage = ref('')
@@ -61,6 +73,10 @@ const answers = ref<Record<string, string>>({})
 const questionIndex = ref(0)
 const groupStats = ref<GroupQuestionStat[] | null>(null)
 const personalResult = ref<ParticipantResult | null>(null)
+const demoOverviewCards = ref<OverviewCard[]>([])
+const liveOverviewCards = ref<OverviewCard[]>([])
+const isLiveOverview = ref(false)
+const overviewLoadError = ref('')
 const isHost = ref(false)
 const revealStep = ref(3)
 const qrCodeDataUrl = ref('')
@@ -69,6 +85,7 @@ const successRevealBeat = ref(0)
 const quizInterstitialVisible = ref(false)
 const audioMuted = ref(isAudioMuted())
 let quizInterstitialTimer: number | null = null
+let hostLobbyRefreshTimer: number | null = null
 let unsubscribe: (() => void) | null = null
 
 const activeQuestions = computed(() => {
@@ -123,6 +140,13 @@ const dinnerSuccess = computed(() =>
 const incompleteCount = computed(() =>
   Math.max(0, participants.value.length - completedCount.value),
 )
+
+const overviewCards = computed(() => (isLiveOverview.value ? liveOverviewCards.value : demoOverviewCards.value))
+const overviewTotal = computed(() => (isLiveOverview.value ? participants.value.length : overviewCards.value.length))
+const overviewCompleted = computed(() => overviewCards.value.filter((card) => card.status === 'complete').length)
+const overviewRare = computed(() => overviewCards.value.filter((card) => Boolean(card.result?.rare)).length)
+const overviewSuccess = computed(() => (isLiveOverview.value ? dinnerSuccess.value.score : 100))
+const overviewSampleSize = computed(() => (isLiveOverview.value ? resultSampleSize.value : overviewTotal.value))
 
 const quizEvent = computed(() => {
   const events: Record<number, { eyebrow: string; headline: string; text: string }> = {
@@ -234,6 +258,7 @@ async function withBusy(task: () => Promise<void>) {
 function clearRoomInUrl() {
   const url = new URL(window.location.href)
   url.searchParams.delete('room')
+  url.searchParams.delete('view')
   window.history.replaceState({}, '', url)
 }
 
@@ -241,6 +266,30 @@ function setRoomInUrl(code: string) {
   const url = new URL(window.location.href)
   url.searchParams.set('room', code)
   window.history.replaceState({}, '', url)
+}
+
+function setRoomView(view: 'overview' | undefined) {
+  const url = new URL(window.location.href)
+  if (view) url.searchParams.set('view', view)
+  else url.searchParams.delete('view')
+  requestedRoomOverview.value = view === 'overview'
+  window.history.replaceState({}, '', url)
+}
+
+function stopHostLobbyRefresh() {
+  if (hostLobbyRefreshTimer === null) return
+  window.clearInterval(hostLobbyRefreshTimer)
+  hostLobbyRefreshTimer = null
+}
+
+function startHostLobbyRefresh() {
+  stopHostLobbyRefresh()
+  if (!isHost.value || participant.value || session.value?.status !== 'open') return
+
+  hostLobbyRefreshTimer = window.setInterval(() => {
+    if (document.visibilityState !== 'visible') return
+    void refreshSessionState().catch(fail)
+  }, 3000)
 }
 
 async function updateJoinQr() {
@@ -307,8 +356,10 @@ async function restoreFromUrl() {
     await refreshSessionState()
 
     if (session.value.status === 'open') {
-      if (isHost.value && !participant.value) screen.value = 'host'
-      else if (participant.value) screen.value = !ownResponseIsComplete() ? 'quiz' : answers.value[FOOD_AVOID_ID] ? 'waiting' : 'food'
+      if (isHost.value && !participant.value) {
+        screen.value = 'host'
+        startHostLobbyRefresh()
+      } else if (participant.value) screen.value = !ownResponseIsComplete() ? 'quiz' : answers.value[FOOD_AVOID_ID] ? 'waiting' : 'food'
       else screen.value = 'join'
     }
   })
@@ -320,6 +371,46 @@ function ownResponseIsComplete() {
   )
 }
 
+async function loadLiveOverview() {
+  if (!session.value || !isHost.value || session.value.status !== 'revealed') return
+
+  try {
+    const rows = await listParticipantResults(session.value.id)
+    const resultByParticipant = new Map(rows.map((row) => [row.participant_id, row.result]))
+    liveOverviewCards.value = participants.value.map((person, index) => {
+      const result = resultByParticipant.get(person.id) ?? null
+      return {
+        code: `P${String(index + 1).padStart(2, '0')}`,
+        participant: person,
+        result,
+        status: result ? 'complete' : person.completed_at ? 'pending' : 'incomplete',
+      }
+    })
+    overviewLoadError.value = ''
+    isLiveOverview.value = true
+  } catch (error) {
+    overviewLoadError.value = '全員人格總覽尚未啟用，請先套用資料庫權限 migration。'
+    throw error
+  }
+}
+
+async function openLiveOverview() {
+  if (!session.value || !isHost.value || session.value.status !== 'revealed') return
+  await withBusy(async () => {
+    setRoomView('overview')
+    await loadLiveOverview()
+    screen.value = 'overview'
+  })
+}
+
+function closeLiveOverview() {
+  setRoomView(undefined)
+  isLiveOverview.value = false
+  liveOverviewCards.value = []
+  overviewLoadError.value = ''
+  screen.value = 'host'
+}
+
 async function refreshSessionState() {
   if (!session.value) return
   const latest = await getSessionByCode(session.value.code)
@@ -328,15 +419,22 @@ async function refreshSessionState() {
   completedCount.value = participants.value.filter((item) => Boolean(item.completed_at)).length
 
   if (latest.status === 'locked') {
+    stopHostLobbyRefresh()
     screen.value = isHost.value ? 'host' : 'revealing'
     return
   }
 
   if (latest.status === 'revealed') {
+    stopHostLobbyRefresh()
     groupStats.value = await getGroupStats(latest.id)
     if (participant.value) {
+      isLiveOverview.value = false
+      liveOverviewCards.value = []
       personalResult.value = await getPersonalResult(latest.id, participant.value.id)
       screen.value = 'result'
+    } else if (isHost.value && requestedRoomOverview.value) {
+      screen.value = 'overview'
+      await loadLiveOverview()
     } else {
       screen.value = 'host'
     }
@@ -376,6 +474,7 @@ async function startHost() {
     if (!audioMuted.value) startLobbyLoop()
     await refreshSessionState()
     screen.value = 'host'
+    startHostLobbyRefresh()
   })
 }
 
@@ -383,6 +482,7 @@ async function startHost() {
 function resetRound() {
   unsubscribe?.()
   unsubscribe = null
+  stopHostLobbyRefresh()
   if (quizInterstitialTimer !== null) {
     window.clearTimeout(quizInterstitialTimer)
     quizInterstitialTimer = null
@@ -397,6 +497,10 @@ function resetRound() {
   groupStats.value = null
   foodAvoid.value = []
   personalResult.value = null
+  demoOverviewCards.value = []
+  liveOverviewCards.value = []
+  isLiveOverview.value = false
+  overviewLoadError.value = ''
   isHost.value = false
   revealStep.value = 3
   successRevealBeat.value = 0
@@ -584,6 +688,10 @@ function showDemoResult(personaParam: string | null, rare = false) {
   const person = (id: string, display_name: string): Participant => ({
     id, session_id: 'demo', user_id: id, display_name, completed_at: new Date().toISOString(),
   })
+  demoOverviewCards.value = []
+  liveOverviewCards.value = []
+  isLiveOverview.value = false
+  overviewLoadError.value = ''
   participants.value = [person('demo-me', 'Soda'), person('demo-soul', 'Amy'), person('demo-enemy', 'Ben')]
   participant.value = participants.value[0]!
   personalResult.value = {
@@ -600,18 +708,60 @@ function showDemoResult(personaParam: string | null, rare = false) {
   screen.value = 'result'
 }
 
+function showDemoOverview() {
+  isLiveOverview.value = false
+  liveOverviewCards.value = []
+  overviewLoadError.value = ''
+  const now = new Date().toISOString()
+  const participantsFixture = Array.from({ length: 10 }, (_, index) => ({
+    id: `demo-p${String(index + 1).padStart(2, '0')}`,
+    session_id: 'demo-overview',
+    user_id: `demo-p${String(index + 1).padStart(2, '0')}`,
+    display_name: `P${String(index + 1).padStart(2, '0')}`,
+    completed_at: now,
+  }))
+  const easygoing: PersonaKey = 'easygoing'
+
+  demoOverviewCards.value = participantsFixture.map((participantFixture, index) => ({
+    code: participantFixture.display_name,
+    participant: participantFixture,
+    result: {
+      persona: easygoing,
+      rare: index === 2,
+      rareReason: index === 2 ? RARE_CARD_REASON : undefined,
+    },
+    status: 'complete',
+  }))
+  participants.value = participantsFixture
+  participant.value = null
+  personalResult.value = null
+
+  const counts = Object.fromEntries(
+    FOOD_OPTIONS.filter((food) => food.id !== 'japanese').map((food) => [food.id, 1]),
+  )
+  groupStats.value = [{ questionId: FOOD_AVOID_ID, counts, sampleSize: participantsFixture.length }]
+  screen.value = 'overview'
+}
+
 onMounted(() => {
   const params = new URL(window.location.href).searchParams
   if (params.get('demo') === 'result') {
-    showDemoResult(params.get('persona'), params.get('rare') === '1')
+    if (params.get('view') === 'overview') showDemoOverview()
+    else showDemoResult(params.get('persona'), params.get('rare') === '1')
     return
   }
-  void restoreFromUrl().catch(fail)
+  if (!hasRoomParam) return
+  void restoreFromUrl()
+    .catch(fail)
+    .finally(() => {
+      restoringFromUrl.value = false
+    })
 })
 
 onBeforeUnmount(() => {
   stopLobbyLoop()
   unsubscribe?.()
+  stopHostLobbyRefresh()
   if (quizInterstitialTimer !== null) window.clearTimeout(quizInterstitialTimer)
 })
 </script>
@@ -641,7 +791,14 @@ onBeforeUnmount(() => {
       </aside>
     </Transition>
 
-    <section v-if="screen === 'landing'" class="hero panel landing-panel">
+    <section v-if="restoringFromUrl" class="panel center state-panel restore-panel" role="status" aria-live="polite">
+      <div class="state-code reveal-pulse">SYNC</div>
+      <div class="eyebrow">RESTORING SESSION / 正在找回飯局</div>
+      <h2>正在找回你的結果…</h2>
+      <p class="lede">先別重新加入，這一局正在同步回來。</p>
+    </section>
+
+    <section v-else-if="screen === 'landing'" class="hero panel landing-panel">
       <div class="landing-meta">
         <span class="eyebrow">10/1 SOCIAL EXPERIMENT</span>
         <span class="signal-dot">LIVE TEST / 01</span>
@@ -883,13 +1040,8 @@ onBeforeUnmount(() => {
             <p>{{ foodConsensus.sampleSize }} 人都沒排除的類別，挑一個就不會有人被迫吃不想吃的。</p>
           </template>
           <template v-else>
-            <strong>沒有全員都能接受的類別</strong>
-            <ul class="food-chips">
-              <li v-for="item in foodConsensus.leastVetoed" :key="item.food.id">
-                {{ item.food.emoji }} {{ item.food.label }} · {{ item.vetoCount }} 人排除
-              </li>
-            </ul>
-            <p>這是被排除人數最少的類別，至少犧牲最少人。</p>
+            <strong>沒有全員都能接受的類別。那就別聚餐了。</strong>
+            <p>這團連一個安全牌都沒有，硬約只會有人委屈。</p>
           </template>
         </article>
 
@@ -901,7 +1053,8 @@ onBeforeUnmount(() => {
 
         <p class="host-result-footer">手機已同步翻牌。剩下的交給你們互相吐槽。</p>
 
-        <div class="bottom-actions">
+        <div class="bottom-actions inline">
+          <button class="secondary" type="button" :disabled="busy" @click="openLiveOverview">查看全員人格 ↗</button>
           <button class="primary" type="button" :disabled="busy" @click="playAgainAsHost">重新開局 ↻</button>
         </div>
       </div>
@@ -910,6 +1063,83 @@ onBeforeUnmount(() => {
         <button class="primary" type="button" :disabled="busy || completedCount === 0" @click="reveal">
           {{ busy ? '正在公開處刑…' : '鎖定並揭曉' }}
         </button>
+      </div>
+    </section>
+
+    <section v-else-if="screen === 'overview'" class="panel result-panel overview-panel" data-testid="result-overview">
+      <header class="overview-header">
+        <div>
+          <div class="eyebrow">{{ isLiveOverview ? 'LIVE SESSION / HOST OVERVIEW' : '10 PERSON TEST / RESULT OVERVIEW' }}</div>
+          <h2>{{ isLiveOverview ? `房號 ${session?.code} · 全員人格已揭曉` : '今晚這團，十個人都回來了。' }}</h2>
+          <p class="lede">{{ isLiveOverview ? '只有主持人可以查看這頁；參與者手機仍保留個人結果。' : '這是 10 人並行測試的完整結果。沒有人掉線，只有一張稀有卡。' }}</p>
+        </div>
+        <span class="live-badge"><span></span> {{ isLiveOverview ? 'LIVE RESULT' : 'DEMO RESULT' }}</span>
+      </header>
+
+      <div class="overview-summary">
+        <div class="overview-metric" data-testid="overview-summary-completed">
+          <strong>{{ overviewCompleted }} / {{ overviewTotal }}</strong>
+          <span>COMPLETE</span>
+        </div>
+        <div class="overview-metric" data-testid="overview-summary-rare">
+          <strong>{{ overviewRare }}</strong>
+          <span>RARE CARD</span>
+        </div>
+        <div class="overview-metric" data-testid="overview-summary-success">
+          <strong>{{ overviewSuccess > 0 ? overviewSuccess + '%' : '樣本不足' }}</strong>
+          <span>DINNER SUCCESS</span>
+        </div>
+      </div>
+
+      <div class="overview-card-grid" data-testid="overview-card-grid">
+        <article
+          v-for="card in overviewCards"
+          :key="card.participant.id"
+          class="overview-card"
+          :class="{ rare: card.result?.rare, incomplete: card.status !== 'complete' }"
+          data-testid="overview-card"
+        >
+          <header class="overview-card-head">
+            <span data-testid="overview-card-code">{{ card.code }}</span>
+            <span data-testid="overview-card-status">{{ card.status === 'complete' ? 'COMPLETE' : card.status === 'pending' ? 'RESULT PENDING' : 'INCOMPLETE' }}</span>
+          </header>
+          <div class="overview-card-body">
+            <img
+              v-if="card.result && personaArt(card.result.persona)"
+              class="overview-card-art"
+              :src="personaArt(card.result.persona)"
+              :alt="PERSONAS[card.result.persona].name"
+            />
+            <div v-else class="overview-card-art overview-card-placeholder">?</div>
+            <div class="overview-card-copy">
+              <span class="result-kicker" data-testid="overview-card-persona">
+                {{ card.result ? `TYPE ${PERSONA_DISPLAY[card.result.persona].code} · ${PERSONA_DISPLAY[card.result.persona].label}` : card.status === 'pending' ? 'RESULT PENDING' : 'NO PERSONA RESULT' }}
+              </span>
+              <strong>{{ card.participant.display_name }}</strong>
+              <span>{{ card.result ? PERSONAS[card.result.persona].name : '尚未產生人格卡' }}</span>
+            </div>
+          </div>
+          <span v-if="card.result?.rare" class="rare-badge">★ SSR · 頂級稀有</span>
+        </article>
+      </div>
+
+      <article v-if="foodConsensus" class="food-consensus overview-consensus" data-testid="overview-consensus">
+        <span class="result-kicker">🍽️ 大家都能吃</span>
+        <template v-if="foodConsensus.safe.length">
+          <ul class="food-chips">
+            <li v-for="food in foodConsensus.safe" :key="food.id">{{ food.emoji }} {{ food.label }}</li>
+          </ul>
+          <p>{{ overviewSampleSize }} 人都沒排除{{ foodConsensus.safe[0]?.label }}，這是本場不需要犧牲任何人的選項。</p>
+        </template>
+        <template v-else>
+          <strong>沒有全員都能接受的類別。那就別聚餐了。</strong>
+          <p>這團連一個安全牌都沒有，硬約只會有人委屈。</p>
+        </template>
+      </article>
+
+      <p v-if="overviewLoadError" class="error overview-error" role="alert">{{ overviewLoadError }}</p>
+      <div class="bottom-actions overview-actions">
+        <button v-if="isLiveOverview" class="secondary" type="button" @click="closeLiveOverview">回到主持人結果</button>
       </div>
     </section>
 
@@ -983,13 +1213,8 @@ onBeforeUnmount(() => {
           <p>{{ foodConsensus.sampleSize }} 人都沒排除的類別，挑一個就不會有人被迫吃不想吃的。</p>
         </template>
         <template v-else>
-          <strong>沒有全員都能接受的類別</strong>
-          <ul class="food-chips">
-            <li v-for="item in foodConsensus.leastVetoed" :key="item.food.id">
-              {{ item.food.emoji }} {{ item.food.label }} · {{ item.vetoCount }} 人排除
-            </li>
-          </ul>
-          <p>這是被排除人數最少的類別，至少犧牲最少人。</p>
+          <strong>沒有全員都能接受的類別。那就別聚餐了。</strong>
+          <p>這團連一個安全牌都沒有，硬約只會有人委屈。</p>
         </template>
       </article>
 
