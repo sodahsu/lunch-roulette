@@ -448,7 +448,7 @@ Test code 覆蓋：
 
 ### Playwright
 
-Playwright 目前實際包含 CASE-01～16。
+Playwright 目前實際包含 CASE-01～18；CASE-17 為十人結果總覽與 responsive layout，CASE-18 為音效切換與靜音偏好持久化。
 
 CASE-01 驗證核心 Reveal 順序：
 
@@ -460,9 +460,9 @@ Host lock
 → Participant 手機同步 persona
 ```
 
-CASE-02～10 覆蓋未滿 8 人、latest response、incomplete、lock 後不可改、refresh、privacy、第 9 位、pacing 與 Persona card；CASE-11～16 另覆蓋失效房號、重新開局、示意 Persona、稀有卡與 food consensus。
+CASE-02～10 覆蓋未滿 8 人、latest response、incomplete、lock 後不可改、refresh、privacy、第 9 位、pacing 與 Persona card；CASE-11～16 另覆蓋失效房號、重新開局、示意 Persona、稀有卡與 food consensus；CASE-17 / 18 覆蓋 Host overview responsive layout 與 audio preference。
 
-**Runtime status：16 項 E2E tests 通過（2026-09-30）；多裝置與真機驗證仍待執行。**
+**Runtime status：2026-09-30 曾在較早 HEAD 驗證 16 項 E2E 通過；目前最新 HEAD 已包含 CASE-17 / CASE-18，尚未重跑完整 E2E，因此不可宣稱最新 HEAD 已全數通過。多裝置與真機驗證仍待執行。**
 
 ## 16. Validation gate
 
@@ -475,4 +475,5 @@ CASE-02～10 覆蓋未滿 8 人、latest response、incomplete、lock 後不可�
 5. `pnpm test:e2e`
 6. Anonymous Sign-ins runtime verification
 7. 實際多人兩段式 Reveal smoke test
-8. Review success-rate cross-version persistence decision
+8. Confirm latest-HEAD OpenSpec/code drift review is clean
+9. Review archive readiness
