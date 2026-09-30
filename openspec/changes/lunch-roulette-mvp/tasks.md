@@ -119,6 +119,7 @@
 - [x] CASE-14 一般卡與稀有卡顯示 test code
 - [x] CASE-15 每場稀有卡保底與原因 test code
 - [x] CASE-16 food consensus 示意流程 test code
+- [x] CASE-17 十人結果總覽與 responsive layout test code
 - [x] CASE-18 音效控制可切換並記住靜音設定
 
 > 上述只代表 test code 已寫，不代表 runtime PASS。
@@ -132,7 +133,8 @@
 - [x] outsider 無法讀 room participants / responses
 - [x] locked 後 response update 被拒
 - [x] locked 後新 participant insert 被 RLS 拒絕
-- [x] Supabase Security Advisor 前次查核無 security lint
+- [x] Host-only revealed participant overview RLS policy 已於 production 查核存在（2026-10-01）
+- [x] Supabase Security Advisor 已重新查核；目前有 Anonymous Sign-ins 相關 warning 與 leaked-password-protection warning，無此次 overview RLS 缺失
 
 ## 6. Runtime validation — pending
 
@@ -141,7 +143,8 @@
 - [x] `pnpm test:unit`（33 項通過；2026-09-30）
 - [x] `pnpm typecheck`（2026-09-30）
 - [x] `pnpm build`（2026-09-30）
-- [x] `pnpm test:e2e`（16 項通過；2026-09-30）
+- [x] `pnpm test:e2e`（16 項通過；2026-09-30，屬較早 HEAD）
+- [ ] 最新 HEAD 已新增 CASE-17 / CASE-18，需重新執行完整 E2E 後才能更新通過數
 - [ ] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
 - [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
 - [x] 實際驗證成功率畫面出現時 participant 仍停留在 waiting（e2e CASE-01）
@@ -168,7 +171,7 @@
 
 ## 7. Archive gate
 
-- [x] OpenSpec proposal / design / capability specs 已同步兩段式 Reveal 與 food consensus
+- [x] OpenSpec proposal / design / capability specs 已同步兩段式 Reveal、food consensus、稀有卡、Host overview 與音效可觀察行為
 - [x] 已修正 `result_snapshots` 與 `participant_results` ownership 描述
 - [x] 成功率跨未來程式版本採 `questionnaire_version → algorithm version` 固定 mapping
 - [x] 不新增 success-summary persistence；舊版 algorithm 由 code 保留
@@ -177,4 +180,4 @@
 
 **Current archive verdict: NOT_READY**
 
-原因：success-rate 跨版本 contract 已解決；目前只剩 runtime / integration validation 尚未執行。
+原因：contract drift 已於 2026-10-01 收斂；目前剩最新 HEAD 的 runtime / integration validation、真機多人驗證與 archive readiness review。
