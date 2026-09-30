@@ -411,7 +411,19 @@ Persona 結果卡顯示：
 - 支援 `prefers-reduced-motion`。
 - 關鍵 E2E / accessibility label 保持可見或使用 aria label。
 
-## 14. Testing strategy
+## 14. Audio experience
+
+音訊是 pacing 層，不是新的 domain rule，也不改變 session state / scoring。
+
+- Host / landing 可播放低存在感 lobby loop；participant 不播放持續背景音樂。
+- Participant 只在自己的操作節點播放短 cue，例如 answer click 與 persona reveal。
+- Reveal cue 對齊既有狀態：lock → 3/2/1 → suspense → success result → persona reveal。
+- 首次 AudioContext 建立／resume 由使用者 gesture 解鎖，符合 mobile autoplay 限制。
+- 全域音效開關以 localStorage 保存；靜音時不得留下持續 loop。
+- 音訊 owner 為 `src/lib/audio.ts`；目前使用 Web Audio 產生 placeholder cue，避免在功能分支加入授權不明音樂檔。
+- 未來若替換正式音檔，沿用相同 cue contract，不應把播放邏輯散落到畫面元件。
+
+## 15. Testing strategy
 
 ### Unit / Vitest
 
@@ -458,7 +470,7 @@ CASE-09 驗證第 4 題會出現固定節奏事件。
 
 **Runtime status：NOT_RUN。**
 
-## 15. Validation gate
+## 16. Validation gate
 
 在此 change 可 archive 前至少需要：
 
