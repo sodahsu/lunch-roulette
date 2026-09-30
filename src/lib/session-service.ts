@@ -254,7 +254,11 @@ export async function getPersonalResult(
   return (data?.result as ParticipantResult | undefined) ?? null
 }
 
-export function subscribeToSession(sessionId: string, onChange: () => void): () => void {
+export function subscribeToSession(
+  sessionId: string,
+  onChange: () => void,
+  onSubscribed?: () => void,
+): () => void {
   const channel = supabase
     .channel(`session:${sessionId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, onChange)
@@ -262,7 +266,9 @@ export function subscribeToSession(sessionId: string, onChange: () => void): () 
     .on('postgres_changes', { event: '*', schema: 'public', table: 'responses', filter: `session_id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'result_snapshots', filter: `session_id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results', filter: `session_id=eq.${sessionId}` }, onChange)
-    .subscribe()
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') onSubscribed?.()
+    })
 
   return () => {
     void supabase.removeChannel(channel)
