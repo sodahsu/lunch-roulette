@@ -780,10 +780,10 @@ input:focus {
 
 .person-row {
   display: grid;
-  grid-template-columns: 34px 40px 1fr auto;
+  grid-template-columns: 28px 72px 1fr auto;
   gap: 10px;
   align-items: center;
-  min-height: 58px;
+  min-height: 88px;
   padding: 9px 12px;
   border-bottom: 1px solid var(--line);
 }
@@ -795,15 +795,48 @@ input:focus {
 }
 
 .avatar {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
+  display: block;
+  object-fit: cover;
+  width: 72px;
+  height: 72px;
   border: 1px solid var(--line-strong);
   border-radius: 50%;
   color: var(--text);
   background: var(--surface-2);
   font-weight: 900;
+}
+
+.avatar-md {
+  flex: none;
+  width: 108px;
+  height: 108px;
+  border-width: 2px;
+}
+
+.quiz-player {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  margin: 20px 0 18px;
+}
+
+.quiz-player-name {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 22px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.avatar-lg {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 8px;
+  border-width: 2px;
 }
 
 .subject-name {
@@ -1221,7 +1254,7 @@ input:focus {
   }
 
   .person-row {
-    grid-template-columns: 26px 36px 1fr auto;
+    grid-template-columns: 22px 72px 1fr auto;
     padding-right: 4px;
     padding-left: 4px;
   }

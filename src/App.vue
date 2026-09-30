@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
+import { avatarFor } from './lib/avatars'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
 import { calculateDinnerSuccessRate } from './domain/domain'
 import type { GroupQuestionStat, Participant, ParticipantResult, PersonaKey } from './domain/types'
@@ -577,6 +578,10 @@ onBeforeUnmount(() => {
         <span v-if="session?.status !== 'open'" class="locked-pill">已鎖定</span>
       </div>
       <div class="progress-track"><div class="progress-bar" :style="{ width: progress + '%' }" /></div>
+      <div v-if="participant" class="quiz-player">
+        <img class="avatar avatar-md" :src="avatarFor(participant.id)" alt="" />
+        <strong class="quiz-player-name">{{ participant.display_name }}</strong>
+      </div>
       <template v-if="currentQuestion">
         <h2 class="question">{{ currentQuestion.prompt }}</h2>
         <div class="choice-list">
@@ -604,6 +609,7 @@ onBeforeUnmount(() => {
     </section>
 
     <section v-else-if="screen === 'waiting'" class="panel center state-panel">
+      <img v-if="participant" class="avatar avatar-lg" :src="avatarFor(participant.id)" alt="" />
       <div class="state-code">READY</div>
       <div class="eyebrow">RESPONSE LOCKED IN</div>
       <h2>你答完了。先不要偷看別人。</h2>
@@ -652,7 +658,7 @@ onBeforeUnmount(() => {
       <div class="people">
         <div v-for="(person, personIndex) in participants" :key="person.id" class="person-row">
           <span class="subject-index">{{ String(personIndex + 1).padStart(2, '0') }}</span>
-          <span class="avatar">{{ person.display_name.slice(0, 1).toUpperCase() }}</span>
+          <img class="avatar" :src="avatarFor(person.id)" alt="" />
           <span class="subject-name">{{ person.display_name }}</span>
           <span class="subject-status" :class="{ ready: Boolean(person.completed_at) }">
             {{ person.completed_at ? 'READY' : 'THINKING' }}
