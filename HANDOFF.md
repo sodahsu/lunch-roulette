@@ -6,6 +6,107 @@ handoff_status: ready_for_handoff
 
 # Lunch Roulette《都可以？》｜AI 工作交接
 
+## 2026-10-01 Solo-start 接手快照
+
+**交付定位：**本段是目前 `task/solo-start` 的最新狀態，優先於下方較早的 MVP / 視覺交接內容。Solo-start 已完成規格與主要實作，但 **尚未通過完整 E2E**，不得標記 release-ready 或合併 `main`。
+
+```yaml
+handoff_purpose: implementation_and_validation
+task_state: solo_start_implemented_e2e_blocked
+code_changed: true
+repository_reverified: true
+branch: task/solo-start
+head: 0ac31a6b0bda6d1fa0c63977a52dd42802d01599
+base: main
+base_sha: 80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95
+pr: 5
+pr_state: draft
+release_candidate_tag: not_created
+```
+
+### Resume Here
+
+- **目標：**完成「1 人可直接開局，朋友之後加入，不重置既有進度；open 階段有 provisional Persona / group preview；最後仍走正式兩段 Reveal」。
+- **目前完成：**
+  - Solo-start OpenSpec proposal / design / tasks / capability deltas 已建立。
+  - README 已同步，明確區分 current runtime 與 Solo-start change。
+  - Host 可在 open session 以同一 anonymous auth user 成為第一位 participant。
+  - 單人 complete 可先看 private provisional Persona。
+  - 2+ complete participants 可顯示 host-only provisional dinner-success / food consensus。
+  - Late join 不應重置既有 participant。
+  - Host-as-participant 在正式 Reveal 後仍保有控制室並可看自己的 persisted Persona。
+  - CASE-19～21 已加入 Playwright。
+  - `buildProvisionalGroupPreview()` 與相關 unit coverage 已加入。
+- **目前阻塞：**完整 Playwright E2E 的 CASE-01 會卡到整體 test timeout；目前沒有 assertion failure 指向具體 UI 元件，需先把卡住階段定位清楚。
+- **第一個安全動作：**針對 CASE-01 加入階段性可觀察證據或拆成更小步驟，確認卡在 `answerAll`、Stage A lock/success reveal、Stage B `finalizeReveal()`、還是 participant Realtime result delivery。不要再先加 timeout 或 polling fallback。
+- **停止條件：**若需要改 DB schema / RLS / Reveal contract，先對照 Solo-start OpenSpec 與既有兩段式 Reveal contract；不得為了讓測試綠而改變正式產品語意。
+
+### 最新驗證證據
+
+| 驗收項目 | 結果 | 證據 |
+|---|---|---|
+| `pnpm test:unit` | **PASS** | GitHub Actions run `36890053375`：35 tests passed |
+| `pnpm typecheck` | **PASS** | 同一 run |
+| `pnpm build` | **PASS** | 同一 run |
+| `openspec validate solo-start --strict --no-interactive` | **PASS** | 同一 run：`Change 'solo-start' is valid` |
+| `pnpm test:e2e` | **FAIL** | 同一 run：CASE-01 在 240000ms timeout；其餘 20 cases 因 serial mode 未執行 |
+| CASE-19～21 Solo-start scenarios | **NOT_VERIFIED IN FINAL RUN** | 因 CASE-01 先 timeout，serial suite 未跑到 CASE-19～21 |
+| Release / tag `v0.3.0-rc.1` | **NOT_CREATED** | 需等完整驗證 PASS 後再建立 |
+
+### E2E 失敗現象｜FACT
+
+GitHub Actions run `36890053375`：
+
+```text
+Running 21 tests using 1 worker
+CASE-01 先公布晚餐成功率，再同步翻手機人格卡
+Test timeout of 240000ms exceeded.
+20 did not run
+```
+
+目前只能確認整個 CASE-01 超過 240 秒，**不能**從這份 log 判定是哪一個 expect 或哪一個 backend call 卡住。先前 120 秒與 240 秒都重現，故單純增加 timeout 已被證據否定為解法。
+
+### 已撤回的假說／避免重做
+
+- 曾嘗試為 participant waiting/revealing 加 3 秒 polling fallback，以避免漏 Realtime event。
+- 後續證據仍只顯示整體 CASE timeout，沒有證明 Realtime 漏事件是根因。
+- 該 polling fallback 已撤回；不要在沒有更直接證據前重新加入。
+
+### Release 標籤規劃
+
+- `v0.3.0-rc.1`：Solo-start 完整驗證通過後建立 RC。
+- `v0.3.0`：合併 `main` 後再跑正式驗證，才建立正式 release。
+- 現在 **不要打 tag**，因 E2E 仍 FAIL。
+
+### Solo-start 主要檔案
+
+- `README.md`
+- `openspec/changes/solo-start/proposal.md`
+- `openspec/changes/solo-start/design.md`
+- `openspec/changes/solo-start/tasks.md`
+- `openspec/changes/solo-start/specs/live-session/spec.md`
+- `openspec/changes/solo-start/specs/result-reveal/spec.md`
+- `openspec/changes/solo-start/specs/food-consensus/spec.md`
+- `src/App.vue`
+- `src/domain/domain.ts`
+- `src/domain/domain.test.ts`
+- `src/lib/session-service.ts`
+- `tests/e2e/lunch-roulette.spec.ts`
+- `.github/workflows/solo-start-ci.yml`
+
+### Next Action
+
+1. 先定位 CASE-01 卡住階段，不擴大 scope。
+2. 修 root cause。
+3. 重新跑同一條 CI：unit / typecheck / build / OpenSpec strict / 全部 21 項 E2E。
+4. 只有全部 PASS 才更新 OpenSpec tasks、README / handoff 驗證狀態，並建立 `v0.3.0-rc.1`。
+5. 合併 `main` 與正式 `v0.3.0` 仍是後續獨立 gate。
+
+**本段文件判定：READY_FOR_HANDOFF。**  
+這只代表下一個 Agent 可以從明確狀態接手；**不代表 Solo-start 已完成驗收。**
+
+---
+
 ## Resume Here
 
 **交付定位：**核心多人遊戲、兩段式 Reveal、防冷場 pacing、Dark Editorial 視覺與 OpenSpec 已實作；下一步重點是 runtime / 多裝置 / 部署驗證，不要再把視覺改版列為未開始。
