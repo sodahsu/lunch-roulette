@@ -981,7 +981,7 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 
 此技術決策已完成；OpenSpec archive 現在只被 runtime / integration validation 阻擋。
 
-**OpenSpec archive = NOT_READY（runtime validation 已完成；剩 archive readiness review 與 v0.1 舊房 8 題未實測的處置）**
+**OpenSpec archive = READY（strict validate 通過；已知未實測風險：v0.1 舊房 8 題僅有單元測試證據）**
 
 ---
 

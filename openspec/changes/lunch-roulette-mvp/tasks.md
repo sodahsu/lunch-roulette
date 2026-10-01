@@ -146,7 +146,7 @@
 - [x] `pnpm test:e2e`（16 項通過；2026-09-30，屬較早 HEAD）
 - [x] `pnpm test:e2e`（18 項通過，含 CASE-17 / CASE-18；2026-10-01，`bab2aa5`；首次冷啟動曾有 1 次逾時，重跑全過）
 - [x] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
-- [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
+- [x] v0.1 舊 session 仍維持 8 題（以單元測試為證據；未用實際舊房實測，使用者 2026-10-01 同意作為已知未實測風險接受）
 - [x] 實際驗證成功率畫面出現時 participant 仍停留在 waiting（e2e CASE-01）
 - [x] 實際驗證 host 按翻人格卡後所有完成者同步 persona（e2e CASE-01）
 - [x] 實際驗證 incomplete participant 不會拿到 persona（e2e CASE-04）
@@ -176,8 +176,8 @@
 - [x] 成功率跨未來程式版本採 `questionnaire_version → algorithm version` 固定 mapping
 - [x] 不新增 success-summary persistence；舊版 algorithm 由 code 保留
 - [x] 完成 runtime validation（unit / build / E2E 18 項 / 正式站 smoke / 真機驗收，2026-10-01）；唯 v0.1 舊房 8 題未實測
-- [ ] OpenSpec archive readiness review
+- [x] OpenSpec archive readiness review（2026-10-01：`openspec validate lunch-roulette-mvp --strict` 通過；4 份 capability spec 已轉為 delta 格式；task 全數完成）
 
-**Current archive verdict: NOT_READY**
+**Current archive verdict: READY**
 
-原因：contract drift 與 runtime validation 已於 2026-10-01 完成；目前剩 archive readiness review，以及 v0.1 舊房 8 題未實測的處置決定。
+依據：contract drift 與 runtime validation 已於 2026-10-01 完成，strict validate 通過。已知未實測風險：v0.1 舊房 8 題僅有單元測試證據。
