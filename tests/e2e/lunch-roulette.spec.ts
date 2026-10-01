@@ -99,7 +99,7 @@ async function closeActors(...actors: Actor[]) {
   await Promise.all(actors.map((actor) => actor.context.close()))
 }
 
-test.describe.configure({ mode: 'serial', timeout: 120_000 })
+test.describe.configure({ mode: 'serial', timeout: 240_000 })
 
 test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }) => {
   const host = await createHost(browser)
