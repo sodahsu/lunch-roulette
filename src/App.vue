@@ -138,6 +138,27 @@ const dinnerSuccess = computed(() =>
   ),
 )
 
+const provisionalPersona = computed<PersonaKey | null>(() => {
+  if (session.value?.status !== 'open' || !participant.value || !ownResponseIsComplete()) return null
+  return assignPersona(answers.value, activeQuestions.value)
+})
+
+const hostDifficulty = computed(() => {
+  const count = participants.value.length
+  if (count <= 1) return { label: 'EASY', text: '最大的敵人是自己。' }
+  if (count === 2) return { label: 'NORMAL', text: '友情開始接受考驗。' }
+  if (count <= 4) return { label: 'HARD', text: '有人說「都可以」了。' }
+  if (count <= 6) return { label: 'NIGHTMARE', text: '民主制度開始失效。' }
+  return { label: 'LARGE PARTY', text: '大型飯局警報。' }
+})
+
+const hostParticipantActionLabel = computed(() => {
+  if (!participant.value) return '我先玩 →'
+  if (!ownResponseIsComplete()) return '繼續我的答題 ↗'
+  if (!answers.value[FOOD_AVOID_ID]) return '完成我的忌口 ↗'
+  return '查看我的暫時人格 ↗'
+})
+
 const incompleteCount = computed(() =>
   Math.max(0, participants.value.length - completedCount.value),
 )
@@ -285,7 +306,7 @@ function stopHostLobbyRefresh() {
 
 function startHostLobbyRefresh() {
   stopHostLobbyRefresh()
-  if (!isHost.value || participant.value || session.value?.status !== 'open') return
+  if (!isHost.value || session.value?.status !== 'open') return
 
   hostLobbyRefreshTimer = window.setInterval(() => {
     if (document.visibilityState !== 'visible') return
