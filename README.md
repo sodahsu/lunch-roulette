@@ -193,3 +193,18 @@ Vite build output：`dist`。
 - `food-consensus`
 
 `solo-start` 目前狀態為 **SPEC READY / IMPLEMENTATION NOT STARTED**。在功能實作與 unit / typecheck / build / E2E / runtime 驗證完成前，不會把 Solo-start 行為併入 `openspec/specs/` 當作已驗證現行規格。
+
+
+## Release versioning
+
+App Release 使用 Semantic Versioning，與資料欄位 `questionnaire_version` 分開管理：
+
+- `package.json#version` / Git tag / GitHub Release：代表整個 Web App 的發布版本。
+- `questionnaire_version`：只代表題組與對應 domain algorithm contract，不等於 App Release。
+
+Solo-start 預定版本：
+
+- `v0.2.0-rc.1`：功能實作完成並進入完整驗證時的 release candidate。
+- `v0.2.0`：相關 unit / typecheck / build / E2E / runtime smoke 全部通過、合併 `main` 後的正式 Release。
+
+正式 Release 不從未驗證的 feature branch 建立。若 RC 驗證失敗，修正後依序使用 `v0.2.0-rc.2`、`v0.2.0-rc.3`，直到符合 release gate。
