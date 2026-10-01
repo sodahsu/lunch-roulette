@@ -1997,7 +1997,7 @@ input:focus {
 .difficulty-pill {
   border: 1px solid currentColor;
   padding: 8px 10px;
-  font-family: var(--mono);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   white-space: nowrap;
@@ -2012,12 +2012,12 @@ input:focus {
 
 .provisional-score > span {
   color: var(--muted);
-  font-family: var(--mono);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   letter-spacing: 0.04em;
 }
 
 .provisional-score > strong {
-  font-family: var(--mono);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: clamp(3rem, 10vw, 6rem);
   line-height: 0.95;
 }
