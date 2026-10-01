@@ -1,7 +1,7 @@
 name: Solo Start CI
 
 concurrency:
-  group: solo-start-${{ github.ref }}
+  group: solo-start-final-${{ github.ref }}
   cancel-in-progress: true
 
 on:
