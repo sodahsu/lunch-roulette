@@ -32,13 +32,13 @@ Host 開房 / QR 加入
 → 看到自己的 provisional Persona
 → 房間仍保持 open，QR / 房號繼續可分享
 → 朋友加入時不重置既有答案或進度
-→ 2 位以上 complete participant 後顯示 provisional group preview
+→ 2 位以上 complete participant 後，Host Control Room 顯示 provisional group preview
 → 有效樣本改變時即時重算目前局勢
 → Host 最後鎖定
 → 沿用既有兩段式正式 Reveal
 ```
 
-Solo-start 的 provisional result 不會寫入正式 `result_snapshots` / `participant_results`；正式結果仍以 `locked` 當下的 complete responses 重新建立。只有 1 位 complete participant 時，不顯示團體成功率百分比，也不產生 soulmate / opposite。
+Solo-start 的 provisional result 不會寫入正式 `result_snapshots` / `participant_results`；正式結果仍以 `locked` 當下的 complete responses 重新建立。每位 participant 只在自己的裝置看到 provisional Persona；群體 provisional 成功率與 food consensus 只在 Host Control Room 聚合顯示，不放寬 participant 讀取他人 responses 的 RLS。只有 1 位 complete participant 時，不顯示團體成功率百分比，也不產生 soulmate / opposite。
 
 v0.2 題庫共有 24 題、6 類；每個房間依房號固定選 12 題，每類 2 題。舊 v0.1 房間保留原 8 題。完成答題後另有獨立的忌口步驟；結果只保存各類排除計數，不影響 Persona、配對或成功率。
 
