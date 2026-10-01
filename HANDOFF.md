@@ -718,9 +718,9 @@ Avoid all readable text, logos, UI, watermarks, childish mascot styling, rainbow
 
 目前已同步：
 
-- `openspec/changes/lunch-roulette-mvp/proposal.md`
-- `openspec/changes/lunch-roulette-mvp/design.md`
-- `openspec/changes/lunch-roulette-mvp/tasks.md`
+- `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/proposal.md`
+- `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/design.md`
+- `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/tasks.md`
 - `specs/live-session/spec.md`
 - `specs/preference-quiz/spec.md`
 - `specs/result-reveal/spec.md`

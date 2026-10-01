@@ -148,7 +148,7 @@ Vite build output：`dist`。
 
 Active OpenSpec change：
 
-`openspec/changes/lunch-roulette-mvp/`
+`openspec/specs/`（現行規格）與 `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/`（歸檔的提案、設計與任務）
 
 主要 capability：
 
