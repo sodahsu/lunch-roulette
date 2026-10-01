@@ -176,9 +176,9 @@ Result hub 在 1 人時至少顯示：
 - 不顯示誤導性的 group success 0%。
 - 不顯示 soulmate / enemy。
 
-### Multi-participant open hub
+### Host Control Room 的 multi-participant open preview
 
-當 complete count >= 2：
+當 complete count >= 2 時，只有 Host Control Room 顯示群體 provisional preview：
 
 - 顯示 provisional success preview。
 - 顯示 provisional food consensus。
@@ -209,6 +209,8 @@ Open provisional state 仍遵守既有 privacy boundary：
 - Host 可以看到 roster 與 completion。
 - Public/group preview 只能顯示 aggregate。
 - Participant 只能看到自己的 provisional persona。
+- 一般 participant 不查詢其他人的 responses，也不在 client 端重建群體 preview。
+- Host 沿用既有 host response-read 權限計算 aggregate preview；不新增或放寬 RLS。
 - 不公開任何 participant 的逐題答案。
 - 不因 Host 同時是 participant 而放寬 private result RLS。
 
