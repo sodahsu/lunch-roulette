@@ -5,7 +5,7 @@ import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
 import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
-import { calculateDinnerSuccessRate, RARE_CARD_REASON } from './domain/domain'
+import { assignPersona, calculateDinnerSuccessRate, RARE_CARD_REASON } from './domain/domain'
 import {
   calculateFoodConsensus,
   decodeFoodAvoid,
@@ -28,6 +28,7 @@ import {
   finalizeReveal,
   lockSession,
   previewLockedGroupStats,
+  previewOpenGroupStats,
   saveAnswers,
   SessionNotFoundError,
   subscribeToSession,
