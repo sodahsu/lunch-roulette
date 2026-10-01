@@ -102,3 +102,15 @@
 - [ ] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
 
 **Current verdict: SPEC READY / IMPLEMENTATION NOT STARTED**
+
+
+## 9. Release gate
+
+- [ ] 功能實作完成後將 App version 設為 `0.2.0-rc.1`。
+- [ ] 建立對應 RC tag：`v0.2.0-rc.1`。
+- [ ] RC 上完成 unit / typecheck / build / E2E / runtime smoke。
+- [ ] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag。
+- [ ] 合併 `main` 前確認 `openspec/specs/`、README 與 runtime 已同步。
+- [ ] 合併 `main` 後將 App version 更新為 `0.2.0`。
+- [ ] 建立 immutable Git tag `v0.2.0`。
+- [ ] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制。
