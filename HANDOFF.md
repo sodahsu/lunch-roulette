@@ -787,10 +787,10 @@ Host 公開處刑
 |---|---|
 | `pnpm install --frozen-lockfile` | VERIFIED（2026-09-30） |
 | lockfile 產生 | 已存在並通過 frozen install |
-| `pnpm test:unit` | VERIFIED：33 項通過（2026-09-30） |
+| `pnpm test:unit` | VERIFIED：33 項通過（2026-10-01，`bab2aa5`） |
 | `pnpm typecheck` | VERIFIED（2026-09-30） |
 | `pnpm build` | VERIFIED（2026-09-30） |
-| `pnpm test:e2e` | PREVIOUSLY VERIFIED：較早 HEAD 16 項通過（2026-09-30）；最新 HEAD 已新增 CASE-17 / 18，需重跑 |
+| `pnpm test:e2e` | VERIFIED：18 項通過（2026-10-01，`bab2aa5`，含 CASE-17 / 18） |
 | Supabase project health | VERIFIED: ACTIVE_HEALTHY |
 | Supabase Security Advisor | VERIFIED: 0 security lints |
 | Anonymous Sign-ins runtime | UNKNOWN：目前 auth.users 尚無 anonymous user evidence |

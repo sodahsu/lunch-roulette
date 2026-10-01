@@ -144,7 +144,7 @@
 - [x] `pnpm typecheck`（2026-09-30）
 - [x] `pnpm build`（2026-09-30）
 - [x] `pnpm test:e2e`（16 項通過；2026-09-30，屬較早 HEAD）
-- [ ] 最新 HEAD 已新增 CASE-17 / CASE-18，需重新執行完整 E2E 後才能更新通過數
+- [x] `pnpm test:e2e`（18 項通過，含 CASE-17 / CASE-18；2026-10-01，`bab2aa5`；首次冷啟動曾有 1 次逾時，重跑全過）
 - [ ] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
 - [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
 - [x] 實際驗證成功率畫面出現時 participant 仍停留在 waiting（e2e CASE-01）
