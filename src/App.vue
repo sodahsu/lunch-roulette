@@ -87,6 +87,7 @@ const quizInterstitialVisible = ref(false)
 const audioMuted = ref(isAudioMuted())
 let quizInterstitialTimer: number | null = null
 let hostLobbyRefreshTimer: number | null = null
+let participantRecoveryRefreshTimer: number | null = null
 let openPreviewFingerprint = ''
 let unsubscribe: (() => void) | null = null
 
@@ -315,6 +316,24 @@ function startHostLobbyRefresh() {
   }, 3000)
 }
 
+function stopParticipantRecoveryRefresh() {
+  if (participantRecoveryRefreshTimer === null) return
+  window.clearInterval(participantRecoveryRefreshTimer)
+  participantRecoveryRefreshTimer = null
+}
+
+function startParticipantRecoveryRefresh() {
+  stopParticipantRecoveryRefresh()
+  if (isHost.value || !session.value || !participant.value) return
+
+  participantRecoveryRefreshTimer = window.setInterval(() => {
+    if (document.visibilityState !== 'visible') return
+    if (!session.value || !participant.value) return
+    if (screen.value !== 'waiting' && screen.value !== 'revealing') return
+    void refreshSessionState().catch(fail)
+  }, 3000)
+}
+
 async function updateJoinQr() {
   if (!joinUrl.value) return
   try {
@@ -376,6 +395,7 @@ async function restoreFromUrl() {
     }
 
     await attachRealtime()
+    startParticipantRecoveryRefresh()
     await refreshSessionState()
 
     if (session.value.status === 'open') {
@@ -661,6 +681,7 @@ async function joinRoom() {
     setRoomInUrl(session.value.code)
     await attachRealtime()
     screen.value = 'quiz'
+    startParticipantRecoveryRefresh()
     await refreshSessionState()
   })
 }
@@ -872,6 +893,7 @@ onBeforeUnmount(() => {
   stopLobbyLoop()
   unsubscribe?.()
   stopHostLobbyRefresh()
+  stopParticipantRecoveryRefresh()
   if (quizInterstitialTimer !== null) window.clearTimeout(quizInterstitialTimer)
 })
 </script>
