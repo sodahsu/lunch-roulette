@@ -10,6 +10,7 @@ import {
 import {
   assignPersona,
   buildParticipantResult,
+  buildProvisionalGroupPreview,
   buildResultSnapshot,
   calculateDinnerSuccessRate,
   calculateGroupStats,
@@ -162,6 +163,34 @@ describe('dinner success rate', () => {
     expect(() => calculateDinnerSuccessRate([stat({ a: 8 })], 'v9.9')).toThrow(
       /Unsupported dinner-success algorithm/,
     )
+  })
+})
+
+describe('provisional group preview', () => {
+  it('keeps a single complete participant out of the group success percentage', () => {
+    const preview = buildProvisionalGroupPreview(
+      [response('solo', { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE })],
+      sessionQuestions,
+      'v0.2',
+    )
+
+    expect(preview.groupStats[0]!.sampleSize).toBe(1)
+    expect(preview.dinnerSuccess).toBeNull()
+    expect(preview.groupStats.at(-1)!.questionId).toBe(FOOD_AVOID_ID)
+  })
+
+  it('uses the same dinner-success algorithm once two complete participants exist', () => {
+    const rows = [
+      response('a', { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE }),
+      response('b', { ...allSecond, [FOOD_AVOID_ID]: 'hotpot' }),
+      response('ignored', allFirst, false),
+    ]
+    const preview = buildProvisionalGroupPreview(rows, sessionQuestions, 'v0.2')
+    const expectedStats = calculateGroupStats(rows, sessionQuestions)
+
+    expect(preview.groupStats[0]!.sampleSize).toBe(2)
+    expect(preview.dinnerSuccess).toEqual(calculateDinnerSuccessRate(expectedStats, 'v0.2'))
+    expect(preview.groupStats.at(-1)).toMatchObject({ questionId: FOOD_AVOID_ID, sampleSize: 2 })
   })
 })
 
