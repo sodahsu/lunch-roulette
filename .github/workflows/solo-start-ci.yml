@@ -44,6 +44,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: OpenSpec strict validation
+        run: pnpm dlx @fission-ai/openspec validate solo-start --strict --no-interactive
+
       - name: E2E
         run: pnpm test:e2e
 
