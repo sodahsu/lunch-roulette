@@ -384,8 +384,7 @@ test('CASE-14 稀有卡顯示金色閃卡標示，一般卡不顯示', async ({ 
   await page.goto('/?demo=result&persona=easygoing')
   await expect(page.locator('.persona-card')).toBeVisible()
   await expect(page.locator('.persona-card.rare')).toHaveCount(0)
-}
-)
+})
 
 test('CASE-15 每一場至少有一位拿到稀有卡，並寫出稀有原因', async ({ browser }) => {
   const host = await createHost(browser)
