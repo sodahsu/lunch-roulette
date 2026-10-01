@@ -23,11 +23,11 @@
 - Host 同時是 participant 時，Host 控制權與 participant 作答身分必須保持可區分，不建立第二個 auth session。
 - open 階段完成答題者可看到自己的「暫時人格卡」；暫時人格使用既有 deterministic persona scoring，但不得寫入正式 `participant_results`。
 - 只有 1 位 complete participant 時，不產生靈魂飯友／飲食天敵，也不把既有團體成功率公式硬套成單人百分比。
-- complete participant 達 2 位以上時，open 階段可顯示「目前飯局局勢」：
+- complete participant 達 2 位以上時，Host Control Room 可顯示「目前飯局局勢」：
   - 暫時的今晚約成飯成功率。
   - 目前大家都能接受的餐點。
   - 加入人數、完成人數與娛樂性飯局難度提示。
-- open 階段的成功率與食物共識都是 provisional preview：
+- Host Control Room 的 open 階段成功率與食物共識都是 provisional preview：
   - 不 persist 成正式 result snapshot。
   - participant 加入、完成、修改答案或修改 food-avoid 後重新計算。
   - UI 必須清楚標示「目前局勢／尚未鎖定」，不得冒充正式 Reveal 結果。
@@ -87,7 +87,7 @@ Open 階段可以使用不影響 domain 的娛樂性提示，例如：
    - open provisional state 隨有效樣本更新。
 
 2. `result-reveal`
-   - 新增 open 階段 provisional persona / provisional group preview。
+   - 新增 open 階段 private provisional persona / Host-only provisional group preview。
    - 正式 Reveal 與正式 persistence boundary 維持不變。
 
 3. `food-consensus`
