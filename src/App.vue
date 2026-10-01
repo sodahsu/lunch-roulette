@@ -87,6 +87,7 @@ const quizInterstitialVisible = ref(false)
 const audioMuted = ref(isAudioMuted())
 let quizInterstitialTimer: number | null = null
 let hostLobbyRefreshTimer: number | null = null
+let openPreviewFingerprint = ''
 let unsubscribe: (() => void) | null = null
 
 const activeQuestions = computed(() => {
@@ -441,7 +442,20 @@ async function refreshSessionState() {
   completedCount.value = participants.value.filter((item) => Boolean(item.completed_at)).length
 
   if (latest.status === 'open') {
-    groupStats.value = isHost.value ? await previewOpenGroupStats(latest) : null
+    if (isHost.value) {
+      const nextFingerprint = participants.value
+        .filter((person) => Boolean(person.completed_at))
+        .map((person) => `${person.id}:${person.completed_at}`)
+        .sort()
+        .join('|')
+
+      if (nextFingerprint !== openPreviewFingerprint) {
+        groupStats.value = completedCount.value > 0 ? await previewOpenGroupStats(latest) : null
+        openPreviewFingerprint = nextFingerprint
+      }
+    } else {
+      groupStats.value = null
+    }
     return
   }
 
@@ -586,6 +600,7 @@ function resetRound() {
   participant.value = null
   participants.value = []
   completedCount.value = 0
+  openPreviewFingerprint = ''
   answers.value = {}
   questionIndex.value = 0
   groupStats.value = null
