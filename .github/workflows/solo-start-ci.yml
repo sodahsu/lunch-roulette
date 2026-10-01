@@ -1,5 +1,9 @@
 name: Solo Start CI
 
+concurrency:
+  group: solo-start-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches:
@@ -42,3 +46,11 @@ jobs:
 
       - name: E2E
         run: pnpm test:e2e
+
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results
+          if-no-files-found: ignore
