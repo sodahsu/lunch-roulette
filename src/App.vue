@@ -440,8 +440,14 @@ async function refreshSessionState() {
   participants.value = await listParticipants(latest.id)
   completedCount.value = participants.value.filter((item) => Boolean(item.completed_at)).length
 
+  if (latest.status === 'open') {
+    groupStats.value = isHost.value ? await previewOpenGroupStats(latest) : null
+    return
+  }
+
   if (latest.status === 'locked') {
     stopHostLobbyRefresh()
+    if (successRevealBeat.value === 0) groupStats.value = null
     screen.value = isHost.value ? 'host' : 'revealing'
     return
   }
@@ -449,16 +455,25 @@ async function refreshSessionState() {
   if (latest.status === 'revealed') {
     stopHostLobbyRefresh()
     groupStats.value = await getGroupStats(latest.id)
+
+    if (isHost.value) {
+      if (participant.value) {
+        personalResult.value = await getPersonalResult(latest.id, participant.value.id)
+      }
+      if (requestedRoomOverview.value) {
+        screen.value = 'overview'
+        await loadLiveOverview()
+      } else {
+        screen.value = 'host'
+      }
+      return
+    }
+
     if (participant.value) {
       isLiveOverview.value = false
       liveOverviewCards.value = []
       personalResult.value = await getPersonalResult(latest.id, participant.value.id)
       screen.value = 'result'
-    } else if (isHost.value && requestedRoomOverview.value) {
-      screen.value = 'overview'
-      await loadLiveOverview()
-    } else {
-      screen.value = 'host'
     }
   }
 }
@@ -497,6 +512,63 @@ async function startHost() {
     await refreshSessionState()
     screen.value = 'host'
     startHostLobbyRefresh()
+  })
+}
+
+async function startAsHostParticipant() {
+  if (!session.value || !isHost.value || session.value.status !== 'open') return
+
+  const displayName = (name.value || participant.value?.display_name || '').trim()
+  if (!displayName) {
+    errorMessage.value = '先輸入你的暱稱，再開始自己的這局。'
+    return
+  }
+
+  await withBusy(async () => {
+    stopLobbyLoop()
+    participant.value = await joinSession(session.value!.id, displayName)
+    name.value = participant.value.display_name
+
+    const ownResponse = await getOwnResponse(session.value!.id, participant.value.id)
+    answers.value = ownResponse?.answers ?? {}
+    foodAvoid.value = decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) ?? []
+
+    const firstUnanswered = activeQuestions.value.findIndex(
+      (question) => question.required && !answers.value[question.id],
+    )
+    questionIndex.value =
+      firstUnanswered === -1 ? Math.max(0, activeQuestions.value.length - 1) : firstUnanswered
+
+    await refreshSessionState()
+
+    if (!ownResponseIsComplete()) {
+      screen.value = 'quiz'
+    } else if (!answers.value[FOOD_AVOID_ID]) {
+      screen.value = 'food'
+    } else {
+      screen.value = 'waiting'
+    }
+  })
+}
+
+async function returnToHost() {
+  if (!session.value || !isHost.value) return
+  await withBusy(async () => {
+    await refreshSessionState()
+    screen.value = 'host'
+    if (session.value?.status === 'open') {
+      startHostLobbyRefresh()
+      if (!audioMuted.value) startLobbyLoop()
+    }
+  })
+}
+
+async function openHostPersonalResult() {
+  if (!session.value || !isHost.value || !participant.value || session.value.status !== 'revealed') return
+  await withBusy(async () => {
+    personalResult.value = await getPersonalResult(session.value!.id, participant.value!.id)
+    if (!personalResult.value) throw new Error('你的正式人格結果尚未產生。')
+    screen.value = 'result'
   })
 }
 
@@ -677,6 +749,7 @@ async function reveal() {
     if (!session.value || session.value.status !== 'open') return
 
     successRevealBeat.value = 0
+    groupStats.value = null
     playCue('lock')
     await lockSession(session.value)
     await refreshSessionState()
