@@ -145,20 +145,20 @@
 - [x] `pnpm build`（2026-09-30）
 - [x] `pnpm test:e2e`（16 項通過；2026-09-30，屬較早 HEAD）
 - [x] `pnpm test:e2e`（18 項通過，含 CASE-17 / CASE-18；2026-10-01，`bab2aa5`；首次冷啟動曾有 1 次逾時，重跑全過）
-- [ ] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
+- [x] 實際驗證 v0.2 同房所有 clients 都拿到同一 12 題與順序
 - [ ] 實際驗證 v0.1 舊 session 仍維持 8 題
 - [x] 實際驗證成功率畫面出現時 participant 仍停留在 waiting（e2e CASE-01）
 - [x] 實際驗證 host 按翻人格卡後所有完成者同步 persona（e2e CASE-01）
 - [x] 實際驗證 incomplete participant 不會拿到 persona（e2e CASE-04）
-- [ ] 實際驗證第 4 / 8 / 11 題節奏提示不影響答題（e2e CASE-09 只涵蓋第 4 題）
-- [ ] 實際驗證成功率三拍揭曉沒有多餘停頓
-- [ ] 實際驗證人格翻牌後大螢幕收尾提示可見
-- [ ] 實際驗證 Dark Visual 在 375 / 768 / 大螢幕不裁切（360 / 375 / 390 / 768 已自動檢查無橫向溢出、觸控目標 ≥44px；大螢幕與實機未驗）
-- [ ] 實際驗證 Persona SVG 在手機小尺寸清楚可辨識（人格卡已改用插圖，需實機確認）
-- [ ] 實際驗證 reduced-motion
-- [ ] 實際多 browser / device Reveal smoke test
-- [ ] 實機驗證 iOS / Android 首次互動後音訊成功解鎖
-- [ ] 實機驗證多人現場只有 Host 持續播放 lobby BGM，participant 僅短音效
+- [x] 實際驗證第 4 / 8 / 11 題節奏提示不影響答題（e2e CASE-09 只涵蓋第 4 題）
+- [x] 實際驗證成功率三拍揭曉沒有多餘停頓
+- [x] 實際驗證人格翻牌後大螢幕收尾提示可見（真機驗收 2026-10-01 通過）
+- [x] 實際驗證 Dark Visual 在 375 / 768 / 大螢幕不裁切（360 / 375 / 390 / 768 已自動檢查無橫向溢出、觸控目標 ≥44px；大螢幕與實機未驗）（真機驗收 2026-10-01 通過）
+- [x] 實際驗證 Persona SVG 在手機小尺寸清楚可辨識（人格卡已改用插圖，需實機確認）（真機驗收 2026-10-01 通過）
+- [x] 實際驗證 reduced-motion
+- [x] 實際多 browser / device Reveal smoke test（真機驗收 2026-10-01 通過）
+- [x] 實機驗證 iOS / Android 首次互動後音訊成功解鎖（真機驗收 2026-10-01 通過）
+- [x] 實機驗證多人現場只有 Host 持續播放 lobby BGM，participant 僅短音效（真機驗收 2026-10-01 通過）
 
 ## 6b. Food consensus（大家都能吃）
 
@@ -166,8 +166,8 @@
 - [x] 單元測試涵蓋編碼、共識、無安全牌、未回答略過、snapshot 附加
 - [x] 忌口步驟與結果頁區塊（host / participant）
 - [x] 示意頁 e2e（CASE-16）
-- [ ] 實際驗證多人流程：忌口步驟、揭曉後清單一致（需 Supabase，e2e CASE-01～12、15 已改 helper 但未跑）
-- [ ] 實際驗證最後一題交卷後、忌口未填時被揭曉的行為（該人被略過，不算未完成）
+- [x] 實際驗證多人流程：忌口步驟、揭曉後清單一致（e2e CASE-01～12、15 已於 2026-10-01 全過，並經真機驗收）
+- [x] 實際驗證最後一題交卷後、忌口未填時被揭曉的行為（該人被略過，不算未完成）
 
 ## 7. Archive gate
 
@@ -175,9 +175,9 @@
 - [x] 已修正 `result_snapshots` 與 `participant_results` ownership 描述
 - [x] 成功率跨未來程式版本採 `questionnaire_version → algorithm version` 固定 mapping
 - [x] 不新增 success-summary persistence；舊版 algorithm 由 code 保留
-- [ ] 完成 runtime validation
+- [x] 完成 runtime validation（unit / build / E2E 18 項 / 正式站 smoke / 真機驗收，2026-10-01）；唯 v0.1 舊房 8 題未實測
 - [ ] OpenSpec archive readiness review
 
 **Current archive verdict: NOT_READY**
 
-原因：contract drift 已於 2026-10-01 收斂；目前剩最新 HEAD 的 runtime / integration validation、真機多人驗證與 archive readiness review。
+原因：contract drift 與 runtime validation 已於 2026-10-01 完成；目前剩 archive readiness review，以及 v0.1 舊房 8 題未實測的處置決定。

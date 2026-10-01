@@ -981,7 +981,7 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 
 此技術決策已完成；OpenSpec archive 現在只被 runtime / integration validation 阻擋。
 
-**OpenSpec archive = NOT_READY（最新 HEAD runtime / integration validation + archive readiness）**
+**OpenSpec archive = NOT_READY（runtime validation 已完成；剩 archive readiness review 與 v0.1 舊房 8 題未實測的處置）**
 
 ---
 
@@ -1001,8 +1001,8 @@ Dark visual redesign code 已實作。下一步不是重做視覺，而是驗證
 
 - 2026-09-30 較早 HEAD 曾完成 unit / typecheck / build / 16 項 E2E；2026-10-01 最新 code 又收斂 food-consensus domain 並更新測試，且已有 CASE-17 / 18，因此舊 PASS 不可套用到最新 HEAD。本環境因 GitHub DNS 無法重新 clone / install，最新 HEAD 尚未完整重跑。
 - Anonymous Auth 已於 2026-09-30 驗證可用；Supabase project 為 ACTIVE_HEALTHY。2026-10-01 已確認 Host-only revealed participant overview RLS policy 存在。Security Advisor 目前有 Anonymous Sign-ins 與 leaked-password-protection warnings，屬已知警告，不應寫成 0 lint。
-- 真機多人同步未驗證。
-- Dark visual redesign 已實作，但尚未完成 browser / device runtime QA。
+- 真機多人同步已於 2026-10-01 驗收通過（使用者實測 iOS / Android / 大螢幕）。
+- Dark visual redesign 已完成 browser 與真機 QA（2026-10-01）。
 - Vercel：2026-10-01 GitHub 對目前 `main` 回報 `Vercel = pending`，target 指向 `lunch-roulette` deployment；但目前連接的 Vercel workspace 仍只列出 `beloved-agent`，無法從此 connector 驗證該 deployment 的 project ownership / production readiness。因此不可再寫成「完全沒有部署」，也不可宣稱 production demo 已驗證可用。
 - 2026-10-01 remote branches 已重新驗證：`main`、`chore/vercel-main-only`、`feat/lunch-roulette-mvp`、`feat/reveal-sync-show`。分支清理屬 repo hygiene，不影響本次規格與程式一致性判定。
 
