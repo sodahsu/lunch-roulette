@@ -178,6 +178,7 @@ Vercel Production
 - PR / feature branch 不產生 Vercel Preview。
 - 只有 merge / push 到 `main` 才允許 Vercel Production deployment。
 - Release / tag 只在 `dev → main` 的 production gate 通過後處理。
+- `.github/workflows/branch-policy.yml` 會拒絕非 `dev` 來源直接 PR 到 `main`，避免 GitHub default branch 仍為 `main` 時誤送 production。
 
 ## Deployment
 
