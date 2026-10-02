@@ -48,6 +48,7 @@ Vercel Production
 - `main` 只有在 `dev` 的整合驗證通過後才接受 PR。
 - `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。
 - tag / GitHub Release / production deploy 都屬 `dev → main` 之後的獨立 production gate。
+- **Vercel workspace verification：**目前已連線的 team `sodahsu0314-3323` 只列出 `beloved-agent`，未列出 `lunch-roulette`。因此 repo-level `vercel.json` main-only policy 已確認，但 Dashboard/project-level production branch 尚無可驗證的 lunch-roulette project；不得宣稱 Vercel 專案已完成連線。
 
 ## 2026-10-02｜測試前置收斂完成
 
