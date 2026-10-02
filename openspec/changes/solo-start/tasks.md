@@ -111,6 +111,16 @@ Codex 接手只需處理下列執行／除錯工作：
 
 測試依據：`docs/solo-start-test-plan.md`。不要重寫產品規格或另外建立第二套測試口徑。
 
+## 7.2 Branch / deployment gate
+
+- [x] 建立 `dev` 作為日常開發／整合分支。
+- [x] PR #5 改為 `task/solo-start → dev`。
+- [x] `vercel.json` 已限制只有 `main` Git deployment；`dev` / PR / feature branches 不部署。
+- [ ] Codex 完成 CASE-01 / full E2E / runtime / RLS 後，先整合 `task/solo-start → dev`。
+- [ ] 在 `dev` 上做整合驗證。
+- [ ] 只有 `dev` 整合驗證通過後，才建立／更新 `dev → main` production PR。
+- [ ] 只有 merge `main` 才進 Vercel Production。
+
 ## 8. Archive gate
 
 - [ ] 所有已確認 Requirements 實作完成。
@@ -128,7 +138,7 @@ Codex 接手只需處理下列執行／除錯工作：
 - [ ] 建立對應 RC tag：`v0.2.0-rc.1`。
 - [ ] RC 上完成 unit / typecheck / build / E2E / runtime smoke。
 - [ ] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag。
-- [ ] 合併 `main` 前確認 `openspec/specs/`、README 與 runtime 已同步。
-- [ ] 合併 `main` 後將 App version 更新為 `0.2.0`。
+- [ ] `task/solo-start → dev` 整合並驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。
+- [ ] 建立 `dev → main` production PR；合併 `main` 後將 App version 更新為 `0.2.0`。
 - [ ] 建立 immutable Git tag `v0.2.0`。
 - [ ] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制。
