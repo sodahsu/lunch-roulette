@@ -1,6 +1,6 @@
 ---
 title: "Lunch Roulette《都可以？》｜AI 工作交接"
-date: "2026-10-01"
+date: "2026-10-03"
 handoff_status: ready_for_handoff
 ---
 
@@ -20,6 +20,48 @@ code_changed: true
 repository_reverified: true
 visual_redesign: implemented_runtime_unverified
 ```
+
+## 0. 最新切片（2026-10-03）｜忌口提交才算完成、成功率排除忌口
+
+**目前 `main` HEAD：** `d8b1f7e2a19b56b814da88f03be6e6ea957f4e1a`（PR #6 merge commit；實作 commit `e2e5ee5`）
+
+```yaml
+slice_state: merged_and_db_migrated
+code_changed: true
+repository_reverified: true
+remote_db_migrated: true
+```
+
+### 修了什麼、為什麼
+
+- 原本答完計分題就把 `responses.is_complete` 設為 true，Host 會在 participant 尚未送出忌口時顯示 READY。現在 `isCompleteResponse` = `isCompleteQuestionnaire` + `decodeFoodAvoid(food-avoid) !== undefined`；不勾任何項目送出存成 `none`，也算完成（`src/domain/domain.ts:14-29`）。
+- 翻牌時才寫入的 `food-avoid` group stat 被算進成功率，所以兩個階段顯示的分數不一致。`calculateDinnerSuccessRate` 現在會先排除 `FOOD_AVOID_ID`（`src/domain/domain.ts:115`）。
+- 重新整理後的復原：計分題未答完 → quiz；答完但沒有忌口 → food；都完成 → waiting（`src/App.vue:362-368`）。最後一題按鈕改為「填寫忌口」。
+- 四份主規格同步：`openspec/specs/{food-consensus,live-session,preference-quiz,result-reveal}/spec.md`。
+
+### 驗證（FACT，2026-10-02 於合併前的同一份工作樹執行）
+
+| 檢查 | 結果 |
+|---|---|
+| `pnpm typecheck` | PASS |
+| `pnpm test:unit` | 34/34 PASS |
+| `pnpm test:e2e`（連 `.env` 的 Supabase） | 18/18 PASS；CASE-01 新增斷言：翻牌後的 `.compatibility-score` 必須等於第一階段的 `.success-score`（雙人計分題相同 → 100%） |
+| GitHub commit status（`d8b1f7e`） | `Vercel success`（只看了 status；未開 production 網址實測） |
+
+repo 沒有 CI；PR #6 合併前沒有遠端自動檢查。
+
+### 遠端 DB migration 已套用（FACT，2026-10-03）
+
+- 檔案：`supabase/migrations/20261002_require_food_submission_for_completion.sql`
+- 作用：把仍為 `open`、`is_complete = true` 但 `answers ->> 'food-avoid'` 為空的 response 改回未完成；`locked` / `revealed` 場次不動。既有 trigger `responses_sync_participant_completion`（`20260929_initial.sql:219`）會連帶清空 `participants.completed_at`。
+- 執行方式：agent 透過 OpenCLI（Chrome default profile，已登入 Supabase）在 Dashboard SQL Editor 直接貼上執行。本機沒有 Supabase CLI 與 `psql`，`.env` 只有 publishable key。
+- 結果：執行前只讀 count = **19**；執行 `update` → Success；執行後 `remaining = 0`，`stale_ready`（response 未完成但 `completed_at` 仍有值）= **0**，trigger 確實生效。
+- **以後不要用 `supabase db push`**（INFERENCE）：前幾支 migration 都是手動套用，遠端很可能沒有 migration 歷史表，push 會從 `20260929_initial.sql` 開始重跑。新 migration 一樣用 SQL Editor 手動套用。
+
+### Next Action
+
+1. 選做：在 production 網址實測一局，確認未送出忌口的人不會顯示 READY，翻牌前後成功率一致。
+2. 那 19 位 participant 的房間仍為 `open`；他們重新整理後會回到忌口步驟，送出後才會重新算進完成。
 
 ## 1. 產品一句話
 
