@@ -17,6 +17,7 @@ import {
   calculateMaxPersonaScores,
   calculatePersonaScores,
   calculateSimilarity,
+  isCompleteQuestionnaire,
   isCompleteResponse,
   isRareCard,
   RARE_CARD_RATE,
@@ -86,11 +87,16 @@ describe('v0.2 questionnaire contract', () => {
 })
 
 describe('response completeness', () => {
-  it('requires every selected required question', () => {
-    expect(isCompleteResponse(allFirst, sessionQuestions)).toBe(true)
+  it('tracks scored-question completion separately from final submission', () => {
+    expect(isCompleteQuestionnaire(allFirst, sessionQuestions)).toBe(true)
+    expect(isCompleteResponse(allFirst, sessionQuestions)).toBe(false)
+    expect(isCompleteResponse({ ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE }, sessionQuestions)).toBe(true)
+    expect(isCompleteResponse({ ...allFirst, [FOOD_AVOID_ID]: 'hotpot,spicy' }, sessionQuestions)).toBe(true)
+    expect(isCompleteResponse({ ...allFirst, [FOOD_AVOID_ID]: '' }, sessionQuestions)).toBe(false)
 
-    const missing = { ...allFirst }
+    const missing = { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE }
     delete missing[sessionQuestions[0]!.id]
+    expect(isCompleteQuestionnaire(missing, sessionQuestions)).toBe(false)
     expect(isCompleteResponse(missing, sessionQuestions)).toBe(false)
   })
 })
@@ -157,6 +163,23 @@ describe('dinner success rate', () => {
     expect(calculateDinnerSuccessRate(stats, 'v0.1')).toEqual(
       calculateDinnerSuccessRate(stats, 'v0.2'),
     )
+  })
+
+  it('ignores food-avoid stats persisted with the final snapshot', () => {
+    const questionStats = [
+      stat({ a: 2 }, 2),
+      stat({ a: 2 }, 2),
+    ]
+    const foodStat: GroupQuestionStat = {
+      questionId: FOOD_AVOID_ID,
+      counts: { hotpot: 1 },
+      sampleSize: 2,
+    }
+
+    expect(calculateDinnerSuccessRate([...questionStats, foodStat])).toEqual(
+      calculateDinnerSuccessRate(questionStats),
+    )
+    expect(calculateDinnerSuccessRate([...questionStats, foodStat]).score).toBe(100)
   })
 
   it('requires an explicit algorithm mapping for a new questionnaire version', () => {
