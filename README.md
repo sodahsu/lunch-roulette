@@ -20,7 +20,7 @@ Host 開房 / QR 加入
 → 結果頁列出大家都能吃的餐點
 ```
 
-### Planned: Solo-start（規格完成、尚未實作）
+### Solo-start（主要實作已存在，完整驗證中）
 
 `task/solo-start` 目前規格方向是「1 個人就能先開局，朋友之後再加入」，不是另外做一套 Solo mode：
 
@@ -131,7 +131,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Playwright 目前包含 CASE-01～18（CASE-17 / 18 已加入），涵蓋：
+Playwright 目前包含 CASE-01～21；CASE-19～21 為 Solo-start 覆蓋。完整 suite 目前仍被 CASE-01 timeout 阻塞，不能視為 runtime PASS。涵蓋：
 
 - 兩段式 Reveal
 - 未完成者
@@ -148,6 +148,7 @@ Playwright 目前包含 CASE-01～18（CASE-17 / 18 已加入），涵蓋：
 - food consensus 示意流程
 - Host 10 人結果總覽與 responsive layout
 - 音效切換與靜音偏好持久化
+- Solo-start：Host 單人開局、late join provisional preview、Host-as-participant final Reveal
 
 > Test code 已存在不代表 runtime 已 PASS。請以實際命令輸出為準。
 
@@ -175,7 +176,7 @@ Vite build output：`dist`。
 - `openspec/specs/`
 - `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/`
 
-目前待實作 change：
+目前 active change：
 
 - `openspec/changes/solo-start/`
   - `proposal.md`
@@ -192,7 +193,9 @@ Vite build output：`dist`。
 - `result-reveal`
 - `food-consensus`
 
-`solo-start` 目前狀態為 **SPEC READY / IMPLEMENTATION NOT STARTED**。在功能實作與 unit / typecheck / build / E2E / runtime 驗證完成前，不會把 Solo-start 行為併入 `openspec/specs/` 當作已驗證現行規格。
+`solo-start` 目前狀態為 **IMPLEMENTATION PRESENT / VALIDATION BLOCKED**。主要功能程式、domain tests 與 CASE-19～21 已存在；目前 unit / typecheck / build / OpenSpec strict 有 PASS 證據，但 full E2E 仍被 CASE-01 timeout 阻塞。在完整 E2E、runtime smoke 與 privacy / RLS regression 通過前，不會把 Solo-start 行為併入 `openspec/specs/` 當作已驗證現行規格。
+
+詳細測試追溯與完成 gate：`docs/solo-start-test-plan.md`。
 
 
 ## Release versioning
