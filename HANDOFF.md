@@ -12,7 +12,7 @@ handoff_status: ready_for_handoff
 
 - 目標與交付物：讓同一個 Lunch Roulette session 支援「1 人先開局 → 朋友後加入 → open 階段 provisional Persona / group preview → 最後沿用正式兩段式 Reveal」，並做到 unit / typecheck / build / OpenSpec / E2E / runtime 驗證可通過。
 - 非目標：不新增獨立 Solo session type、不改掉 `open → locked → revealed`、不把單人結果硬算成群體成功率、不放寬 participant 讀取他人 response/result 的隱私邊界、不在驗證失敗時建立正式 Release。
-- 本次已做／未做：遠端 feature branch 已存在實作、測試、OpenSpec、README 與 CI workflow；本次交接只重整 `HANDOFF.md`。最新 CI 的 unit / typecheck / build / OpenSpec strict 已 PASS，但 E2E FAIL，因此整體尚未完成。
+- 本次已做／未做：遠端 feature branch 已存在主要實作、OpenSpec、測試計劃、Solo domain regression tests、README/tasks/HANDOFF 同步與 CI workflow。新增測試後的 GitHub Actions run #18 已確認 Unit / Typecheck / Build / OpenSpec strict steps PASS；Full E2E 仍屬已知 blocker，整體尚未完成。
 - 第一個安全動作：從 CI run `36890053375` 的 CASE-01 timeout 開始定位，不先重寫 Solo Start；先確認 timeout 前最後一個未完成的 UI / Realtime 等待條件，再做最小修正並重跑 CASE-01。
 - 停止條件：若接手時 `task/solo-start` HEAD 已不是本文件記錄的 implementation baseline、PR base 已改變、或 main 已前進造成 contract drift，先重新 compare / read specs，不沿用本文件的「目前」描述。
 
@@ -22,6 +22,7 @@ task_state: implementation_present_validation_blocked
 code_changed: true
 repository_reverified: true
 implementation_baseline_before_handoff_commit: 0ac31a6b0bda6d1fa0c63977a52dd42802d01599
+test_prep_baseline: a377f24764a87316451094177fd2e1d0e87e25b6
 approval_evidence: user_requested_continue_until_self_test_complete_then_requested_handoff_first
 ```
 
@@ -64,10 +65,10 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 
 | 類別 | 內容 | 來源／範圍 |
 |---|---|---|
-| Completed（本次直接查核） | `task/solo-start` 相對 `main` ahead 35 / behind 0；PR #5 為 draft、open、mergeable；14 個 changed files。 | GitHub compare + PR #5，implementation baseline `0ac31a6...` |
+| Completed（本次直接查核） | PR #5 仍為 draft / open；`task/solo-start` 已包含主要實作、測試計劃、domain regression tests、OpenSpec 與同步文件。 | GitHub compare + PR #5；最新 pre-Codex prep baseline 為 `a377f24764a87316451094177fd2e1d0e87e25b6` |
 | Completed（本次直接查核） | Branch 已包含 Solo Start source、domain test、E2E、OpenSpec、README 與 `.github/workflows/solo-start-ci.yml`。 | GitHub compare；實際讀取 `src/domain/domain.ts`、`src/domain/domain.test.ts`、`src/lib/session-service.ts`、`tests/e2e/lunch-roulette.spec.ts` |
-| Completed（CI） | Unit 35/35 PASS、typecheck PASS、build PASS、OpenSpec strict validation PASS。 | CI run `36890053375` / job `110463088445` |
-| In Progress / BLOCKED | Full E2E 尚未通過。CASE-01 在 240000 ms timeout；其餘 20 tests 未執行。 | 同一 CI job log |
+| Completed（CI pre-E2E gates） | 新增 UT-SOLO-05～12 後，Unit / Typecheck / Build / OpenSpec strict steps 均 PASS。 | GitHub Actions run #18（head `276d9229...`）；後續只改 docs/OpenSpec decision text，最新 head 仍需由 CI / Codex 最終確認 |
+| In Progress / BLOCKED | Full E2E 尚未通過；最近完整失敗證據仍是 CASE-01 在 240000 ms timeout，後續 CASE 因 serial mode 未執行。 | GitHub Actions run #17 / 既有 HANDOFF evidence；Codex 依新 test plan 做 targeted root-cause |
 | Completed（docs sync） | README 與 `openspec/changes/solo-start/tasks.md` 已同步為 `IMPLEMENTATION PRESENT / VALIDATION BLOCKED`；未驗證 E2E / runtime 項目仍保持未完成。 | README / tasks / `docs/solo-start-test-plan.md` |
 | PENDING_DECISION | Release versioning 文件已有 `v0.2.0-rc.1 → v0.2.0` 方案，但尚未證明使用者已核准這組實際版本號。 | README / tasks；使用者僅詢問是否可有 release 版本標籤 |
 | UNKNOWN | 本機 worktree dirty/clean、真機 / 多裝置 runtime smoke、目前是否存在 Git tag。 | 本次只查 GitHub 遠端 branch / CI；未查本機 |
@@ -80,12 +81,12 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 | 單人可由 Host 直接開局 | OpenSpec `solo-start` + CASE-19 | Host 成為第一位 participant、完成後可看 provisional persona | Playwright CASE-19 + runtime smoke | NOT_FULLY_VERIFIED | CASE-19 在 full suite 中尚未執行，因 CASE-01 先 timeout |
 | 第二人後加入不重置第一人 | OpenSpec + CASE-20 | joined=2、第一人保留 provisional state，第二人 complete 後 host 顯示 provisional success | CASE-20 | NOT_FULLY_VERIFIED | Full suite 未跑到 CASE-20 |
 | Host-as-participant 正式 Reveal | OpenSpec + CASE-21 | Host 保留 control room，仍可查看自己正式 persona；guest 正常翻牌 | CASE-21 | NOT_FULLY_VERIFIED | Full suite 未跑到 CASE-21 |
-| Domain provisional preview | `buildProvisionalGroupPreview()` | 1 complete 不算 group success；2+ 用既有 success algorithm | Vitest | PASS | CI 35/35 |
+| Domain provisional preview | `buildProvisionalGroupPreview()` | 1 complete 不算 group success；2+ 用既有 success algorithm；latest/incomplete/food/final-boundary invariants | Vitest UT-SOLO-05～12 + 既有 tests | PASS | GitHub Actions run #18 Unit step PASS |
 | Type safety | 專案既有 gate | `vue-tsc -b` 無錯 | CI | PASS | 無 |
 | Production build | 專案既有 gate | Vite build 成功 | CI | PASS | 無 |
 | OpenSpec change 格式 | `openspec/config.yaml` / change `solo-start` | strict validation 通過 | `pnpm dlx @fission-ai/openspec validate solo-start --strict --no-interactive` | PASS | 無 |
 | Full E2E regression | 原有 CASE-01～18 + 新增 CASE-19～21 | 全部 PASS | `pnpm test:e2e` | FAIL | CASE-01 timeout；20 tests did not run |
-| README / tasks 狀態一致 | 文件應反映 code + validation 真實狀態 | 不再寫「未實作」；需標示 implementation present / E2E blocked | 文件 review | FAIL | 尚未同步 |
+| README / tasks 狀態一致 | 文件應反映 code + validation 真實狀態 | `IMPLEMENTATION PRESENT / VALIDATION BLOCKED`，並把未驗證 E2E/runtime 保持未完成 | 文件 review | PASS | README / tasks / HANDOFF / test plan 已同步 |
 | Release | 使用者希望有版本標籤 | 只有驗證 gate 通過後才建立 RC / 正式 release | tag / GitHub Release | NOT_RUN | 版本號尚待明確批准；GitHub Releases 目前無資料 |
 
 ## Evidence Classification 與證據
@@ -131,13 +132,13 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 - 本次複核：PASS（讀取 workflow job 與完整 log）。
 - 下一步證據：下載 artifact / error-context，或針對 CASE-01 單跑並記錄 timeout 前最後一個 await。
 
-### E04｜文件狀態漂移
+### E04｜文件狀態同步
 
 - 分類：FACT
-- 主張：README 仍標 `Planned: Solo-start（規格完成、尚未實作）`；tasks 仍大量 unchecked 並寫 `SPEC READY / IMPLEMENTATION NOT STARTED`。這與 branch source / CI 事實不一致。
-- 來源：`README.md`、`openspec/changes/solo-start/tasks.md` 與 E02/E03。
+- 主張：README、`openspec/changes/solo-start/tasks.md`、本 HANDOFF 與 `docs/solo-start-test-plan.md` 已統一使用 **IMPLEMENTATION PRESENT / VALIDATION BLOCKED**；未通過的 E2E / runtime / RLS 項目保持未完成。
+- 來源：上述四份文件與 GitHub Actions run #18 pre-E2E gates。
 - 本次複核：PASS。
-- 影響：在修正文件前，不應 archive OpenSpec change，也不應把 README 當 release readiness 依據。
+- 影響：文件漂移已不再是目前 blocker；archive 仍由 Codex 的 E2E/runtime evidence 阻擋。
 
 ### E05｜Release / tag 狀態
 
@@ -181,7 +182,7 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 | 2 | 做最小修正並只重跑 CASE-01 | App / session-service / test helper 中實際 owner | E01～E03 | 不改產品 contract | CASE-01 PASS |
 | 3 | 重跑 full gate | branch / PR #5 | CASE-01 已穩定 | 無額外批准 | unit / typecheck / build / OpenSpec / E2E 全 PASS |
 | 4 | 補 runtime smoke | 1→2→3+、Host-as-participant、多 browser | 自動化 gate 全綠 | 無額外批准 | 具體 smoke evidence，不只看 test code |
-| 5 | 修 README / tasks 狀態漂移 | `README.md`、`openspec/changes/solo-start/tasks.md` | 以實際驗證結果更新，不先勾未驗證項 | 無額外批准 | 文件與 runtime / CI 一致 |
+| 5 | 最終同步 README / tasks / HANDOFF | 驗證完成後的狀態欄位 | 必須先取得 full E2E + runtime/RLS evidence | 無額外批准 | 將 `VALIDATION BLOCKED` 改為實際最終 verdict，不提前宣稱 release-ready |
 | 6 | Review OpenSpec archive readiness | `openspec/changes/solo-start/` | 所有 gate 通過 | archive 前確認 change 無 NEEDS_CONFIRMATION 阻塞 | strict validate + capability/code drift review |
 | 7 | 決定 Release 版本號 | README/tasks release section | 使用者確認 `v0.2.0-rc.1 / v0.2.0` 是否採用 | **需使用者明確定案** | 版本策略確認 |
 | 8 | Merge / tag / GitHub Release | PR #5 / main | tests + docs + OpenSpec 全綠 | **需 merge/release 授權** | main 固定 commit + immutable tag + release notes |
@@ -208,7 +209,7 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 
 ## 交付與驗證備註
 
-- 此次交付變更：只更新 `HANDOFF.md`，把 Solo Start branch / PR / CI / docs drift / release pending 狀態整理成可接手快照。
+- 此次交付變更：新增 `docs/solo-start-test-plan.md`、補 UT-SOLO-05～12、同步 README / OpenSpec decisions / tasks / HANDOFF，並把剩餘技術工作收斂到 Codex 的 E2E root-cause 與 runtime 驗證。
 - 實際執行的檢查：
   - GitHub compare `main...task/solo-start`。
   - PR #5 metadata。
@@ -217,7 +218,7 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
   - 讀取 CI run `36890053375` job steps 與 logs。
   - 查 GitHub Releases 頁（空集合）。
 - 未執行的驗證：
-  - 本次沒有重跑任何 test。
+  - 新增測試後 GitHub Actions run #18 的 Unit / Typecheck / Build / OpenSpec strict steps 已 PASS；Full E2E 尚未完成。
   - 沒有下載 Playwright artifact。
   - 沒有查本機 worktree/status。
   - 沒有真機 / 多裝置 smoke。
