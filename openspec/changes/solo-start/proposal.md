@@ -102,14 +102,11 @@ Open 階段可以使用不影響 domain 的娛樂性提示，例如：
 - 正式 dinner-success algorithm version mapping 不變。
 - 正式 persona / rare / pairing persistence contract 不變。
 
-## NEEDS_CONFIRMATION
+## Resolved product decisions for this change
 
-- 首頁主要 CTA 最終命名：
-  - 「開一局」
-  - 「我先玩」
-  - 或其他文案。
-- 只有 1 位 complete participant 時，是否要另外設計一個獨立、非團體成功率的 Solo 指標；在確認公式前，本 change 不新增百分比。
-- open provisional success rate 是否對所有 participants 顯示精確百分比，或只顯示趨勢／變化值。規格先允許 exact preview，但 UI 實作前需確認揭曉張力是否仍符合現場玩法。
+- Host 建房後的主要單人入口採用「我先玩」。這是本 change 的 UI baseline；未來若只調整文案，不改變 domain contract。
+- 只有 1 位 complete participant 時，不新增獨立 Solo 百分比指標；此能力明確移出本 change scope。
+- complete participant >= 2 時，Host Control Room 的 provisional success 採用精確百分比，並必須清楚標示「目前局勢／尚未鎖定」。一般 participant 不取得群體 preview。
 
 ## Change status
 
