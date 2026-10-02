@@ -14,7 +14,7 @@ handoff_status: ready_for_handoff
 - 非目標：不新增獨立 Solo session type、不改掉 `open → locked → revealed`、不把單人結果硬算成群體成功率、不放寬 participant 讀取他人 response/result 的隱私邊界、不在驗證失敗時建立正式 Release。
 - 本次已做／未做：遠端 feature branch 已存在主要實作、OpenSpec、測試計劃、Solo domain regression tests、README/tasks/HANDOFF 同步與 CI workflow。新增測試後的 GitHub Actions run #18 已確認 Unit / Typecheck / Build / OpenSpec strict steps PASS；Full E2E 仍屬已知 blocker，整體尚未完成。
 - 第一個安全動作：從 CI run `36890053375` 的 CASE-01 timeout 開始定位，不先重寫 Solo Start；先確認 timeout 前最後一個未完成的 UI / Realtime 等待條件，再做最小修正並重跑 CASE-01。
-- 停止條件：若接手時 `task/solo-start` HEAD 已不是本文件記錄的 implementation baseline、PR base 已改變、或 main 已前進造成 contract drift，先重新 compare / read specs，不沿用本文件的「目前」描述。
+- 停止條件：若接手時 `task/solo-start` HEAD、PR base、`dev` 或 `main` 已改變造成 contract drift，先重新 compare / read specs，不沿用本文件的「目前」描述。
 
 ```yaml
 handoff_purpose: implementation_and_validation
@@ -47,6 +47,7 @@ Vercel Production
 - Codex 修完 CASE-01 / E2E / runtime / RLS 後，目標是把 Solo Start 安全整合到 `dev`，**不是直接 merge main**。
 - `main` 只有在 `dev` 的整合驗證通過後才接受 PR。
 - `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。
+- `.github/workflows/branch-policy.yml` 會阻擋非 `dev` 來源直接 PR 到 `main`；因 GitHub default branch 目前仍是 `main` 且 connector 無 repository-settings 寫入能力，這個 CI guard 用來防止誤送 production PR。
 - tag / GitHub Release / production deploy 都屬 `dev → main` 之後的獨立 production gate。
 - **Vercel workspace verification：**目前已連線的 team `sodahsu0314-3323` 只列出 `beloved-agent`，未列出 `lunch-roulette`。因此 repo-level `vercel.json` main-only policy 已確認，但 Dashboard/project-level production branch 尚無可驗證的 lunch-roulette project；不得宣稱 Vercel 專案已完成連線。
 
@@ -209,7 +210,7 @@ Vercel Production
 | 5 | 最終同步 README / tasks / HANDOFF | 驗證完成後的狀態欄位 | 必須先取得 full E2E + runtime/RLS evidence | 無額外批准 | 將 `VALIDATION BLOCKED` 改為實際最終 verdict，不提前宣稱 release-ready |
 | 6 | Review OpenSpec archive readiness | `openspec/changes/solo-start/` | 所有 gate 通過 | archive 前確認 change 無 NEEDS_CONFIRMATION 阻塞 | strict validate + capability/code drift review |
 | 7 | 決定 Release 版本號 | README/tasks release section | 使用者確認 `v0.2.0-rc.1 / v0.2.0` 是否採用 | **需使用者明確定案** | 版本策略確認 |
-| 8 | Merge / tag / GitHub Release | PR #5 / main | tests + docs + OpenSpec 全綠 | **需 merge/release 授權** | main 固定 commit + immutable tag + release notes |
+| 8 | Production merge / tag / GitHub Release | `dev → main` production PR | `task/solo-start → dev` 已整合、dev 全部驗證全綠 | **需 merge/release 授權** | main 固定 commit + immutable tag + release notes；merge main 才觸發 Vercel |
 
 ## Workspace Provenance
 
@@ -228,7 +229,7 @@ Vercel Production
 ## 額外發現（未納入本次交接修改）
 
 - CI 使用 `actions/checkout@v4`、`actions/setup-node@v4`、`actions/upload-artifact@v4` 時出現「Node.js 20 deprecated / forced Node.js 24」warning；本次沒有把它當 E2E failure 根因，也沒有升級 actions。
-- `README.md` 的 Verification 仍描述「CASE-01～18」，但 feature branch E2E 已新增 CASE-19～21；這也是文件漂移的一部分。
+- README Verification 已同步為 CASE-01～21；目前文件漂移不再是 blocker。
 - Release 頁目前空白；tag 清單本次未成功查核。
 
 ## 交付與驗證備註
