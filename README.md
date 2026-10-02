@@ -152,9 +152,36 @@ Playwright 目前包含 CASE-01～21；CASE-19～21 為 Solo-start 覆蓋。完�
 
 > Test code 已存在不代表 runtime 已 PASS。請以實際命令輸出為準。
 
+## Branch strategy
+
+開發整合以 `dev` 為優先，`main` 只代表可發布的 production 基準：
+
+```text
+task/* / feat/*
+      ↓
+     dev
+      ↓
+整合驗證（unit / typecheck / build / E2E / runtime / RLS）
+      ↓
+PR: dev → main
+      ↓
+merge main
+      ↓
+Vercel Production
+```
+
+規則：
+
+- 功能分支不得直接以 `main` 為日常整合目標。
+- `task/*` / `feat/*` 先 merge 到 `dev`。
+- `dev` 不觸發 Vercel deployment。
+- PR / feature branch 不產生 Vercel Preview。
+- 只有 merge / push 到 `main` 才允許 Vercel Production deployment。
+- Release / tag 只在 `dev → main` 的 production gate 通過後處理。
+
 ## Deployment
 
-`vercel.json` 只允許 `main` 進行 Git deployment：
+`vercel.json` 只允許 `main` 進行 Git deployment；`dev`、PR 與所有 feature/task branch 都不部署：
 
 ```json
 {
@@ -208,6 +235,6 @@ App Release 使用 Semantic Versioning，與資料欄位 `questionnaire_version`
 Solo-start 預定版本：
 
 - `v0.2.0-rc.1`：功能實作完成並進入完整驗證時的 release candidate。
-- `v0.2.0`：相關 unit / typecheck / build / E2E / runtime smoke 全部通過、合併 `main` 後的正式 Release。
+- `v0.2.0`：相關 unit / typecheck / build / E2E / runtime smoke 全部通過，先整合 `dev`，再由 `dev → main` 合併後建立正式 Release。
 
 正式 Release 不從未驗證的 feature branch 建立。若 RC 驗證失敗，修正後依序使用 `v0.2.0-rc.2`、`v0.2.0-rc.3`，直到符合 release gate。
