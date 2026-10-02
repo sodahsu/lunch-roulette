@@ -116,6 +116,7 @@ Codex 接手只需處理下列執行／除錯工作：
 - [x] 建立 `dev` 作為日常開發／整合分支。
 - [x] PR #5 改為 `task/solo-start → dev`。
 - [x] `vercel.json` 已限制只有 `main` Git deployment；`dev` / PR / feature branches 不部署。
+- [ ] Vercel workspace 目前未列出 `lunch-roulette` project；若後續連線／建立專案，需再驗證 Production Branch = `main`，不得啟用 dev / PR preview deploy。
 - [ ] Codex 完成 CASE-01 / full E2E / runtime / RLS 後，先整合 `task/solo-start → dev`。
 - [ ] 在 `dev` 上做整合驗證。
 - [ ] 只有 `dev` 整合驗證通過後，才建立／更新 `dev → main` production PR。
