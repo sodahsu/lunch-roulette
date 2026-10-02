@@ -23,6 +23,8 @@ code_changed: true
 repository_reverified: true
 implementation_baseline_before_handoff_commit: 0ac31a6b0bda6d1fa0c63977a52dd42802d01599
 test_prep_baseline: a377f24764a87316451094177fd2e1d0e87e25b6
+current_integration_branch: dev
+solo_start_merged_to_dev: e9a5c659049dcced887edd6ee50bf2530ad448dc
 approval_evidence: user_requested_continue_until_self_test_complete_then_requested_handoff_first
 ```
 
@@ -42,9 +44,9 @@ PR: dev → main
 Vercel Production
 ```
 
-- PR #5 已改為 `task/solo-start → dev`。
+- PR #5 已於 2026-10-02 合併 `task/solo-start → dev`；merge commit：`e9a5c659049dcced887edd6ee50bf2530ad448dc`。
 - `dev` 已由目前 `main` 建立，作為後續功能整合基準。
-- Codex 修完 CASE-01 / E2E / runtime / RLS 後，目標是把 Solo Start 安全整合到 `dev`，**不是直接 merge main**。
+- Solo Start 已進 `dev`；Codex 後續直接以 `dev` 為整合基準修 CASE-01 / E2E / runtime / RLS，**不要直接 merge main**。
 - `main` 只有在 `dev` 的整合驗證通過後才接受 PR。
 - `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。
 - `.github/workflows/branch-policy.yml` 會阻擋非 `dev` 來源直接 PR 到 `main`；因 GitHub default branch 目前仍是 `main` 且 connector 無 repository-settings 寫入能力，這個 CI guard 用來防止誤送 production PR。
@@ -80,7 +82,7 @@ Vercel Production
 - 不另做一套 preview scoring。
 - 不重寫測試計劃。
 - 不重新設計單人成功率；目前 contract 仍是少於 2 complete 不顯示 group success %。
-- 不處理 tag / GitHub Release；Codex 先完成 `task/solo-start → dev` 的技術 gate，production release 只在後續 `dev → main` 處理。
+- 不處理 tag / GitHub Release；Codex 先在 `dev` 完成技術 gate，production release 只在後續 `dev → main` 處理。
 
 ### 剩餘 blocker
 
@@ -183,7 +185,7 @@ Vercel Production
 | 1 complete 不顯示 group success % | CONFIRMED_IN_SPEC | 避免把單人資料冒充群體共識 | OpenSpec + unit test | 若未來另定 Solo 指標，必須是不同 contract |
 | Participant provisional persona 僅自己可見；group provisional preview 留在 Host control room | CONFIRMED_IN_SPEC | 保持 privacy / RLS boundary | design + README | RLS / role model 改變時重開 |
 | `v0.2.0-rc.1 → v0.2.0` release scheme | PENDING_DECISION | 已寫入 README/tasks，但缺少明確定案證據 | 未記錄 | 使用者明確批准版本號後 |
-| Merge PR #5 into `dev` | BLOCKED | Full E2E / runtime / RLS 尚未通過；文件與規格目前已同步 | 尚未批准 merge | CASE-01 + full E2E + runtime / RLS 綠，並以最新證據更新 HANDOFF / tasks |
+| PR #5 merge into `dev` | DONE | 使用者已明確要求合併回 dev；GitHub merge 成功 | merge commit `e9a5c659049dcced887edd6ee50bf2530ad448dc` | 後續剩餘 blocker 為 CASE-01 + full E2E + runtime / RLS |
 | Archive `solo-start` 到 `openspec/specs/` | BLOCKED | Archive gate 尚未成立 | OpenSpec 規則 | 實作與驗證全部完成後 |
 
 ### Stable Architecture References／禁止改壞
@@ -206,7 +208,7 @@ Vercel Production
 |---|---|---|---|---|---|
 | 1 | 定位 CASE-01 timeout | `tests/e2e/lunch-roulette.spec.ts`、CI artifact `11176632212` | 讀 error-context；必要時單跑 CASE-01 | 屬既有「做到自行測試完成」工作範圍 | 找到 timeout 前實際卡住的 await / state，不把 cleanup line 誤判為根因 |
 | 2 | 做最小修正並只重跑 CASE-01 | App / session-service / test helper 中實際 owner | E01～E03 | 不改產品 contract | CASE-01 PASS |
-| 3 | 重跑 full gate | branch / PR #5 | CASE-01 已穩定 | 無額外批准 | unit / typecheck / build / OpenSpec / E2E 全 PASS |
+| 3 | 重跑 full gate | `dev` | CASE-01 已穩定 | 無額外批准 | unit / typecheck / build / OpenSpec / E2E 全 PASS |
 | 4 | 補 runtime smoke | 1→2→3+、Host-as-participant、多 browser | 自動化 gate 全綠 | 無額外批准 | 具體 smoke evidence，不只看 test code |
 | 5 | 最終同步 README / tasks / HANDOFF | 驗證完成後的狀態欄位 | 必須先取得 full E2E + runtime/RLS evidence | 無額外批准 | 將 `VALIDATION BLOCKED` 改為實際最終 verdict，不提前宣稱 release-ready |
 | 6 | Review OpenSpec archive readiness | `openspec/changes/solo-start/` | 所有 gate 通過 | archive 前確認 change 無 NEEDS_CONFIRMATION 阻塞 | strict validate + capability/code drift review |
@@ -220,7 +222,7 @@ Vercel Production
 | production baseline | `sodahsu/lunch-roulette` | `main@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | production branch；本機 worktree 未查 |
 | integration baseline | 同 repo | `dev@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | dev 與 main 目前同基準；後續功能先進 dev |
 | feature verification baseline | 同 repo | `task/solo-start@f884ca9c803c6eb7e8dd6c16502dc610149a8357` | PR #5 metadata，2026-10-02 | 當時相對 dev ahead 60 / behind 0；17 changed files；後續 docs commit 可能推進 HEAD |
-| PR | 同 repo | `#5` draft / open / mergeable，`task/solo-start → dev` | GitHub PR metadata | 尚未 merge；production 不直接由 feature 進 main |
+| PR | 同 repo | `#5` merged，`task/solo-start → dev` | GitHub PR metadata / merge result | merge commit `e9a5c659049dcced887edd6ee50bf2530ad448dc`；production 仍不得直接由 feature 進 main |
 
 | 變更歸屬 | 檔案／位置 | 狀態 | 來源及處理限制 |
 |---|---|---|---|
