@@ -48,6 +48,7 @@ Vercel Production
 - `main` 只有在 `dev` 的整合驗證通過後才接受 PR。
 - `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。
 - `.github/workflows/branch-policy.yml` 會阻擋非 `dev` 來源直接 PR 到 `main`；因 GitHub default branch 目前仍是 `main` 且 connector 無 repository-settings 寫入能力，這個 CI guard 用來防止誤送 production PR。
+- Solo Start CI 已改為監聽 PR 到 `dev` / `main`，並在 push 到 `dev` 時重跑整合驗證；因此 feature → dev 與 dev 整合後都有自動 gate。
 - tag / GitHub Release / production deploy 都屬 `dev → main` 之後的獨立 production gate。
 - **Vercel workspace verification：**目前已連線的 team `sodahsu0314-3323` 只列出 `beloved-agent`，未列出 `lunch-roulette`。因此 repo-level `vercel.json` main-only policy 已確認，但 Dashboard/project-level production branch 尚無可驗證的 lunch-roulette project；不得宣稱 Vercel 專案已完成連線。
 
@@ -90,9 +91,9 @@ Vercel Production
 
 | 類別 | 內容 | 來源／範圍 |
 |---|---|---|
-| Completed（本次直接查核） | PR #5 仍為 draft / open；`task/solo-start` 已包含主要實作、測試計劃、domain regression tests、OpenSpec 與同步文件。 | GitHub compare + PR #5；最新 pre-Codex prep baseline 為 `a377f24764a87316451094177fd2e1d0e87e25b6` |
+| Completed（本次直接查核） | PR #5 為 draft / open / mergeable，base=`dev`、head=`task/solo-start`；目前相對 `dev` ahead 58 / behind 0，共 17 changed files。 | GitHub compare + PR #5；目前 head=`56e01ed7aa51bc12be6bbcd351495fb7882b2f62` |
 | Completed（本次直接查核） | Branch 已包含 Solo Start source、domain test、E2E、OpenSpec、README 與 `.github/workflows/solo-start-ci.yml`。 | GitHub compare；實際讀取 `src/domain/domain.ts`、`src/domain/domain.test.ts`、`src/lib/session-service.ts`、`tests/e2e/lunch-roulette.spec.ts` |
-| Completed（CI pre-E2E gates） | 新增 UT-SOLO-05～12 後，Unit / Typecheck / Build / OpenSpec strict steps 均 PASS。 | GitHub Actions run #18（head `276d9229...`）；後續只改 docs/OpenSpec decision text，最新 head 仍需由 CI / Codex 最終確認 |
+| Completed（CI pre-E2E gates） | 新增 UT-SOLO-05～12 後，Unit / Typecheck / Build / OpenSpec strict steps 均 PASS。最新 head 的 Branch Policy workflow 已 PASS；Solo Start CI run #24 已排隊，會驗證 `task/solo-start → dev`。 | GitHub Actions run #18 + Branch Policy run #2 + Solo Start CI run #24 pending |
 | In Progress / BLOCKED | Full E2E 尚未通過；最近完整失敗證據仍是 CASE-01 在 240000 ms timeout，後續 CASE 因 serial mode 未執行。 | GitHub Actions run #17 / 既有 HANDOFF evidence；Codex 依新 test plan 做 targeted root-cause |
 | Completed（docs sync） | README 與 `openspec/changes/solo-start/tasks.md` 已同步為 `IMPLEMENTATION PRESENT / VALIDATION BLOCKED`；未驗證 E2E / runtime 項目仍保持未完成。 | README / tasks / `docs/solo-start-test-plan.md` |
 | PENDING_DECISION | Release versioning 文件已有 `v0.2.0-rc.1 → v0.2.0` 方案，但尚未證明使用者已核准這組實際版本號。 | README / tasks；使用者僅詢問是否可有 release 版本標籤 |
@@ -119,11 +120,11 @@ Vercel Production
 ### E01｜Branch 與 PR 現況
 
 - 分類：FACT
-- 主張：`task/solo-start` 以 `main@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` 為 merge base，在本次交接查核時 ahead 35 / behind 0；PR #5 為 draft、open、mergeable，head 為 `0ac31a6b0bda6d1fa0c63977a52dd42802d01599`。
-- 來源：GitHub compare、PR #5 metadata。
+- 主張：PR #5 已改為 `task/solo-start → dev`，目前為 draft / open / mergeable；查核時 head=`56e01ed7aa51bc12be6bbcd351495fb7882b2f62`，相對 `dev` ahead 58 / behind 0、17 changed files。`dev` 與 `main` 目前都指向 `80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95`。
+- 來源：GitHub compare、PR #5 metadata、`dev` / `main` branch refs。
 - 時間：2026-10-02 本次查核。
 - 本次複核：PASS。
-- 缺口：本 `HANDOFF.md` 寫入後會產生新的 handoff-only commit，因此 `0ac31a6...` 是「實作與驗證 baseline」，不是交接寫入後的 branch HEAD。
+- 補充：後續文件 commit 可能繼續推進 head；接手前仍應以 PR metadata 重新確認最新 SHA。
 
 ### E02｜Solo Start 已不是「尚未實作」
 
@@ -182,7 +183,7 @@ Vercel Production
 | 1 complete 不顯示 group success % | CONFIRMED_IN_SPEC | 避免把單人資料冒充群體共識 | OpenSpec + unit test | 若未來另定 Solo 指標，必須是不同 contract |
 | Participant provisional persona 僅自己可見；group provisional preview 留在 Host control room | CONFIRMED_IN_SPEC | 保持 privacy / RLS boundary | design + README | RLS / role model 改變時重開 |
 | `v0.2.0-rc.1 → v0.2.0` release scheme | PENDING_DECISION | 已寫入 README/tasks，但缺少明確定案證據 | 未記錄 | 使用者明確批准版本號後 |
-| Merge PR #5 | BLOCKED | Full E2E FAIL、docs drift 未修 | 尚未批准 merge | E2E 綠 + docs/spec 狀態同步 |
+| Merge PR #5 into `dev` | BLOCKED | Full E2E / runtime / RLS 尚未通過；文件與規格目前已同步 | 尚未批准 merge | CASE-01 + full E2E + runtime / RLS 綠，並以最新證據更新 HANDOFF / tasks |
 | Archive `solo-start` 到 `openspec/specs/` | BLOCKED | Archive gate 尚未成立 | OpenSpec 規則 | 實作與驗證全部完成後 |
 
 ### Stable Architecture References／禁止改壞
@@ -216,9 +217,10 @@ Vercel Production
 
 | 快照 | repo／位置 | branch／HEAD 或版本 | 時間與來源 | worktree／資料狀態 |
 |---|---|---|---|---|
-| main baseline | `sodahsu/lunch-roulette` | `main@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub compare，2026-10-02 | 遠端 commit；本機 worktree 未查 |
-| implementation baseline | 同 repo | `task/solo-start@0ac31a6b0bda6d1fa0c63977a52dd42802d01599` | PR #5 / CI，2026-10-02 | 遠端 branch；本機 worktree 未查 |
-| PR | 同 repo | `#5` draft / open / mergeable | GitHub PR metadata | 35 commits、14 changed files；尚未 merge |
+| production baseline | `sodahsu/lunch-roulette` | `main@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | production branch；本機 worktree 未查 |
+| integration baseline | 同 repo | `dev@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | dev 與 main 目前同基準；後續功能先進 dev |
+| feature head | 同 repo | `task/solo-start@56e01ed7aa51bc12be6bbcd351495fb7882b2f62` | PR #5 metadata，2026-10-02 | 相對 dev ahead 58 / behind 0；17 changed files |
+| PR | 同 repo | `#5` draft / open / mergeable，`task/solo-start → dev` | GitHub PR metadata | 尚未 merge；production 不直接由 feature 進 main |
 
 | 變更歸屬 | 檔案／位置 | 狀態 | 來源及處理限制 |
 |---|---|---|---|
@@ -236,7 +238,7 @@ Vercel Production
 
 - 此次交付變更：新增 `docs/solo-start-test-plan.md`、補 UT-SOLO-05～12、同步 README / OpenSpec decisions / tasks / HANDOFF，並把剩餘技術工作收斂到 Codex 的 E2E root-cause 與 runtime 驗證。
 - 實際執行的檢查：
-  - GitHub compare `main...task/solo-start`。
+  - GitHub compare `dev...task/solo-start`，並確認 `dev` / `main` refs。
   - PR #5 metadata。
   - 讀取 README、OpenSpec tasks/design、CI workflow。
   - 讀取 domain / session-service / E2E feature source。
