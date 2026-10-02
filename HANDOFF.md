@@ -91,9 +91,9 @@ Vercel Production
 
 | 類別 | 內容 | 來源／範圍 |
 |---|---|---|
-| Completed（本次直接查核） | PR #5 為 draft / open / mergeable，base=`dev`、head=`task/solo-start`；目前相對 `dev` ahead 58 / behind 0，共 17 changed files。 | GitHub compare + PR #5；目前 head=`56e01ed7aa51bc12be6bbcd351495fb7882b2f62` |
+| Completed（本次直接查核） | PR #5 為 draft / open / mergeable，base=`dev`、head=`task/solo-start`；alignment verification baseline 相對 `dev` ahead 60 / behind 0，共 17 changed files。 | GitHub compare + PR #5；baseline=`f884ca9c803c6eb7e8dd6c16502dc610149a8357`，後續 docs commit 可能再推進 HEAD |
 | Completed（本次直接查核） | Branch 已包含 Solo Start source、domain test、E2E、OpenSpec、README 與 `.github/workflows/solo-start-ci.yml`。 | GitHub compare；實際讀取 `src/domain/domain.ts`、`src/domain/domain.test.ts`、`src/lib/session-service.ts`、`tests/e2e/lunch-roulette.spec.ts` |
-| Completed（CI pre-E2E gates） | 新增 UT-SOLO-05～12 後，Unit / Typecheck / Build / OpenSpec strict steps 均 PASS。最新 head 的 Branch Policy workflow 已 PASS；Solo Start CI run #24 已排隊，會驗證 `task/solo-start → dev`。 | GitHub Actions run #18 + Branch Policy run #2 + Solo Start CI run #24 pending |
+| Completed（CI pre-E2E gates） | 新增 UT-SOLO-05～12 後，Unit / Typecheck / Build / OpenSpec strict steps 均 PASS。Branch Policy run #3 已在 alignment baseline 上 PASS；Solo Start CI run #25 已排隊，會驗證 `task/solo-start → dev`。 | GitHub Actions run #18 + Branch Policy run #3 PASS + Solo Start CI run #25 pending |
 | In Progress / BLOCKED | Full E2E 尚未通過；最近完整失敗證據仍是 CASE-01 在 240000 ms timeout，後續 CASE 因 serial mode 未執行。 | GitHub Actions run #17 / 既有 HANDOFF evidence；Codex 依新 test plan 做 targeted root-cause |
 | Completed（docs sync） | README 與 `openspec/changes/solo-start/tasks.md` 已同步為 `IMPLEMENTATION PRESENT / VALIDATION BLOCKED`；未驗證 E2E / runtime 項目仍保持未完成。 | README / tasks / `docs/solo-start-test-plan.md` |
 | PENDING_DECISION | Release versioning 文件已有 `v0.2.0-rc.1 → v0.2.0` 方案，但尚未證明使用者已核准這組實際版本號。 | README / tasks；使用者僅詢問是否可有 release 版本標籤 |
@@ -120,7 +120,7 @@ Vercel Production
 ### E01｜Branch 與 PR 現況
 
 - 分類：FACT
-- 主張：PR #5 已改為 `task/solo-start → dev`，目前為 draft / open / mergeable；查核時 head=`56e01ed7aa51bc12be6bbcd351495fb7882b2f62`，相對 `dev` ahead 58 / behind 0、17 changed files。`dev` 與 `main` 目前都指向 `80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95`。
+- 主張：PR #5 已改為 `task/solo-start → dev`，目前為 draft / open / mergeable；alignment verification baseline=`f884ca9c803c6eb7e8dd6c16502dc610149a8357`，當時相對 `dev` ahead 60 / behind 0、17 changed files。`dev` 與 `main` 目前都指向 `80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95`。
 - 來源：GitHub compare、PR #5 metadata、`dev` / `main` branch refs。
 - 時間：2026-10-02 本次查核。
 - 本次複核：PASS。
@@ -219,7 +219,7 @@ Vercel Production
 |---|---|---|---|---|
 | production baseline | `sodahsu/lunch-roulette` | `main@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | production branch；本機 worktree 未查 |
 | integration baseline | 同 repo | `dev@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | dev 與 main 目前同基準；後續功能先進 dev |
-| feature head | 同 repo | `task/solo-start@56e01ed7aa51bc12be6bbcd351495fb7882b2f62` | PR #5 metadata，2026-10-02 | 相對 dev ahead 58 / behind 0；17 changed files |
+| feature verification baseline | 同 repo | `task/solo-start@f884ca9c803c6eb7e8dd6c16502dc610149a8357` | PR #5 metadata，2026-10-02 | 當時相對 dev ahead 60 / behind 0；17 changed files；後續 docs commit 可能推進 HEAD |
 | PR | 同 repo | `#5` draft / open / mergeable，`task/solo-start → dev` | GitHub PR metadata | 尚未 merge；production 不直接由 feature 進 main |
 
 | 變更歸屬 | 檔案／位置 | 狀態 | 來源及處理限制 |
