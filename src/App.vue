@@ -1164,7 +1164,8 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div v-else-if="groupStats" class="group-result host-results">
+      <!-- open 時 groupStats 也會被填入暫定預覽，必須限定 revealed，否則會蓋掉下方的鎖定按鈕 -->
+      <div v-else-if="session?.status === 'revealed' && groupStats" class="group-result host-results">
         <div class="eyebrow">人格卡已同步翻開 · 有效樣本 {{ resultSampleSize }} 人</div>
 
         <article class="group-verdict-card">
