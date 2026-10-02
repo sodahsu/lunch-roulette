@@ -285,3 +285,22 @@ lock → provisional 停止 → Stage A → Stage B → persisted results。
 - 不 archive `solo-start`。
 - 不宣稱 release-ready。
 - 不建立正式 GitHub Release。
+
+
+## 11. Branch / deployment gate
+
+測試完成不代表直接進 production。
+
+```text
+task/solo-start
+→ dev
+→ dev integration verification
+→ dev → main
+→ Vercel Production
+```
+
+- Feature / task branch 的完成目標是安全整合到 `dev`。
+- `dev` 上需再確認 unit / typecheck / build / full E2E / runtime / RLS 沒有 integration regression。
+- `dev` 與所有非 main branch 都不得觸發 Vercel。
+- 只有 merge / push `main` 才進 production deployment。
+- Codex 不負責 tag / Release；除非另有 production 授權。
