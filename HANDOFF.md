@@ -25,6 +25,41 @@ implementation_baseline_before_handoff_commit: 0ac31a6b0bda6d1fa0c63977a52dd4280
 approval_evidence: user_requested_continue_until_self_test_complete_then_requested_handoff_first
 ```
 
+## 2026-10-02｜測試前置收斂完成
+
+**目前交接界線：非 Codex 前置工作已收斂；剩餘技術執行集中在 E2E root-cause 與 runtime 驗證。**
+
+### 本輪已完成｜FACT
+
+- 新增 `docs/solo-start-test-plan.md`，以 HANDOFF + OpenSpec 為 source of truth，包含 requirement-to-test matrix、Unit / Integration / E2E / Runtime 分層、CASE-01 checkpoints 與 completion gate。
+- `src/domain/domain.test.ts` 補上 UT-SOLO-05～12：incomplete late joiner、latest-answer recompute、complete→incomplete eligibility、food unanswered、latest food-avoid、deterministic preview、provisional/final source boundary、final deterministic。
+- README 已由「尚未實作」修正為 **IMPLEMENTATION PRESENT / VALIDATION BLOCKED**，並補 CASE-19～21 與測試計劃連結。
+- GitHub Actions run #18 已在新增測試後確認：Unit PASS、Typecheck PASS、Build PASS、OpenSpec strict PASS。
+- `openspec/changes/solo-start/tasks.md` 已同步實際 source / CI 證據；未通過的 E2E / runtime / RLS 項目保持未勾選。
+
+### Codex 只需要繼續這些工作
+
+1. 依 `docs/solo-start-test-plan.md#8-case-01-codex-debug-plan` 對 CASE-01 加 checkpoint，找出 240000ms timeout 前最後一個 PASS 狀態。
+2. 隔離 root cause owner：UI / session-service / Supabase write / Realtime / Playwright helper；做最小修正。
+3. 單跑 CASE-01 到 PASS。
+4. 跑完整 CASE-01～21 Playwright suite 到 PASS。
+5. 做 1 → 2 → 3+ Realtime smoke、Host-as-participant multi-browser smoke、locked/revealed late-join regression、privacy/RLS regression。
+6. 依實際結果更新 HANDOFF / tasks，做 OpenSpec archive readiness review。
+
+### 不需要 Codex 重做
+
+- 不重寫 Solo Start 產品規格。
+- 不新增 session status。
+- 不另做一套 preview scoring。
+- 不重寫測試計劃。
+- 不重新設計單人成功率；目前 contract 仍是少於 2 complete 不顯示 group success %。
+- 不處理 tag / GitHub Release；那是所有技術 gate 通過後的獨立批准步驟。
+
+### 剩餘 blocker
+
+**CASE-01 Full E2E timeout**。既有證據只證明 240000ms timeout 後 cleanup 在 `closeActors()` 報錯，不能把 cleanup line 當 root cause。
+
+
 ## 交接狀態
 
 | 類別 | 內容 | 來源／範圍 |
@@ -33,7 +68,7 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 | Completed（本次直接查核） | Branch 已包含 Solo Start source、domain test、E2E、OpenSpec、README 與 `.github/workflows/solo-start-ci.yml`。 | GitHub compare；實際讀取 `src/domain/domain.ts`、`src/domain/domain.test.ts`、`src/lib/session-service.ts`、`tests/e2e/lunch-roulette.spec.ts` |
 | Completed（CI） | Unit 35/35 PASS、typecheck PASS、build PASS、OpenSpec strict validation PASS。 | CI run `36890053375` / job `110463088445` |
 | In Progress / BLOCKED | Full E2E 尚未通過。CASE-01 在 240000 ms timeout；其餘 20 tests 未執行。 | 同一 CI job log |
-| In Progress / DOCUMENT DRIFT | README 與 `openspec/changes/solo-start/tasks.md` 仍寫「尚未實作 / IMPLEMENTATION NOT STARTED」，但 branch 已有實作與測試；不能把這兩段狀態文字當目前真相。 | README / tasks vs branch diff / source / CI |
+| Completed（docs sync） | README 與 `openspec/changes/solo-start/tasks.md` 已同步為 `IMPLEMENTATION PRESENT / VALIDATION BLOCKED`；未驗證 E2E / runtime 項目仍保持未完成。 | README / tasks / `docs/solo-start-test-plan.md` |
 | PENDING_DECISION | Release versioning 文件已有 `v0.2.0-rc.1 → v0.2.0` 方案，但尚未證明使用者已核准這組實際版本號。 | README / tasks；使用者僅詢問是否可有 release 版本標籤 |
 | UNKNOWN | 本機 worktree dirty/clean、真機 / 多裝置 runtime smoke、目前是否存在 Git tag。 | 本次只查 GitHub 遠端 branch / CI；未查本機 |
 | FACT | GitHub Releases 頁目前回傳空集合。 | GitHub releases page 查核 |
