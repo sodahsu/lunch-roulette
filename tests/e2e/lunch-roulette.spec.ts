@@ -39,7 +39,7 @@ async function joinParticipant(browser: Browser, code: string, name: string): Pr
   return { context, page }
 }
 
-async function answerAll(page: Page, optionIndex = 0) {
+async function answerScoredQuestions(page: Page, optionIndex = 0) {
   for (let guard = 0; guard < 20; guard += 1) {
     const choices = page.locator('.choice')
     await expect(choices.first()).toBeVisible()
@@ -47,16 +47,12 @@ async function answerAll(page: Page, optionIndex = 0) {
 
     const progress = page.getByText(/第 \d+ \/ \d+ 題/)
     const before = await progress.textContent()
-    const next = page.getByRole('button', { name: /下一題|交卷/ })
+    const next = page.getByRole('button', { name: /下一題|填寫忌口/ })
     const label = (await next.textContent()) ?? ''
     await next.click()
 
-    if (label.includes('交卷')) {
-      // 最後題之後多了忌口步驟：optionIndex 0 不排除任何食物，1 排除火鍋
+    if (label.includes('填寫忌口')) {
       await expect(page.getByRole('heading', { name: '有哪些是你不吃或吃不了的？' })).toBeVisible()
-      if (optionIndex === 1) await page.getByRole('button', { name: /火鍋/ }).click()
-      await page.getByRole('button', { name: /交卷/ }).click()
-      await expect(page.getByRole('heading', { name: '你答完了。先不要偷看別人。' })).toBeVisible()
       return
     }
 
@@ -65,6 +61,17 @@ async function answerAll(page: Page, optionIndex = 0) {
   }
 
   throw new Error('Questionnaire did not finish within 20 questions')
+}
+
+async function submitFoodAvoid(page: Page, optionIndex = 0) {
+  if (optionIndex === 1) await page.getByRole('button', { name: /火鍋/ }).click()
+  await page.getByRole('button', { name: /交卷/ }).click()
+  await expect(page.getByRole('heading', { name: '你答完了。先不要偷看別人。' })).toBeVisible()
+}
+
+async function answerAll(page: Page, optionIndex = 0, foodOptionIndex = optionIndex) {
+  await answerScoredQuestions(page, optionIndex)
+  await submitFoodAvoid(page, foodOptionIndex)
 }
 
 function joinedMetric(page: Page) {
@@ -107,17 +114,20 @@ test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ 
   const ben = await joinParticipant(browser, host.code, 'Ben')
 
   try {
-    await Promise.all([answerAll(amy.page, 0), answerAll(ben.page, 1)])
+    await Promise.all([answerAll(amy.page, 0), answerAll(ben.page, 0, 1)])
     await expect(completedMetric(host.page)).toHaveText('2')
 
     await revealDinnerSuccess(host.page)
-    await expect(host.page.locator('.success-score')).toBeVisible()
+    await expect(host.page.locator('.success-score')).toHaveText('100%')
+    const stageOneScore = await host.page.locator('.success-score').textContent()
     await expect(amy.page.getByText(/全場結算中/)).toBeVisible()
     await expect(ben.page.getByText(/全場結算中/)).toBeVisible()
     await expect(amy.page.getByText('你的飲食人格')).toHaveCount(0)
     await expect(ben.page.getByText('你的飲食人格')).toHaveCount(0)
 
     await flipPersonaCards(host.page)
+    // 翻牌時才寫入 food-avoid stat；成功率不得因此變動
+    await expect(host.page.locator('.compatibility-score')).toHaveText(stageOneScore ?? '')
 
     await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })

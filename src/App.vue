@@ -5,7 +5,7 @@ import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
 import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
-import { assignPersona, calculateDinnerSuccessRate, RARE_CARD_REASON } from './domain/domain'
+import { assignPersona, calculateDinnerSuccessRate, isCompleteResponse, RARE_CARD_REASON } from './domain/domain'
 import {
   calculateFoodConsensus,
   decodeFoodAvoid,
@@ -140,7 +140,11 @@ const dinnerSuccess = computed(() =>
 )
 
 const provisionalPersona = computed<PersonaKey | null>(() => {
-  if (session.value?.status !== 'open' || !participant.value || !ownResponseIsComplete()) return null
+  if (
+    session.value?.status !== 'open'
+    || !participant.value
+    || !isCompleteResponse(answers.value, activeQuestions.value)
+  ) return null
   return assignPersona(answers.value, activeQuestions.value)
 })
 
@@ -155,8 +159,8 @@ const hostDifficulty = computed(() => {
 
 const hostParticipantActionLabel = computed(() => {
   if (!participant.value) return '我先玩 →'
-  if (!ownResponseIsComplete()) return '繼續我的答題 ↗'
-  if (!answers.value[FOOD_AVOID_ID]) return '完成我的忌口 ↗'
+  if (!areScoredQuestionsComplete()) return '繼續我的答題 ↗'
+  if (decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) === undefined) return '完成我的忌口 ↗'
   return '查看我的暫時人格 ↗'
 })
 
@@ -382,13 +386,19 @@ async function restoreFromUrl() {
       if (isHost.value && !participant.value) {
         screen.value = 'host'
         startHostLobbyRefresh()
-      } else if (participant.value) screen.value = !ownResponseIsComplete() ? 'quiz' : answers.value[FOOD_AVOID_ID] ? 'waiting' : 'food'
+      } else if (participant.value) {
+        screen.value = !areScoredQuestionsComplete()
+          ? 'quiz'
+          : decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) === undefined
+            ? 'food'
+            : 'waiting'
+      }
       else screen.value = 'join'
     }
   })
 }
 
-function ownResponseIsComplete() {
+function areScoredQuestionsComplete() {
   return activeQuestions.value.every(
     (question) => !question.required || Boolean(answers.value[question.id]),
   )
@@ -555,9 +565,9 @@ async function startAsHostParticipant() {
 
     await refreshSessionState()
 
-    if (!ownResponseIsComplete()) {
+    if (!areScoredQuestionsComplete()) {
       screen.value = 'quiz'
-    } else if (!answers.value[FOOD_AVOID_ID]) {
+    } else if (decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) === undefined) {
       screen.value = 'food'
     } else {
       screen.value = 'waiting'
@@ -977,7 +987,7 @@ onBeforeUnmount(() => {
       <div class="bottom-actions inline">
         <button class="secondary" type="button" :disabled="questionIndex === 0" @click="previousQuestion">上一題</button>
         <button class="primary" type="button" :disabled="!currentAnswer || busy" @click="nextQuestion">
-          {{ questionIndex === activeQuestions.length - 1 ? '交卷' : '下一題' }}
+          {{ questionIndex === activeQuestions.length - 1 ? '填寫忌口' : '下一題' }}
         </button>
       </div>
     </section>
@@ -1154,7 +1164,8 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div v-else-if="groupStats" class="group-result host-results">
+      <!-- open 時 groupStats 也會被填入暫定預覽，必須限定 revealed，否則會蓋掉下方的鎖定按鈕 -->
+      <div v-else-if="session?.status === 'revealed' && groupStats" class="group-result host-results">
         <div class="eyebrow">人格卡已同步翻開 · 有效樣本 {{ resultSampleSize }} 人</div>
 
         <article class="group-verdict-card">
