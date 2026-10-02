@@ -5,7 +5,7 @@ import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
 import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
 import { PERSONAS, selectQuestionsForSession } from './domain/questions'
-import { assignPersona, calculateDinnerSuccessRate, RARE_CARD_REASON } from './domain/domain'
+import { assignPersona, calculateDinnerSuccessRate, isCompleteResponse, RARE_CARD_REASON } from './domain/domain'
 import {
   calculateFoodConsensus,
   decodeFoodAvoid,
@@ -140,7 +140,11 @@ const dinnerSuccess = computed(() =>
 )
 
 const provisionalPersona = computed<PersonaKey | null>(() => {
-  if (session.value?.status !== 'open' || !participant.value || !ownResponseIsComplete()) return null
+  if (
+    session.value?.status !== 'open'
+    || !participant.value
+    || !isCompleteResponse(answers.value, activeQuestions.value)
+  ) return null
   return assignPersona(answers.value, activeQuestions.value)
 })
 
@@ -155,8 +159,8 @@ const hostDifficulty = computed(() => {
 
 const hostParticipantActionLabel = computed(() => {
   if (!participant.value) return '我先玩 →'
-  if (!ownResponseIsComplete()) return '繼續我的答題 ↗'
-  if (!answers.value[FOOD_AVOID_ID]) return '完成我的忌口 ↗'
+  if (!areScoredQuestionsComplete()) return '繼續我的答題 ↗'
+  if (decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) === undefined) return '完成我的忌口 ↗'
   return '查看我的暫時人格 ↗'
 })
 
@@ -561,9 +565,9 @@ async function startAsHostParticipant() {
 
     await refreshSessionState()
 
-    if (!ownResponseIsComplete()) {
+    if (!areScoredQuestionsComplete()) {
       screen.value = 'quiz'
-    } else if (!answers.value[FOOD_AVOID_ID]) {
+    } else if (decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) === undefined) {
       screen.value = 'food'
     } else {
       screen.value = 'waiting'
