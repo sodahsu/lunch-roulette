@@ -43,7 +43,7 @@ The system SHALL use participant/completion counts to keep the lobby and waiting
 - AND 文案不得指認某位 participant 選了什麼答案
 
 #### Scenario: Participant 已交卷
-- WHEN participant 已完成 active questionnaire
+- WHEN participant 已完成 active questionnaire 並明確提交忌口
 - AND session status 仍為 `open`
 - THEN participant waiting 畫面應顯示目前完成人數
 - AND 可依尚未完成人數顯示趣味等待文案
@@ -53,9 +53,9 @@ The system SHALL use participant/completion counts to keep the lobby and waiting
 The system SHALL expose participant presence and completion progress to the host without exposing per-person answer choices.
 
 #### Scenario: 顯示主持人進度
-- WHEN participants 加入或完成答題
+- WHEN participants 加入或完成整份提交
 - THEN 主持人畫面應更新已加入人數
-- AND 更新已完成人數
+- AND 只把已完成 active questionnaire 並提交忌口者計入已完成人數與 READY 狀態
 - AND 可顯示 participant display names
 - BUT SHALL NOT 顯示某位 participant 的逐題答案
 
@@ -64,7 +64,7 @@ The system SHALL allow the host to start Reveal without requiring a fixed partic
 
 #### Scenario: 未滿 8 人或有人未完成
 - WHEN session status 為 `open`
-- AND 至少一位 participant 已完成答題
+- AND 至少一位 participant 已完成 active questionnaire 與忌口提交
 - THEN 主持人可以開始 Reveal
 - AND 未完成者不得阻塞揭曉
 

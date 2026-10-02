@@ -1,4 +1,4 @@
-import { calculateFoodAvoidStat } from './foods'
+import { calculateFoodAvoidStat, decodeFoodAvoid, FOOD_AVOID_ID } from './foods'
 import { PERSONA_PRIORITY, PERSONAS, QUESTIONS } from './questions'
 import type {
   AnswerValue,
@@ -11,11 +11,21 @@ import type {
   ResultSnapshot,
 } from './types'
 
-export function isCompleteResponse(
+export function isCompleteQuestionnaire(
   answers: Record<string, AnswerValue>,
   questions: Question[] = QUESTIONS,
 ): boolean {
   return questions.filter((q) => q.required).every((q) => Boolean(answers[q.id]))
+}
+
+export function isCompleteResponse(
+  answers: Record<string, AnswerValue>,
+  questions: Question[] = QUESTIONS,
+): boolean {
+  return (
+    isCompleteQuestionnaire(answers, questions)
+    && decodeFoodAvoid(answers[FOOD_AVOID_ID]) !== undefined
+  )
 }
 
 export function calculateGroupStats(
@@ -102,7 +112,9 @@ export function calculateDinnerSuccessRate(
     throw new Error(`Unsupported dinner-success algorithm for questionnaire version: ${questionnaireVersion}`)
   }
 
-  return calculateDinnerSuccessRateV1(stats)
+  return calculateDinnerSuccessRateV1(
+    stats.filter((stat) => stat.questionId !== FOOD_AVOID_ID),
+  )
 }
 
 export function calculatePersonaScores(

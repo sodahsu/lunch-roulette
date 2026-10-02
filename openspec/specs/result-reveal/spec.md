@@ -15,7 +15,7 @@ The system SHALL calculate reveal results using only complete responses captured
 - AND incomplete participants 不得影響有效樣本數
 
 #### Scenario: 未完成 participant
-- WHEN participant 在鎖定前沒有完成 active questionnaire
+- WHEN participant 在鎖定前沒有完成 active questionnaire 或尚未提交忌口
 - AND session 最後進入 `revealed`
 - THEN 系統不得硬判該 participant 的 persona
 - AND 應顯示明確的未完成狀態
@@ -35,7 +35,9 @@ The system SHALL derive a deterministic dinner success rate from locked aggregat
 
 #### Scenario: 計算成功率
 - WHEN 至少兩位 complete participants 形成可用 group stats
-- THEN 每一題的共識度應為該題最高 option count 除以 sample size
+- THEN 成功率只應使用 active questionnaire 的計分題 stats
+- AND 應排除 `food-avoid` 等 auxiliary stats
+- AND 每一題的共識度應為該題最高 option count 除以 sample size
 - AND 整體成功率應為所有可用題目共識度的平均值
 - AND 顯示分數應四捨五入為 0–100 的整數
 
