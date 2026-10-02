@@ -1,10 +1,265 @@
 ---
-title: "Lunch Roulette《都可以？》｜AI 工作交接"
-date: "2026-10-01"
+title: "Lunch Roulette《都可以？》Solo Start｜AI 工作交接"
+date: "2026-10-02"
 handoff_status: ready_for_handoff
 ---
 
-# Lunch Roulette《都可以？》｜AI 工作交接
+# Lunch Roulette《都可以？》Solo Start｜AI 工作交接
+
+## Resume Here
+
+**交付定位：**供下一個 Agent 接手 `task/solo-start` 的實作驗證與除錯。這份文件是狀態快照，不代表 Solo Start 已驗收完成，也不授權直接 merge、建立 Release/tag 或忽略失敗測試。
+
+- 目標與交付物：讓同一個 Lunch Roulette session 支援「1 人先開局 → 朋友後加入 → open 階段 provisional Persona / group preview → 最後沿用正式兩段式 Reveal」，並做到 unit / typecheck / build / OpenSpec / E2E / runtime 驗證可通過。
+- 非目標：不新增獨立 Solo session type、不改掉 `open → locked → revealed`、不把單人結果硬算成群體成功率、不放寬 participant 讀取他人 response/result 的隱私邊界、不在驗證失敗時建立正式 Release。
+- 本次已做／未做：遠端 feature branch 已存在主要實作、OpenSpec、測試計劃、Solo domain regression tests、README/tasks/HANDOFF 同步與 CI workflow。新增測試後的 GitHub Actions run #18 已確認 Unit / Typecheck / Build / OpenSpec strict steps PASS；Full E2E 仍屬已知 blocker，整體尚未完成。
+- 第一個安全動作：從 CI run `36890053375` 的 CASE-01 timeout 開始定位，不先重寫 Solo Start；先確認 timeout 前最後一個未完成的 UI / Realtime 等待條件，再做最小修正並重跑 CASE-01。
+- 停止條件：若接手時 `task/solo-start` HEAD、PR base、`dev` 或 `main` 已改變造成 contract drift，先重新 compare / read specs，不沿用本文件的「目前」描述。
+
+```yaml
+handoff_purpose: implementation_and_validation
+task_state: implementation_present_validation_blocked
+code_changed: true
+repository_reverified: true
+implementation_baseline_before_handoff_commit: 0ac31a6b0bda6d1fa0c63977a52dd42802d01599
+test_prep_baseline: a377f24764a87316451094177fd2e1d0e87e25b6
+approval_evidence: user_requested_continue_until_self_test_complete_then_requested_handoff_first
+```
+
+## 2026-10-02｜Branch / Deployment policy
+
+**最新整合策略：`dev` 是開發整合分支，`main` 只做 production。**
+
+```text
+task/solo-start
+      ↓
+     dev
+      ↓
+完整整合驗證
+      ↓
+PR: dev → main
+      ↓
+Vercel Production
+```
+
+- PR #5 已改為 `task/solo-start → dev`。
+- `dev` 已由目前 `main` 建立，作為後續功能整合基準。
+- Codex 修完 CASE-01 / E2E / runtime / RLS 後，目標是把 Solo Start 安全整合到 `dev`，**不是直接 merge main**。
+- `main` 只有在 `dev` 的整合驗證通過後才接受 PR。
+- `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。
+- `.github/workflows/branch-policy.yml` 會阻擋非 `dev` 來源直接 PR 到 `main`；因 GitHub default branch 目前仍是 `main` 且 connector 無 repository-settings 寫入能力，這個 CI guard 用來防止誤送 production PR。
+- Solo Start CI 已改為監聽 PR 到 `dev` / `main`，並在 push 到 `dev` 時重跑整合驗證；因此 feature → dev 與 dev 整合後都有自動 gate。
+- tag / GitHub Release / production deploy 都屬 `dev → main` 之後的獨立 production gate。
+- **Vercel workspace verification：**目前已連線的 team `sodahsu0314-3323` 只列出 `beloved-agent`，未列出 `lunch-roulette`。因此 repo-level `vercel.json` main-only policy 已確認，但 Dashboard/project-level production branch 尚無可驗證的 lunch-roulette project；不得宣稱 Vercel 專案已完成連線。
+
+## 2026-10-02｜測試前置收斂完成
+
+**目前交接界線：非 Codex 前置工作已收斂；剩餘技術執行集中在 E2E root-cause 與 runtime 驗證。**
+
+### 本輪已完成｜FACT
+
+- 新增 `docs/solo-start-test-plan.md`，以 HANDOFF + OpenSpec 為 source of truth，包含 requirement-to-test matrix、Unit / Integration / E2E / Runtime 分層、CASE-01 checkpoints 與 completion gate。
+- `src/domain/domain.test.ts` 補上 UT-SOLO-05～12：incomplete late joiner、latest-answer recompute、complete→incomplete eligibility、food unanswered、latest food-avoid、deterministic preview、provisional/final source boundary、final deterministic。
+- README 已由「尚未實作」修正為 **IMPLEMENTATION PRESENT / VALIDATION BLOCKED**，並補 CASE-19～21 與測試計劃連結。
+- GitHub Actions run #18 已在新增測試後確認：Unit PASS、Typecheck PASS、Build PASS、OpenSpec strict PASS。
+- `openspec/changes/solo-start/tasks.md` 已同步實際 source / CI 證據；未通過的 E2E / runtime / RLS 項目保持未勾選。
+
+### Codex 只需要繼續這些工作
+
+1. 依 `docs/solo-start-test-plan.md#8-case-01-codex-debug-plan` 對 CASE-01 加 checkpoint，找出 240000ms timeout 前最後一個 PASS 狀態。
+2. 隔離 root cause owner：UI / session-service / Supabase write / Realtime / Playwright helper；做最小修正。
+3. 單跑 CASE-01 到 PASS。
+4. 跑完整 CASE-01～21 Playwright suite 到 PASS。
+5. 做 1 → 2 → 3+ Realtime smoke、Host-as-participant multi-browser smoke、locked/revealed late-join regression、privacy/RLS regression。
+6. 依實際結果更新 HANDOFF / tasks，做 OpenSpec archive readiness review。
+
+### 不需要 Codex 重做
+
+- 不重寫 Solo Start 產品規格。
+- 不新增 session status。
+- 不另做一套 preview scoring。
+- 不重寫測試計劃。
+- 不重新設計單人成功率；目前 contract 仍是少於 2 complete 不顯示 group success %。
+- 不處理 tag / GitHub Release；Codex 先完成 `task/solo-start → dev` 的技術 gate，production release 只在後續 `dev → main` 處理。
+
+### 剩餘 blocker
+
+**CASE-01 Full E2E timeout**。既有證據只證明 240000ms timeout 後 cleanup 在 `closeActors()` 報錯，不能把 cleanup line 當 root cause。
+
+
+## 交接狀態
+
+| 類別 | 內容 | 來源／範圍 |
+|---|---|---|
+| Completed（本次直接查核） | PR #5 為 draft / open / mergeable，base=`dev`、head=`task/solo-start`；alignment verification baseline 相對 `dev` ahead 60 / behind 0，共 17 changed files。 | GitHub compare + PR #5；baseline=`f884ca9c803c6eb7e8dd6c16502dc610149a8357`，後續 docs commit 可能再推進 HEAD |
+| Completed（本次直接查核） | Branch 已包含 Solo Start source、domain test、E2E、OpenSpec、README 與 `.github/workflows/solo-start-ci.yml`。 | GitHub compare；實際讀取 `src/domain/domain.ts`、`src/domain/domain.test.ts`、`src/lib/session-service.ts`、`tests/e2e/lunch-roulette.spec.ts` |
+| Completed（CI pre-E2E gates） | 新增 UT-SOLO-05～12 後，Unit / Typecheck / Build / OpenSpec strict steps 均 PASS。Branch Policy run #3 已在 alignment baseline 上 PASS；Solo Start CI run #25 已排隊，會驗證 `task/solo-start → dev`。 | GitHub Actions run #18 + Branch Policy run #3 PASS + Solo Start CI run #25 pending |
+| In Progress / BLOCKED | Full E2E 尚未通過；最近完整失敗證據仍是 CASE-01 在 240000 ms timeout，後續 CASE 因 serial mode 未執行。 | GitHub Actions run #17 / 既有 HANDOFF evidence；Codex 依新 test plan 做 targeted root-cause |
+| Completed（docs sync） | README 與 `openspec/changes/solo-start/tasks.md` 已同步為 `IMPLEMENTATION PRESENT / VALIDATION BLOCKED`；未驗證 E2E / runtime 項目仍保持未完成。 | README / tasks / `docs/solo-start-test-plan.md` |
+| PENDING_DECISION | Release versioning 文件已有 `v0.2.0-rc.1 → v0.2.0` 方案，但尚未證明使用者已核准這組實際版本號。 | README / tasks；使用者僅詢問是否可有 release 版本標籤 |
+| UNKNOWN | 本機 worktree dirty/clean、真機 / 多裝置 runtime smoke、目前是否存在 Git tag。 | 本次只查 GitHub 遠端 branch / CI；未查本機 |
+| FACT | GitHub Releases 頁目前回傳空集合。 | GitHub releases page 查核 |
+
+## Acceptance Metrics
+
+| 驗收項目 | 基準及來源 | 目標及來源 | 方法／證據位置 | 結果 | 缺口／前置條件 |
+|---|---|---|---|---|---|
+| 單人可由 Host 直接開局 | OpenSpec `solo-start` + CASE-19 | Host 成為第一位 participant、完成後可看 provisional persona | Playwright CASE-19 + runtime smoke | NOT_FULLY_VERIFIED | CASE-19 在 full suite 中尚未執行，因 CASE-01 先 timeout |
+| 第二人後加入不重置第一人 | OpenSpec + CASE-20 | joined=2、第一人保留 provisional state，第二人 complete 後 host 顯示 provisional success | CASE-20 | NOT_FULLY_VERIFIED | Full suite 未跑到 CASE-20 |
+| Host-as-participant 正式 Reveal | OpenSpec + CASE-21 | Host 保留 control room，仍可查看自己正式 persona；guest 正常翻牌 | CASE-21 | NOT_FULLY_VERIFIED | Full suite 未跑到 CASE-21 |
+| Domain provisional preview | `buildProvisionalGroupPreview()` | 1 complete 不算 group success；2+ 用既有 success algorithm；latest/incomplete/food/final-boundary invariants | Vitest UT-SOLO-05～12 + 既有 tests | PASS | GitHub Actions run #18 Unit step PASS |
+| Type safety | 專案既有 gate | `vue-tsc -b` 無錯 | CI | PASS | 無 |
+| Production build | 專案既有 gate | Vite build 成功 | CI | PASS | 無 |
+| OpenSpec change 格式 | `openspec/config.yaml` / change `solo-start` | strict validation 通過 | `pnpm dlx @fission-ai/openspec validate solo-start --strict --no-interactive` | PASS | 無 |
+| Full E2E regression | 原有 CASE-01～18 + 新增 CASE-19～21 | 全部 PASS | `pnpm test:e2e` | FAIL | CASE-01 timeout；20 tests did not run |
+| README / tasks 狀態一致 | 文件應反映 code + validation 真實狀態 | `IMPLEMENTATION PRESENT / VALIDATION BLOCKED`，並把未驗證 E2E/runtime 保持未完成 | 文件 review | PASS | README / tasks / HANDOFF / test plan 已同步 |
+| Release | 使用者希望有版本標籤 | 只有驗證 gate 通過後才建立 RC / 正式 release | tag / GitHub Release | NOT_RUN | 版本號尚待明確批准；GitHub Releases 目前無資料 |
+
+## Evidence Classification 與證據
+
+### E01｜Branch 與 PR 現況
+
+- 分類：FACT
+- 主張：PR #5 已改為 `task/solo-start → dev`，目前為 draft / open / mergeable；alignment verification baseline=`f884ca9c803c6eb7e8dd6c16502dc610149a8357`，當時相對 `dev` ahead 60 / behind 0、17 changed files。`dev` 與 `main` 目前都指向 `80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95`。
+- 來源：GitHub compare、PR #5 metadata、`dev` / `main` branch refs。
+- 時間：2026-10-02 本次查核。
+- 本次複核：PASS。
+- 補充：後續文件 commit 可能繼續推進 head；接手前仍應以 PR metadata 重新確認最新 SHA。
+
+### E02｜Solo Start 已不是「尚未實作」
+
+- 分類：FACT
+- 主張：branch 已包含功能程式與測試，不只是規格。
+- 來源：
+  - `src/domain/domain.ts`：存在 `buildProvisionalGroupPreview()`。
+  - `src/domain/domain.test.ts`：存在 provisional group preview tests。
+  - `src/lib/session-service.ts`：存在 `getOwnParticipant()`、`previewOpenGroupStats()`，`joinSession()` 會恢復同一 user 的 participant。
+  - `tests/e2e/lunch-roulette.spec.ts`：CASE-19 / 20 / 21 覆蓋 solo host、late join provisional success、host-as-participant final reveal。
+  - GitHub compare：`src/App.vue`、`src/styles.css`、session/domain/test files 均有 feature diff。
+- 本次複核：PASS（source-level existence）。
+- 限制：source 存在不代表 runtime 全部正確；E2E 尚未綠。
+
+### E03｜CI 成功與失敗邊界
+
+- 分類：FACT
+- 來源：GitHub Actions run `36890053375`，job `110463088445`。
+- Runner：Ubuntu 24.04、Node 22.23.3、pnpm 10.30.3。
+- PASS：
+  - `pnpm test:unit`：35 tests passed。
+  - `pnpm typecheck`。
+  - `pnpm build`。
+  - `pnpm dlx @fission-ai/openspec validate solo-start --strict --no-interactive`：`Change 'solo-start' is valid`。
+- FAIL：
+  - `pnpm test:e2e`。
+  - CASE-01 timeout 240000 ms。
+  - log 最後顯示 error at `closeActors()` / `context.close()`，但這是 timeout 後 cleanup 位置，**不能直接判定 closeActors 是根因**。
+  - 1 failed / 20 did not run。
+- Artifact：`playwright-test-results`，artifact ID `11176632212`。
+- 本次複核：PASS（讀取 workflow job 與完整 log）。
+- 下一步證據：下載 artifact / error-context，或針對 CASE-01 單跑並記錄 timeout 前最後一個 await。
+
+### E04｜文件狀態同步
+
+- 分類：FACT
+- 主張：README、`openspec/changes/solo-start/tasks.md`、本 HANDOFF 與 `docs/solo-start-test-plan.md` 已統一使用 **IMPLEMENTATION PRESENT / VALIDATION BLOCKED**；未通過的 E2E / runtime / RLS 項目保持未完成。
+- 來源：上述四份文件與 GitHub Actions run #18 pre-E2E gates。
+- 本次複核：PASS。
+- 影響：文件漂移已不再是目前 blocker；archive 仍由 Codex 的 E2E/runtime evidence 阻擋。
+
+### E05｜Release / tag 狀態
+
+- 分類：FACT + PENDING_DECISION
+- FACT：README / tasks 已記錄建議方案 `v0.2.0-rc.1`、`v0.2.0`；GitHub Releases 查核為空集合。
+- PENDING_DECISION：目前沒有足夠批准證據證明這組實際版本號已定案，也沒有建立 Release 的授權／驗證條件成立證據。
+- Tags：UNKNOWN；本次工具未成功列出 tags，因此不得宣稱「沒有 tag」。
+- 保護條件：E2E 未綠前不要建立正式 `v0.2.0` Release；是否建立 RC tag 也應先確認版本號方案與 gate。
+
+## 決策、批准與保護約束
+
+| 決策／待裁決事項 | 狀態 | 原因與證據 | 批准者及紀錄 | 適用範圍／重開條件 |
+|---|---|---|---|---|
+| Solo Start 是同一 session 從 1 人長成 N 人，不是獨立 Solo mode | CONFIRMED_IN_SPEC | `openspec/changes/solo-start/proposal.md` / `design.md` | 使用者要求新增單人可開局，規格已落檔 | 若產品方向改為獨立 solo game 才重開 |
+| Session status 不新增值 | CONFIRMED_IN_SPEC | 仍用 `open / locked / revealed` | OpenSpec | DB state model 改變時重開 |
+| 1 complete 不顯示 group success % | CONFIRMED_IN_SPEC | 避免把單人資料冒充群體共識 | OpenSpec + unit test | 若未來另定 Solo 指標，必須是不同 contract |
+| Participant provisional persona 僅自己可見；group provisional preview 留在 Host control room | CONFIRMED_IN_SPEC | 保持 privacy / RLS boundary | design + README | RLS / role model 改變時重開 |
+| `v0.2.0-rc.1 → v0.2.0` release scheme | PENDING_DECISION | 已寫入 README/tasks，但缺少明確定案證據 | 未記錄 | 使用者明確批准版本號後 |
+| Merge PR #5 into `dev` | BLOCKED | Full E2E / runtime / RLS 尚未通過；文件與規格目前已同步 | 尚未批准 merge | CASE-01 + full E2E + runtime / RLS 綠，並以最新證據更新 HANDOFF / tasks |
+| Archive `solo-start` 到 `openspec/specs/` | BLOCKED | Archive gate 尚未成立 | OpenSpec 規則 | 實作與驗證全部完成後 |
+
+### Stable Architecture References／禁止改壞
+
+| 約束 | 為什麼需要保留 | 正式來源及查核狀態 |
+|---|---|---|
+| 正式 Reveal 仍是 `open → locked → revealed` | Solo preview 不能變成新的 persistence state | `openspec/changes/solo-start/design.md`，已讀 |
+| Provisional result 不寫入正式 `participant_results` / `result_snapshots` | 避免暫時資料污染正式結果 | proposal / design，已讀 |
+| Final result 從 locked source of truth 重建 | 避免 race / stale client preview | design，已讀 |
+| 一般 participant 不讀其他人的 responses | 保持 privacy / RLS boundary | design，已讀 |
+| Host 同時當 participant 不代表可讀其他人的 private result | role 與 private result ownership 分離 | design，已讀 |
+| 少於 2 complete 不顯示 group success percentage | 現有成功率是群體共識遊戲分數 | design + unit test，已查 |
+| 正式 Release 不從未驗證 feature branch 建立 | 避免把失敗 CI 的版本當正式版 | README release section；版本號仍待批准 |
+
+## Next Action
+
+> 以下是接手順序，不代表本交接文件自動授權執行 merge / release。
+
+| # | 具體動作 | 範圍／位置 | 依賴與所需證據 | 批准條件 | 預期產出／如何驗證 |
+|---|---|---|---|---|---|
+| 1 | 定位 CASE-01 timeout | `tests/e2e/lunch-roulette.spec.ts`、CI artifact `11176632212` | 讀 error-context；必要時單跑 CASE-01 | 屬既有「做到自行測試完成」工作範圍 | 找到 timeout 前實際卡住的 await / state，不把 cleanup line 誤判為根因 |
+| 2 | 做最小修正並只重跑 CASE-01 | App / session-service / test helper 中實際 owner | E01～E03 | 不改產品 contract | CASE-01 PASS |
+| 3 | 重跑 full gate | branch / PR #5 | CASE-01 已穩定 | 無額外批准 | unit / typecheck / build / OpenSpec / E2E 全 PASS |
+| 4 | 補 runtime smoke | 1→2→3+、Host-as-participant、多 browser | 自動化 gate 全綠 | 無額外批准 | 具體 smoke evidence，不只看 test code |
+| 5 | 最終同步 README / tasks / HANDOFF | 驗證完成後的狀態欄位 | 必須先取得 full E2E + runtime/RLS evidence | 無額外批准 | 將 `VALIDATION BLOCKED` 改為實際最終 verdict，不提前宣稱 release-ready |
+| 6 | Review OpenSpec archive readiness | `openspec/changes/solo-start/` | 所有 gate 通過 | archive 前確認 change 無 NEEDS_CONFIRMATION 阻塞 | strict validate + capability/code drift review |
+| 7 | 決定 Release 版本號 | README/tasks release section | 使用者確認 `v0.2.0-rc.1 / v0.2.0` 是否採用 | **需使用者明確定案** | 版本策略確認 |
+| 8 | Production merge / tag / GitHub Release | `dev → main` production PR | `task/solo-start → dev` 已整合、dev 全部驗證全綠 | **需 merge/release 授權** | main 固定 commit + immutable tag + release notes；merge main 才觸發 Vercel |
+
+## Workspace Provenance
+
+| 快照 | repo／位置 | branch／HEAD 或版本 | 時間與來源 | worktree／資料狀態 |
+|---|---|---|---|---|
+| production baseline | `sodahsu/lunch-roulette` | `main@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | production branch；本機 worktree 未查 |
+| integration baseline | 同 repo | `dev@80cddbe8e1eb3eb6c1131ffe2ec46c0f3db3ea95` | GitHub branch ref，2026-10-02 | dev 與 main 目前同基準；後續功能先進 dev |
+| feature verification baseline | 同 repo | `task/solo-start@f884ca9c803c6eb7e8dd6c16502dc610149a8357` | PR #5 metadata，2026-10-02 | 當時相對 dev ahead 60 / behind 0；17 changed files；後續 docs commit 可能推進 HEAD |
+| PR | 同 repo | `#5` draft / open / mergeable，`task/solo-start → dev` | GitHub PR metadata | 尚未 merge；production 不直接由 feature 進 main |
+
+| 變更歸屬 | 檔案／位置 | 狀態 | 來源及處理限制 |
+|---|---|---|---|
+| Solo Start feature branch | `.github/workflows/solo-start-ci.yml`、README、OpenSpec、`src/App.vue`、domain/session-service/styles、domain/E2E tests | 已存在於遠端 branch | 不 reset / force-rewrite；先依 PR diff 與 CI 修正 |
+| 本次交接 | `HANDOFF.md` | 本次更新 | handoff-only；不代表 code validation |
+| 本機既存變更 | UNKNOWN | 未查核 | 接手若使用本機，先 `git status` / `git worktree list`，不得自行丟棄 |
+
+## 額外發現（未納入本次交接修改）
+
+- CI 使用 `actions/checkout@v4`、`actions/setup-node@v4`、`actions/upload-artifact@v4` 時出現「Node.js 20 deprecated / forced Node.js 24」warning；本次沒有把它當 E2E failure 根因，也沒有升級 actions。
+- README Verification 已同步為 CASE-01～21；目前文件漂移不再是 blocker。
+- Release 頁目前空白；tag 清單本次未成功查核。
+
+## 交付與驗證備註
+
+- 此次交付變更：新增 `docs/solo-start-test-plan.md`、補 UT-SOLO-05～12、同步 README / OpenSpec decisions / tasks / HANDOFF，並把剩餘技術工作收斂到 Codex 的 E2E root-cause 與 runtime 驗證。
+- 實際執行的檢查：
+  - GitHub compare `dev...task/solo-start`，並確認 `dev` / `main` refs。
+  - PR #5 metadata。
+  - 讀取 README、OpenSpec tasks/design、CI workflow。
+  - 讀取 domain / session-service / E2E feature source。
+  - 讀取 CI run `36890053375` job steps 與 logs。
+  - 查 GitHub Releases 頁（空集合）。
+- 未執行的驗證：
+  - 新增測試後 GitHub Actions run #18 的 Unit / Typecheck / Build / OpenSpec strict steps 已 PASS；Full E2E 尚未完成。
+  - 沒有下載 Playwright artifact。
+  - 沒有查本機 worktree/status。
+  - 沒有真機 / 多裝置 smoke。
+  - 沒有建立、移動或刪除任何 Git tag / Release。
+- repo 規範／validator：CI 實際執行 OpenSpec strict validation PASS；本次交接沒有再次執行 validator。
+- 文件交付判定：**READY_FOR_HANDOFF**。
+- 判定理由：接手者可從明確的 CASE-01 blocker 開始，不需要猜 branch、PR、驗證狀態、文件漂移或 release gate；未驗證事項均已標示。
+- 執行授權：歷史對話中使用者曾要求「繼續做到你自己測試完成」，之後要求「先寫交接檔」。本次只做交接；merge / archive / tag / GitHub Release 仍需在相應 gate 成立並取得必要批准後處理。
+
+---
+
+# Historical MVP handoff（2026-10-01，保留原始證據）
+
+> 以下為 Solo Start 之前的既有 MVP 交接內容。保留作為歷史驗證與設計限制來源；若與上方 Solo Start 最新快照衝突，以較新的、且有直接證據支持的狀態為準。
 
 ## Resume Here
 

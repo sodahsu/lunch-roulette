@@ -10,6 +10,7 @@ import {
 import {
   assignPersona,
   buildParticipantResult,
+  buildProvisionalGroupPreview,
   buildResultSnapshot,
   calculateDinnerSuccessRate,
   calculateGroupStats,
@@ -161,6 +162,164 @@ describe('dinner success rate', () => {
   it('requires an explicit algorithm mapping for a new questionnaire version', () => {
     expect(() => calculateDinnerSuccessRate([stat({ a: 8 })], 'v9.9')).toThrow(
       /Unsupported dinner-success algorithm/,
+    )
+  })
+})
+
+describe('provisional group preview', () => {
+  it('keeps a single complete participant out of the group success percentage', () => {
+    const preview = buildProvisionalGroupPreview(
+      [response('solo', { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE })],
+      sessionQuestions,
+      'v0.2',
+    )
+
+    expect(preview.groupStats[0]!.sampleSize).toBe(1)
+    expect(preview.dinnerSuccess).toBeNull()
+    expect(preview.groupStats.at(-1)!.questionId).toBe(FOOD_AVOID_ID)
+  })
+
+  it('uses the same dinner-success algorithm once two complete participants exist', () => {
+    const rows = [
+      response('a', { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE }),
+      response('b', { ...allSecond, [FOOD_AVOID_ID]: 'hotpot' }),
+      response('ignored', allFirst, false),
+    ]
+    const preview = buildProvisionalGroupPreview(rows, sessionQuestions, 'v0.2')
+    const expectedStats = calculateGroupStats(rows, sessionQuestions)
+
+    expect(preview.groupStats[0]!.sampleSize).toBe(2)
+    expect(preview.dinnerSuccess).toEqual(calculateDinnerSuccessRate(expectedStats, 'v0.2'))
+    expect(preview.groupStats.at(-1)).toMatchObject({ questionId: FOOD_AVOID_ID, sampleSize: 2 })
+  })
+})
+
+describe('solo-start provisional invariants', () => {
+  it('UT-SOLO-05 keeps the preview unchanged when an incomplete late joiner appears', () => {
+    const existing = [
+      response('a', { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE }),
+      response('b', { ...allSecond, [FOOD_AVOID_ID]: 'hotpot' }),
+    ]
+
+    const before = buildProvisionalGroupPreview(existing, sessionQuestions, 'v0.2')
+    const after = buildProvisionalGroupPreview(
+      [...existing, response('late-joiner', {}, false)],
+      sessionQuestions,
+      'v0.2',
+    )
+
+    expect(after).toEqual(before)
+  })
+
+  it('UT-SOLO-06 recomputes the preview from latest complete answers', () => {
+    const beforeRows = [
+      response('a', allFirst),
+      response('b', allFirst),
+    ]
+    const afterRows = [
+      response('a', allFirst),
+      response('b', allSecond),
+    ]
+
+    const before = buildProvisionalGroupPreview(beforeRows, sessionQuestions, 'v0.2')
+    const after = buildProvisionalGroupPreview(afterRows, sessionQuestions, 'v0.2')
+
+    expect(before.dinnerSuccess?.score).not.toBe(after.dinnerSuccess?.score)
+    expect(after.dinnerSuccess).toEqual(
+      calculateDinnerSuccessRate(calculateGroupStats(afterRows, sessionQuestions), 'v0.2'),
+    )
+  })
+
+  it('UT-SOLO-07 removes a response from success eligibility when it becomes incomplete', () => {
+    const before = buildProvisionalGroupPreview(
+      [response('a', allFirst), response('b', allSecond)],
+      sessionQuestions,
+      'v0.2',
+    )
+    const after = buildProvisionalGroupPreview(
+      [response('a', allFirst), response('b', allSecond, false)],
+      sessionQuestions,
+      'v0.2',
+    )
+
+    expect(before.dinnerSuccess).not.toBeNull()
+    expect(after.groupStats[0]!.sampleSize).toBe(1)
+    expect(after.dinnerSuccess).toBeNull()
+  })
+
+  it('UT-SOLO-08 does not treat unanswered food avoidance as no restriction', () => {
+    const preview = buildProvisionalGroupPreview(
+      [
+        response('a', { ...allFirst, [FOOD_AVOID_ID]: 'hotpot' }),
+        response('b', allSecond),
+      ],
+      sessionQuestions,
+      'v0.2',
+    )
+
+    expect(preview.groupStats.at(-1)).toMatchObject({
+      questionId: FOOD_AVOID_ID,
+      sampleSize: 1,
+    })
+  })
+
+  it('UT-SOLO-09 recomputes food data from the latest food-avoid value', () => {
+    const before = buildProvisionalGroupPreview(
+      [response('a', { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE })],
+      sessionQuestions,
+      'v0.2',
+    )
+    const after = buildProvisionalGroupPreview(
+      [response('a', { ...allFirst, [FOOD_AVOID_ID]: 'hotpot' })],
+      sessionQuestions,
+      'v0.2',
+    )
+
+    expect(before.groupStats.at(-1)).not.toEqual(after.groupStats.at(-1))
+  })
+
+  it('UT-SOLO-10 is deterministic for unchanged complete responses', () => {
+    const rows = [
+      response('a', { ...allFirst, [FOOD_AVOID_ID]: FOOD_AVOID_NONE }),
+      response('b', { ...allSecond, [FOOD_AVOID_ID]: 'hotpot' }),
+    ]
+
+    expect(buildProvisionalGroupPreview(rows, sessionQuestions, 'v0.2')).toEqual(
+      buildProvisionalGroupPreview(rows, sessionQuestions, 'v0.2'),
+    )
+  })
+})
+
+describe('solo-start provisional/final boundary', () => {
+  it('UT-SOLO-11 rebuilds the final snapshot from latest locked responses, not an old preview', () => {
+    const provisionalRows = [
+      response('a', allFirst),
+      response('b', allSecond),
+    ]
+    const provisional = buildProvisionalGroupPreview(
+      provisionalRows,
+      sessionQuestions,
+      'v0.2',
+    )
+
+    const lockedRows = [
+      response('a', allFirst),
+      response('b', allFirst),
+    ]
+    const finalSnapshot = buildResultSnapshot(lockedRows, sessionQuestions)
+
+    expect(finalSnapshot.groupStats).toEqual(calculateGroupStats(lockedRows, sessionQuestions))
+    expect(finalSnapshot.groupStats).not.toEqual(provisional.groupStats)
+  })
+
+  it('UT-SOLO-12 keeps the formal snapshot deterministic for the same locked source', () => {
+    const lockedRows = [
+      response('a', allFirst),
+      response('b', allSecond),
+    ]
+
+    expect(buildResultSnapshot(lockedRows, sessionQuestions)).toEqual(
+      buildResultSnapshot(lockedRows, sessionQuestions),
     )
   })
 })

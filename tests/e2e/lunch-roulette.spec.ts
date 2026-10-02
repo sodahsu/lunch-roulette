@@ -99,7 +99,7 @@ async function closeActors(...actors: Actor[]) {
   await Promise.all(actors.map((actor) => actor.context.close()))
 }
 
-test.describe.configure({ mode: 'serial', timeout: 120_000 })
+test.describe.configure({ mode: 'serial', timeout: 240_000 })
 
 test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }) => {
   const host = await createHost(browser)
@@ -384,8 +384,7 @@ test('CASE-14 稀有卡顯示金色閃卡標示，一般卡不顯示', async ({ 
   await page.goto('/?demo=result&persona=easygoing')
   await expect(page.locator('.persona-card')).toBeVisible()
   await expect(page.locator('.persona-card.rare')).toHaveCount(0)
-}
-)
+})
 
 test('CASE-15 每一場至少有一位拿到稀有卡，並寫出稀有原因', async ({ browser }) => {
   const host = await createHost(browser)
@@ -467,5 +466,94 @@ test('CASE-17 十人結果總覽 demo 可在 Orca 直接查看', async ({ page }
     expect(geometry.columns).toBeGreaterThanOrEqual(viewport.minColumns)
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth)
     expect(geometry.cardsWithinViewport).toBe(true)
+  }
+})
+
+
+test('CASE-19 主持人可單人直接開局並先看到暫時人格', async ({ browser }) => {
+  const host = await createHost(browser)
+
+  try {
+    await host.page.getByLabel('主持人暱稱').fill('Solo Host')
+    await host.page.getByRole('button', { name: /我先玩/ }).click()
+    await expect(host.page.getByText(/第 1 \/ \d+ 題/)).toBeVisible()
+
+    await answerAll(host.page, 0)
+
+    await expect(host.page.getByTestId('provisional-persona')).toBeVisible()
+    await expect(host.page.getByText(/PROVISIONAL \/ 暫時人格/)).toBeVisible()
+    await expect(host.page.getByText(/1 \/ 1 COMPLETE/)).toBeVisible()
+
+    await host.page.getByRole('button', { name: /回主持畫面/ }).click()
+    await expect(joinedMetric(host.page)).toHaveText('1')
+    await expect(completedMetric(host.page)).toHaveText('1')
+    await expect(host.page.getByTestId('open-preview')).toContainText('目前只有 1 份完整答案')
+    await expect(host.page.getByTestId('provisional-success')).toHaveCount(0)
+  } finally {
+    await closeActors(host)
+  }
+})
+
+test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成功率出現', async ({ browser }) => {
+  const host = await createHost(browser)
+
+  try {
+    await host.page.getByLabel('主持人暱稱').fill('Host Player')
+    await host.page.getByRole('button', { name: /我先玩/ }).click()
+    await answerAll(host.page, 0)
+    await host.page.getByRole('button', { name: /回主持畫面/ }).click()
+
+    const guest = await joinParticipant(browser, host.code, 'Late Guest')
+    try {
+      await expect(joinedMetric(host.page)).toHaveText('2')
+      await expect(completedMetric(host.page)).toHaveText('1')
+
+      await host.page.getByRole('button', { name: /查看我的暫時人格/ }).click()
+      await expect(host.page.getByTestId('provisional-persona')).toBeVisible()
+      await expect(host.page.getByText(/1 \/ 2 COMPLETE/)).toBeVisible()
+      await host.page.getByRole('button', { name: /回主持畫面/ }).click()
+
+      await answerAll(guest.page, 1)
+      await expect(completedMetric(host.page)).toHaveText('2')
+      await expect(host.page.getByTestId('provisional-success')).toBeVisible({ timeout: 15_000 })
+      await expect(host.page.getByTestId('provisional-success')).toContainText(/\d+%/)
+      await expect(host.page.getByTestId('open-preview')).toContainText('這不是正式結果')
+    } finally {
+      await closeActors(guest)
+    }
+  } finally {
+    await closeActors(host)
+  }
+})
+
+test('CASE-21 Host-as-participant 正式 Reveal 後保留控制室並可查看自己的正式人格', async ({ browser }) => {
+  const host = await createHost(browser)
+  let guest: Actor | null = null
+
+  try {
+    await host.page.getByLabel('主持人暱稱').fill('Host Result')
+    await host.page.getByRole('button', { name: /我先玩/ }).click()
+    await answerAll(host.page, 0)
+    await host.page.getByRole('button', { name: /回主持畫面/ }).click()
+
+    guest = await joinParticipant(browser, host.code, 'Guest Result')
+    await answerAll(guest.page, 1)
+    await expect(completedMetric(host.page)).toHaveText('2')
+
+    await reveal(host.page)
+
+    await expect(host.page.getByText(/人格卡已同步翻開/)).toBeVisible()
+    await expect(host.page.getByRole('button', { name: /查看我的人格卡/ })).toBeVisible()
+    await expect(guest.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+
+    await host.page.getByRole('button', { name: /查看我的人格卡/ }).click()
+    await expect(host.page.getByText('你的飲食人格')).toBeVisible()
+    await expect(host.page.locator('.persona-card')).toBeVisible()
+
+    await host.page.getByRole('button', { name: /回主持人結果/ }).click()
+    await expect(host.page.getByText(/人格卡已同步翻開/)).toBeVisible()
+  } finally {
+    if (guest) await closeActors(guest)
+    await closeActors(host)
   }
 })

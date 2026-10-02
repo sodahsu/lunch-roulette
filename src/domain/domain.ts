@@ -105,6 +105,24 @@ export function calculateDinnerSuccessRate(
   return calculateDinnerSuccessRateV1(stats)
 }
 
+export function buildProvisionalGroupPreview(
+  responses: ResponseRecord[],
+  questions: Question[] = QUESTIONS,
+  questionnaireVersion = 'v0.2',
+): { groupStats: GroupQuestionStat[]; dinnerSuccess: DinnerSuccessResult | null } {
+  const questionStats = calculateGroupStats(responses, questions)
+  const foodStat = calculateFoodAvoidStat(responses)
+  const sampleSize = questionStats[0]?.sampleSize ?? 0
+
+  return {
+    groupStats: [...questionStats, ...(foodStat ? [foodStat] : [])],
+    dinnerSuccess:
+      sampleSize >= 2
+        ? calculateDinnerSuccessRate(questionStats, questionnaireVersion)
+        : null,
+  }
+}
+
 export function calculatePersonaScores(
   answers: Record<string, AnswerValue>,
   questions: Question[] = QUESTIONS,
