@@ -10,9 +10,9 @@
 - [x] final Reveal 仍重新從 locked source of truth 建立正式結果。
 - [x] 只有 1 位 complete participant 時不硬算 group success percentage。
 - [x] 只有 1 位 complete participant 時不建立 pairing。
-- [ ] NEEDS_CONFIRMATION：首頁 / Host CTA 最終文案。
-- [ ] NEEDS_CONFIRMATION：open provisional success 顯示精確百分比或只顯示趨勢。
-- [ ] NEEDS_CONFIRMATION：未來是否設計獨立 Solo 指標；目前不納入本 change。
+- [x] 本 change Host CTA baseline 採「我先玩」；未來純文案調整不改 domain contract。
+- [x] 2+ complete 時 Host Control Room provisional success 顯示精確百分比，並標示尚未鎖定。
+- [x] 獨立 Solo 百分比指標明確移出本 change scope；1 complete 不顯示 group success %。
 
 ## 1. Contract tests first
 
@@ -115,7 +115,7 @@ Codex 接手只需處理下列執行／除錯工作：
 
 - [ ] 所有已確認 Requirements 實作完成。
 - [ ] 所有驗證通過。
-- [ ] NEEDS_CONFIRMATION 已解決或明確移出 scope。
+- [x] NEEDS_CONFIRMATION 已依目前 implementation baseline 解決或明確移出 scope。
 - [ ] capability delta 與 code 無 contract drift。
 - [ ] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
 
