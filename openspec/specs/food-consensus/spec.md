@@ -21,7 +21,14 @@ The system SHALL ask each participant, after the last scored question, which foo
 
 #### Scenario: 重新整理後續填
 - WHEN participant 已完成計分題但沒有 `food-avoid` 答案，且 session 仍為 `open`
-- THEN 重新整理後應回到忌口步驟
+- THEN response 應維持 incomplete
+- AND Host 不得將該 participant 顯示為 READY
+- AND 重新整理後應回到忌口步驟
+
+#### Scenario: 明確提交無忌口
+- WHEN participant 未勾選任何餐點類別並提交忌口步驟
+- THEN 系統應儲存 `food-avoid` 為 `none`
+- AND response 應視為已完成忌口步驟
 
 ### Requirement: 揭曉時彙總忌口且不洩漏個人選擇
 The system SHALL aggregate food avoidance into a single `food-avoid` group stat at reveal time, storing only per-category counts.

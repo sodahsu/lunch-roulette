@@ -37,11 +37,18 @@ The system SHALL deterministically derive the v0.2 active questionnaire from the
 - WHEN participant 在同一 v0.2 session 重新載入
 - THEN active 12 題與順序不得改變
 
-### Requirement: 完整性只以 active questionnaire 判定
-The system SHALL determine response completeness using only the active questions for that session.
+### Requirement: 完整提交包含 active questionnaire 與忌口步驟
+The system SHALL mark a response complete only after the participant answers every active required question and explicitly submits the food-avoid step.
 
-#### Scenario: 完成全部 active required questions
+#### Scenario: 完成 active required questions 但尚未提交忌口
 - WHEN participant 已回答 active questionnaire 的所有 required questions
+- AND 尚未提交 `food-avoid`
+- THEN response 應維持 incomplete
+- AND participant 應進入忌口步驟
+
+#### Scenario: 完成整份提交
+- WHEN participant 已回答 active questionnaire 的所有 required questions
+- AND 已提交有效的 `food-avoid` 值，包含表示無忌口的 `none`
 - THEN response 應標記為 complete
 
 #### Scenario: 缺少 active required question
@@ -50,7 +57,7 @@ The system SHALL determine response completeness using only the active questions
 - AND 該 response 不得進入 Reveal 統計、persona 或 pairing
 
 #### Scenario: v0.2 未回答未被抽中的題目
-- WHEN participant 已完成該場次的 12 題
+- WHEN participant 已完成該場次的 12 題與忌口步驟
 - AND 24 題題庫中的其他 12 題沒有答案
 - THEN response 仍應視為 complete
 

@@ -359,13 +359,19 @@ async function restoreFromUrl() {
       if (isHost.value && !participant.value) {
         screen.value = 'host'
         startHostLobbyRefresh()
-      } else if (participant.value) screen.value = !ownResponseIsComplete() ? 'quiz' : answers.value[FOOD_AVOID_ID] ? 'waiting' : 'food'
+      } else if (participant.value) {
+        screen.value = !areScoredQuestionsComplete()
+          ? 'quiz'
+          : decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) === undefined
+            ? 'food'
+            : 'waiting'
+      }
       else screen.value = 'join'
     }
   })
 }
 
-function ownResponseIsComplete() {
+function areScoredQuestionsComplete() {
   return activeQuestions.value.every(
     (question) => !question.required || Boolean(answers.value[question.id]),
   )
@@ -867,7 +873,7 @@ onBeforeUnmount(() => {
       <div class="bottom-actions inline">
         <button class="secondary" type="button" :disabled="questionIndex === 0" @click="previousQuestion">上一題</button>
         <button class="primary" type="button" :disabled="!currentAnswer || busy" @click="nextQuestion">
-          {{ questionIndex === activeQuestions.length - 1 ? '交卷' : '下一題' }}
+          {{ questionIndex === activeQuestions.length - 1 ? '填寫忌口' : '下一題' }}
         </button>
       </div>
     </section>
