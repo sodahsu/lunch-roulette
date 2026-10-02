@@ -26,6 +26,29 @@ test_prep_baseline: a377f24764a87316451094177fd2e1d0e87e25b6
 approval_evidence: user_requested_continue_until_self_test_complete_then_requested_handoff_first
 ```
 
+## 2026-10-02｜Branch / Deployment policy
+
+**最新整合策略：`dev` 是開發整合分支，`main` 只做 production。**
+
+```text
+task/solo-start
+      ↓
+     dev
+      ↓
+完整整合驗證
+      ↓
+PR: dev → main
+      ↓
+Vercel Production
+```
+
+- PR #5 已改為 `task/solo-start → dev`。
+- `dev` 已由目前 `main` 建立，作為後續功能整合基準。
+- Codex 修完 CASE-01 / E2E / runtime / RLS 後，目標是把 Solo Start 安全整合到 `dev`，**不是直接 merge main**。
+- `main` 只有在 `dev` 的整合驗證通過後才接受 PR。
+- `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。
+- tag / GitHub Release / production deploy 都屬 `dev → main` 之後的獨立 production gate。
+
 ## 2026-10-02｜測試前置收斂完成
 
 **目前交接界線：非 Codex 前置工作已收斂；剩餘技術執行集中在 E2E root-cause 與 runtime 驗證。**
@@ -54,7 +77,7 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 - 不另做一套 preview scoring。
 - 不重寫測試計劃。
 - 不重新設計單人成功率；目前 contract 仍是少於 2 complete 不顯示 group success %。
-- 不處理 tag / GitHub Release；那是所有技術 gate 通過後的獨立批准步驟。
+- 不處理 tag / GitHub Release；Codex 先完成 `task/solo-start → dev` 的技術 gate，production release 只在後續 `dev → main` 處理。
 
 ### 剩餘 blocker
 
