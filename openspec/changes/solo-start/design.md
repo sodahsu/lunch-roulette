@@ -156,7 +156,7 @@ Late join 發生時：
 → Secondary: 先等朋友
 ```
 
-文案名稱仍標記 NEEDS_CONFIRMATION；重要的是功能優先序：不再要求 Host 先等待。
+本 change 的 UI baseline 使用「我先玩」；重要的是功能優先序：不再要求 Host 先等待。未來純文案調整不改變此 capability contract。
 
 ### First participant
 
