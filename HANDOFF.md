@@ -1,6 +1,6 @@
 ---
 title: "Lunch Roulette《都可以？》Solo Start｜AI 工作交接"
-date: "2026-10-02"
+date: "2026-10-03"
 handoff_status: ready_for_handoff
 ---
 
@@ -13,7 +13,7 @@ handoff_status: ready_for_handoff
 - 目標與交付物：讓同一個 Lunch Roulette session 支援「1 人先開局 → 朋友後加入 → open 階段 provisional Persona / group preview → 最後沿用正式兩段式 Reveal」，並做到 unit / typecheck / build / OpenSpec / E2E / runtime 驗證可通過。
 - 非目標：不新增獨立 Solo session type、不改掉 `open → locked → revealed`、不把單人結果硬算成群體成功率、不放寬 participant 讀取他人 response/result 的隱私邊界、不在驗證失敗時建立正式 Release。
 - 本次已做／未做：遠端 feature branch 已存在主要實作、OpenSpec、測試計劃、Solo domain regression tests、README/tasks/HANDOFF 同步與 CI workflow。新增測試後的 GitHub Actions run #18 已確認 Unit / Typecheck / Build / OpenSpec strict steps PASS；Full E2E 仍屬已知 blocker，整體尚未完成。
-- 第一個安全動作：從 CI run `36890053375` 的 CASE-01 timeout 開始定位，不先重寫 Solo Start；先確認 timeout 前最後一個未完成的 UI / Realtime 等待條件，再做最小修正並重跑 CASE-01。
+- 第一個安全動作：先讀下方「2026-10-03｜CASE-01 根因已修」；CASE-01 timeout 已解，full E2E 在 PR #7 CI 通過。下一步是 solo-start 的 production gate 剩餘項目（runtime smoke、privacy / RLS regression、tasks.md 勾選、release 版本號批准）。（原文：從 CI run `36890053375` 的 CASE-01 timeout 開始定位，不先重寫 Solo Start；先確認 timeout 前最後一個未完成的 UI / Realtime 等待條件，再做最小修正並重跑 CASE-01。）
 - 停止條件：若接手時 `task/solo-start` HEAD、PR base、`dev` 或 `main` 已改變造成 contract drift，先重新 compare / read specs，不沿用本文件的「目前」描述。
 
 ```yaml
@@ -27,6 +27,26 @@ current_integration_branch: dev
 solo_start_merged_to_dev: e9a5c659049dcced887edd6ee50bf2530ad448dc
 approval_evidence: user_requested_continue_until_self_test_complete_then_requested_handoff_first
 ```
+
+## 2026-10-03｜CASE-01 根因已修、忌口完成判定補回 dev
+
+### CASE-01 timeout 根因（FACT）
+
+- 現象：主持人點「鎖定並揭曉」的 click 一直等不到按鈕，等到 240 秒逾時（trace 顯示 click 從 16.8 秒起只有 `waiting for getByRole('button', { name: '鎖定並揭曉' })`）。
+- 根因：solo-start 在 open 場次由 `refreshSessionState` 把 `previewOpenGroupStats` 寫進 `groupStats`；host template 的結果區塊 `v-else-if="groupStats"` 排在 `v-else-if="session?.status === 'open'"` 之前，只要有一人完成，主持人就看到揭曉後畫面，鎖定按鈕不會渲染。
+- 修正：結果區塊改為 `session?.status === 'revealed' && groupStats`（commit `5ed419b`）。
+- 證據：本機 `pnpm test:e2e` 21/21；PR #7 CI `verify`（Solo Start CI，含 full E2E）PASS、`enforce`（Branch Policy）PASS。
+
+### 忌口完成判定（原本只在 main，見 PR #6）
+
+- PR #6 當初從功能分支直接合進 `main`，繞過 dev-first 規則（branch-policy.yml 只存在 dev，PR 到 main 時不會跑）。2026-10-03 用 cherry-pick 經 PR #7 補回 dev，不是把 main 合回 dev。
+- 規則：計分題全答完，而且明確送出忌口（什麼都不勾就存成 `none`），才算 complete；成功率排除 `food-avoid` stat。solo-start 的三個呼叫點已跟著改（commit `8b8325c`）：暫定人格要交了忌口才顯示。
+- 遠端 Supabase migration `20261002_require_food_submission_for_completion.sql` 已在 2026-10-03 透過 Dashboard SQL Editor 手動套用：執行前 19 筆、執行後 0 筆，`completed_at` 殘留 0 筆。**不要用 `supabase db push`**（INFERENCE：前幾支 migration 都是手動套用，遠端很可能沒有 migration 歷史表）。
+- production（`main`）已用實測一局驗過：未交忌口 → THINKING、重新整理回到忌口步驟、送出後 READY、翻牌前後成功率一致。
+
+### 歷史同步
+
+`task/sync-main-hotfix` 把 `main` 的 PR #6 歷史接回 dev，讓之後 `dev → main` 不再衝突；程式碼取 dev 版本（dev 已包含同一修正）。
 
 ## 2026-10-02｜Branch / Deployment policy
 
