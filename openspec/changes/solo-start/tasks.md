@@ -123,7 +123,7 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] `task/solo-start → dev` 已完成整合；Codex 後續直接在 `dev` 修正 CASE-01 / full E2E / runtime / RLS。
 - [x] 在 `dev` 上完成整合驗證（CASE-01 / full E2E / runtime / RLS 仍待 Codex）。（PR #7/#8 CI full E2E 21/21 + 2026-10-03 runtime smoke）
 - [x] 只有 `dev` 整合驗證通過後，才建立／更新 `dev → main` production PR（PR #10）。
-- [ ] 只有 merge `main` 才進 Vercel Production。
+- [x] 只有 merge `main` 才進 Vercel Production（#10 合併後 Vercel production success）。
 
 ## 8. Archive gate
 
@@ -141,10 +141,10 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 ## 9. Release gate
 
 - [x] 功能實作完成後將 App version 設為 `0.2.0-rc.1`。
-- [ ] 建立對應 RC tag：`v0.2.0-rc.1`。
-- [ ] RC 上完成 unit / typecheck / build / E2E / runtime smoke。
-- [ ] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag。
+- [x] 建立對應 RC tag：`v0.2.0-rc.1`（指向 `1a0e83f`）。
+- [x] RC 上完成 unit / typecheck / build / E2E / runtime smoke（PR #10 CI；2026-10-03 production runtime smoke 兩支全 PASS，房號 84TWBV / SN9HEP）。
+- [x] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag（rc.1 未需修正）。
 - [ ] `dev` 的 Solo Start 整合驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。
-- [ ] 建立 `dev → main` production PR；合併 `main` 後將 App version 更新為 `0.2.0`。
+- [x] 建立 `dev → main` production PR（#10，已合併 `a5d17ca`）；App version 更新為 `0.2.0`。
 - [ ] 建立 immutable Git tag `v0.2.0`。
 - [ ] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制。
