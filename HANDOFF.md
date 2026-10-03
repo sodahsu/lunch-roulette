@@ -44,6 +44,22 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 - 遠端 Supabase migration `20261002_require_food_submission_for_completion.sql` 已在 2026-10-03 透過 Dashboard SQL Editor 手動套用：執行前 19 筆、執行後 0 筆，`completed_at` 殘留 0 筆。**不要用 `supabase db push`**（INFERENCE：前幾支 migration 都是手動套用，遠端很可能沒有 migration 歷史表）。
 - production（`main`）已用實測一局驗過：未交忌口 → THINKING、重新整理回到忌口步驟、送出後 READY、翻牌前後成功率一致。
 
+### Runtime smoke（FACT，2026-10-03，本機 dev + 遠端 Supabase，有畫面的 Chromium）
+
+| 項目 | 結果 |
+|---|---|
+| A 單人 | PASS：暫時人格、1/1 COMPLETE、無團體成功率、open 時 participant_results / result_snapshots = 0 |
+| SS-02 主持人重進 | PASS：participants 仍為 1。觀察：重新整理後落在自己的參加者畫面，需按「回主持畫面」 |
+| B 1 → 2 | PASS：加入不重置主持人；未交忌口不計入；交卷後暫定成功率 100% |
+| C 2 → 3 | PASS：第三人未完成時不變，完成後 100% → 67%（未重新整理） |
+| D 正式揭曉 | PASS：Stage A 67% = Stage B；含主持人在內都有正式人格；Stage A 時尚未 persist |
+| E 隱私 / RLS | PASS：參加者用自己的 token 打 REST，只讀得到自己的 response / participant_result。主持人可讀全場 response，源自 MVP 既有 policy「self or host can read responses」 |
+| 改答案 | PASS：暫時人格重算（真・都可以 → CP 值守門員） |
+| late join | PASS：locked 與 revealed 都進不了答題 |
+| 單人正式揭曉 | PASS：樣本不足、NO MATCH / NO ENEMY，participant_results = 1 |
+
+腳本放在 agent scratchpad，沒有進 repo；`tasks.md` 的 Host identity 與 privacy regression「repo 內自動化測試」仍未勾。
+
 ### 歷史同步
 
 `task/sync-main-hotfix` 把 `main` 的 PR #6 歷史接回 dev，讓之後 `dev → main` 不再衝突；程式碼取 dev 版本（dev 已包含同一修正）。

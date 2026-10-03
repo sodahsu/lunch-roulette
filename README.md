@@ -221,7 +221,7 @@ Vite build output：`dist`。
 - `result-reveal`
 - `food-consensus`
 
-`solo-start` 目前狀態為 **IMPLEMENTATION PRESENT / VALIDATION BLOCKED**。主要功能程式、domain tests 與 CASE-19～21 已存在；目前 unit / typecheck / build / OpenSpec strict 有 PASS 證據，但 full E2E 仍被 CASE-01 timeout 阻塞。在完整 E2E、runtime smoke 與 privacy / RLS regression 通過前，不會把 Solo-start 行為併入 `openspec/specs/` 當作已驗證現行規格。
+`solo-start` 目前狀態為 **VALIDATED ON DEV / ARCHIVE & RELEASE PENDING**。2026-10-03 已修正 CASE-01 timeout 的根因（open 預覽蓋掉主持人的鎖定按鈕），unit / typecheck / build / OpenSpec strict / full E2E（CASE-01～21）在 CI 通過，1 → 2 → 3 人 runtime smoke、locked / revealed late join 與 privacy / RLS smoke 也已通過。archive review 與 release 版本號核准完成前，不會把 Solo-start 併入 `openspec/specs/`。
 
 詳細測試追溯與完成 gate：`docs/solo-start-test-plan.md`。
 
