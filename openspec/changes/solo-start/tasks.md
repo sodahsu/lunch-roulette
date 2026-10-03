@@ -140,7 +140,7 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 
 ## 9. Release gate
 
-- [ ] 功能實作完成後將 App version 設為 `0.2.0-rc.1`。
+- [x] 功能實作完成後將 App version 設為 `0.2.0-rc.1`。
 - [ ] 建立對應 RC tag：`v0.2.0-rc.1`。
 - [ ] RC 上完成 unit / typecheck / build / E2E / runtime smoke。
 - [ ] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag。
