@@ -498,6 +498,9 @@ test('CASE-19 主持人可單人直接開局並先看到暫時人格', async ({ 
     await expect(joinedMetric(host.page)).toHaveText('1')
     await expect(completedMetric(host.page)).toHaveText('1')
     await expect(host.page.getByTestId('open-preview')).toContainText('目前只有 1 份完整答案')
+    // 單人樣本不得被標示成「大家都能吃」
+    await expect(host.page.getByTestId('provisional-food-consensus')).toContainText('目前唯一完成者可以吃')
+    await expect(host.page.getByTestId('provisional-food-consensus')).not.toContainText('目前大家都能吃')
     await expect(host.page.getByTestId('provisional-success')).toHaveCount(0)
   } finally {
     await closeActors(host)
@@ -565,5 +568,83 @@ test('CASE-21 Host-as-participant 正式 Reveal 後保留控制室並可查看�
   } finally {
     if (guest) await closeActors(guest)
     await closeActors(host)
+  }
+})
+
+// 用頁面自己的 Supabase client 讀表，等於以該使用者的 auth 身分驗證 RLS
+async function countVisibleRows(page: Page, table: string, code: string) {
+  return page.evaluate(
+    async ([tableName, roomCode]) => {
+      const modulePath = '/src/lib/supabase.ts'
+      const { supabase } = await import(/* @vite-ignore */ modulePath)
+      const { data: session, error: sessionError } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('code', roomCode)
+        .single()
+      if (sessionError) throw new Error(sessionError.message)
+      const { data, error } = await supabase.from(tableName).select('*').eq('session_id', session.id)
+      if (error) throw new Error(error.message)
+      return data.length as number
+    },
+    [table, code] as const,
+  )
+}
+
+test('CASE-22 主持人兼參加者重新整理後回到控制室，且不重複建立 participant', async ({ browser }) => {
+  const host = await createHost(browser)
+
+  try {
+    await host.page.getByLabel('主持人暱稱').fill('Reload Host')
+    await host.page.getByRole('button', { name: /我先玩/ }).click()
+    await answerAll(host.page, 0)
+    await host.page.getByRole('button', { name: /回主持畫面/ }).click()
+    await expect(joinedMetric(host.page)).toHaveText('1')
+
+    await host.page.reload()
+    await expect(joinedMetric(host.page)).toHaveText('1', { timeout: 15_000 })
+    await expect(completedMetric(host.page)).toHaveText('1')
+    await expect(host.page.getByTestId('provisional-persona')).toHaveCount(0)
+
+    await host.page.getByRole('button', { name: /查看我的暫時人格/ }).click()
+    await expect(host.page.getByTestId('provisional-persona')).toBeVisible()
+    await host.page.getByRole('button', { name: /回主持畫面/ }).click()
+
+    await expect(joinedMetric(host.page)).toHaveText('1')
+    expect(await countVisibleRows(host.page, 'participants', host.code)).toBe(1)
+  } finally {
+    await closeActors(host)
+  }
+})
+
+test('CASE-23 參加者只讀得到自己的 response 與正式結果，open 時正式結果不存在', async ({ browser }) => {
+  const host = await createHost(browser)
+  const amy = await joinParticipant(browser, host.code, 'Privacy Amy')
+  const ben = await joinParticipant(browser, host.code, 'Privacy Ben')
+
+  try {
+    await host.page.getByLabel('主持人暱稱').fill('Privacy Host')
+    await host.page.getByRole('button', { name: /我先玩/ }).click()
+    await Promise.all([answerAll(host.page, 0), answerAll(amy.page, 0), answerAll(ben.page, 1)])
+    await host.page.getByRole('button', { name: /回主持畫面/ }).click()
+    await expect(completedMetric(host.page)).toHaveText('3')
+
+    for (const actor of [amy, ben]) {
+      expect(await countVisibleRows(actor.page, 'responses', host.code)).toBe(1)
+      expect(await countVisibleRows(actor.page, 'participant_results', host.code)).toBe(0)
+    }
+    expect(await countVisibleRows(host.page, 'participant_results', host.code)).toBe(0)
+    expect(await countVisibleRows(host.page, 'result_snapshots', host.code)).toBe(0)
+
+    await reveal(host.page)
+    await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+    await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+
+    for (const actor of [amy, ben]) {
+      expect(await countVisibleRows(actor.page, 'responses', host.code)).toBe(1)
+      expect(await countVisibleRows(actor.page, 'participant_results', host.code)).toBe(1)
+    }
+  } finally {
+    await closeActors(host, amy, ben)
   }
 })

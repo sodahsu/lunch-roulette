@@ -60,7 +60,7 @@ Host 建立飯局
 | ID | 規格 / HANDOFF 行為 | Unit | Service / Integration | E2E / Runtime | 目前狀態 |
 |---|---|---|---|---|---|
 | SS-01 | Host 可成為第一位 participant | 不適合 | Host identity 建立 / 恢復 | CASE-19 | E2E NOT_FULLY_VERIFIED |
-| SS-02 | Host 重進不得重複 participant | 不適合 | participant uniqueness / restore | 補 runtime smoke | NOT_FULLY_VERIFIED |
+| SS-02 | Host 重進不得重複 participant | 不適合 | participant uniqueness / restore | CASE-22 + runtime smoke | E2E covered |
 | SS-03 | 1 complete 不算 group success % | UT-SOLO-01 | - | CASE-19 | Unit covered |
 | SS-04 | 1 participant 不建立 pairing | UT-SOLO-02 | - | final single-player smoke | Unit covered |
 | SS-05 | 2+ complete 用正式同一 success algorithm | UT-SOLO-03 | - | CASE-20 | Unit covered |
@@ -73,7 +73,7 @@ Host 建立飯局
 | SS-12 | provisional 不成為 final source of truth | UT-SOLO-11 / 12 | result persistence boundary | CASE-01 + CASE-21 | Unit added；E2E blocked |
 | SS-13 | late join 不重置既有 identity / answers / progress | pure unit 不足 | 必須 | CASE-20 | E2E NOT_FULLY_VERIFIED |
 | SS-14 | provisional 不 persist 正式 results | pure unit 不足 | 必須 | CASE-19 / 20 | NOT_FULLY_VERIFIED |
-| SS-15 | Host-as-participant privacy | 不適合 | RLS / ownership | CASE-21 + privacy smoke | NOT_FULLY_VERIFIED |
+| SS-15 | Host-as-participant privacy | 不適合 | RLS / ownership | CASE-21 + CASE-23 + privacy smoke | E2E covered |
 | SS-16 | 正式兩段 Reveal contract 不 regression | domain 只保護計算 | persistence boundary | CASE-01 | **BLOCKED** |
 
 ## 5. Unit test cases
@@ -276,7 +276,7 @@ lock → provisional 停止 → Stage A → Stage B → persisted results。
 - [x] 1 → 2 → 3+ runtime smoke PASS（2026-10-03）
 - [x] Host-as-participant multi-browser smoke PASS（2026-10-03）
 - [x] locked / revealed late-join regression PASS（2026-10-03）
-- [x] privacy / RLS regression PASS（2026-10-03 runtime smoke；repo 內尚無自動化 case）
+- [x] privacy / RLS regression PASS（2026-10-03 runtime smoke；CASE-23）
 - [x] README / tasks / HANDOFF 與 runtime 證據一致（2026-10-03 同步）
 - [ ] archive readiness review 完成
 
