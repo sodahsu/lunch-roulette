@@ -88,6 +88,8 @@ const audioMuted = ref(isAudioMuted())
 let quizInterstitialTimer: number | null = null
 let hostLobbyRefreshTimer: number | null = null
 let openPreviewFingerprint = ''
+// 每開新的一局就遞增；上一局尚未完成的 refreshSessionState 回來時據此丟棄結果
+let roundGeneration = 0
 let unsubscribe: (() => void) | null = null
 
 const activeQuestions = computed(() => {
@@ -447,9 +449,14 @@ function closeLiveOverview() {
 
 async function refreshSessionState() {
   if (!session.value) return
+  const round = roundGeneration
+  const stale = () => round !== roundGeneration
   const latest = await getSessionByCode(session.value.code)
+  if (stale()) return
   session.value = latest
-  participants.value = await listParticipants(latest.id)
+  const latestParticipants = await listParticipants(latest.id)
+  if (stale()) return
+  participants.value = latestParticipants
   completedCount.value = participants.value.filter((item) => Boolean(item.completed_at)).length
 
   if (latest.status === 'open') {
@@ -461,7 +468,9 @@ async function refreshSessionState() {
         .join('|')
 
       if (nextFingerprint !== openPreviewFingerprint) {
-        groupStats.value = completedCount.value > 0 ? await previewOpenGroupStats(latest) : null
+        const preview = completedCount.value > 0 ? await previewOpenGroupStats(latest) : null
+        if (stale()) return
+        groupStats.value = preview
         openPreviewFingerprint = nextFingerprint
       }
     } else {
@@ -479,11 +488,15 @@ async function refreshSessionState() {
 
   if (latest.status === 'revealed') {
     stopHostLobbyRefresh()
-    groupStats.value = await getGroupStats(latest.id)
+    const finalStats = await getGroupStats(latest.id)
+    if (stale()) return
+    groupStats.value = finalStats
 
     if (isHost.value) {
       if (participant.value) {
-        personalResult.value = await getPersonalResult(latest.id, participant.value.id)
+        const ownResult = await getPersonalResult(latest.id, participant.value.id)
+        if (stale()) return
+        personalResult.value = ownResult
       }
       if (requestedRoomOverview.value) {
         screen.value = 'overview'
@@ -498,7 +511,9 @@ async function refreshSessionState() {
     if (participant.value) {
       isLiveOverview.value = false
       liveOverviewCards.value = []
-      personalResult.value = await getPersonalResult(latest.id, participant.value.id)
+      const ownResult = await getPersonalResult(latest.id, participant.value.id)
+      if (stale()) return
+      personalResult.value = ownResult
       screen.value = 'result'
     }
   }
@@ -600,6 +615,7 @@ async function openHostPersonalResult() {
 
 // 開下一局前清掉上一局的全部狀態；暱稱保留，玩家不用重打
 function resetRound() {
+  roundGeneration += 1
   unsubscribe?.()
   unsubscribe = null
   stopHostLobbyRefresh()
