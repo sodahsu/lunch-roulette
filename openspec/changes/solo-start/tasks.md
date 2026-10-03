@@ -133,9 +133,9 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [ ] capability delta 與 code 無 contract drift。
 - [ ] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
 
-**Current verdict: VALIDATED ON DEV / ARCHIVE & RELEASE PENDING**
+**Current verdict: RELEASED v0.2.0 / ARCHIVE PENDING**
 
-仍未勾選：多人加入 cue、responsive / a11y、Provisional 與 Final 視覺區隔的人工檢查、archive review 與 release 版本號。
+仍未勾選：多人加入 cue、responsive / a11y、Provisional 與 Final 視覺區隔的人工檢查、archive review。
 
 
 ## 9. Release gate
@@ -146,5 +146,5 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag（rc.1 未需修正）。
 - [ ] `dev` 的 Solo Start 整合驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。
 - [x] 建立 `dev → main` production PR（#10，已合併 `a5d17ca`）；App version 更新為 `0.2.0`。
-- [ ] 建立 immutable Git tag `v0.2.0`。
-- [ ] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制。
+- [x] 建立 immutable Git tag `v0.2.0`（指向 `cde197b`）。
+- [x] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制（https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.0）。
