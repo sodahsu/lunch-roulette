@@ -58,7 +58,7 @@ approval_evidence: user_requested_continue_until_self_test_complete_then_request
 | late join | PASS：locked 與 revealed 都進不了答題 |
 | 單人正式揭曉 | PASS：樣本不足、NO MATCH / NO ENEMY，participant_results = 1 |
 
-腳本放在 agent scratchpad，沒有進 repo；`tasks.md` 的 Host identity 與 privacy regression「repo 內自動化測試」仍未勾。
+腳本放在 agent scratchpad，沒有進 repo；其中主持人重進與隱私兩項已補成 repo 內的 CASE-22、CASE-23。主持人兼參加者重新整理後，現在會回到控制室（`restoreFromUrl` 只要是主持人就恢復成 host）。
 
 ### 歷史同步
 

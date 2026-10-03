@@ -383,7 +383,8 @@ async function restoreFromUrl() {
     await refreshSessionState()
 
     if (session.value.status === 'open') {
-      if (isHost.value && !participant.value) {
+      // 主持人兼參加者也回控制室：大螢幕要顯示的是控制室，參加者身分由控制室按鈕切回
+      if (isHost.value) {
         screen.value = 'host'
         startHostLobbyRefresh()
       } else if (participant.value) {
