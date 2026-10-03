@@ -6,6 +6,8 @@
 
 ## Experience
 
+目前正式流程：
+
 ```text
 Host 開房 / QR 加入
 → 每人回答本局 deterministic 12 題
@@ -17,6 +19,26 @@ Host 開房 / QR 加入
 → 靈魂飯友 / 飲食天敵
 → 結果頁列出大家都能吃的餐點
 ```
+
+### Solo-start（主要實作已存在，完整驗證中）
+
+`task/solo-start` 目前規格方向是「1 個人就能先開局，朋友之後再加入」，不是另外做一套 Solo mode：
+
+```text
+建立飯局
+→ Host 選「我先玩」
+→ Host 同時成為第一位 participant
+→ 完成本局 12 題 + 忌口
+→ 看到自己的 provisional Persona
+→ 房間仍保持 open，QR / 房號繼續可分享
+→ 朋友加入時不重置既有答案或進度
+→ 2 位以上 complete participant 後，Host Control Room 顯示 provisional group preview
+→ 有效樣本改變時即時重算目前局勢
+→ Host 最後鎖定
+→ 沿用既有兩段式正式 Reveal
+```
+
+Solo-start 的 provisional result 不會寫入正式 `result_snapshots` / `participant_results`；正式結果仍以 `locked` 當下的 complete responses 重新建立。每位 participant 只在自己的裝置看到 provisional Persona；群體 provisional 成功率與 food consensus 只在 Host Control Room 聚合顯示，不放寬 participant 讀取他人 responses 的 RLS。只有 1 位 complete participant 時，不顯示團體成功率百分比，也不產生 soulmate / opposite。
 
 v0.2 題庫共有 24 題、6 類；每個房間依房號固定選 12 題，每類 2 題。舊 v0.1 房間保留原 8 題。完成答題後另有獨立的忌口步驟；結果只保存各類排除計數，不影響 Persona、配對或成功率。
 
@@ -45,6 +67,8 @@ Runtime Persona 圖形位於：
 - Playwright
 
 ## Real data flow
+
+目前已實作：
 
 1. Host 建立 `sessions`
 2. Participant 透過 Anonymous Auth 取得 user identity
@@ -107,7 +131,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Playwright 目前包含 CASE-01～18（CASE-17 / 18 已加入），涵蓋：
+Playwright 目前包含 CASE-01～21；CASE-19～21 為 Solo-start 覆蓋。完整 suite 目前仍被 CASE-01 timeout 阻塞，不能視為 runtime PASS。涵蓋：
 
 - 兩段式 Reveal
 - 未完成者
@@ -124,12 +148,41 @@ Playwright 目前包含 CASE-01～18（CASE-17 / 18 已加入），涵蓋：
 - food consensus 示意流程
 - Host 10 人結果總覽與 responsive layout
 - 音效切換與靜音偏好持久化
+- Solo-start：Host 單人開局、late join provisional preview、Host-as-participant final Reveal
 
 > Test code 已存在不代表 runtime 已 PASS。請以實際命令輸出為準。
 
+## Branch strategy
+
+開發整合以 `dev` 為優先，`main` 只代表可發布的 production 基準：
+
+```text
+task/* / feat/*
+      ↓
+     dev
+      ↓
+整合驗證（unit / typecheck / build / E2E / runtime / RLS）
+      ↓
+PR: dev → main
+      ↓
+merge main
+      ↓
+Vercel Production
+```
+
+規則：
+
+- 功能分支不得直接以 `main` 為日常整合目標。
+- `task/*` / `feat/*` 先 merge 到 `dev`。
+- `dev` 不觸發 Vercel deployment。
+- PR / feature branch 不產生 Vercel Preview。
+- 只有 merge / push 到 `main` 才允許 Vercel Production deployment。
+- Release / tag 只在 `dev → main` 的 production gate 通過後處理。
+- `.github/workflows/branch-policy.yml` 會拒絕非 `dev` 來源直接 PR 到 `main`，避免 GitHub default branch 仍為 `main` 時誤送 production。
+
 ## Deployment
 
-`vercel.json` 只允許 `main` 進行 Git deployment：
+`vercel.json` 只允許 `main` 進行 Git deployment；`dev`、PR 與所有 feature/task branch 都不部署：
 
 ```json
 {
@@ -146,9 +199,20 @@ Vite build output：`dist`。
 
 ## Specs
 
-Active OpenSpec change：
+現行已驗證規格：
 
-`openspec/specs/`（現行規格）與 `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/`（歸檔的提案、設計與任務）
+- `openspec/specs/`
+- `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/`
+
+目前 active change：
+
+- `openspec/changes/solo-start/`
+  - `proposal.md`
+  - `design.md`
+  - `tasks.md`
+  - `specs/live-session/spec.md`
+  - `specs/result-reveal/spec.md`
+  - `specs/food-consensus/spec.md`
 
 主要 capability：
 
@@ -157,4 +221,21 @@ Active OpenSpec change：
 - `result-reveal`
 - `food-consensus`
 
-success-rate cross-version persistence 決策已完成；目前 change 仍因最新 HEAD 的 runtime / integration validation 與 archive readiness review 未完成而保持 active，不應宣稱已 archive。
+`solo-start` 目前狀態為 **VALIDATED ON DEV / ARCHIVE & RELEASE PENDING**。2026-10-03 已修正 CASE-01 timeout 的根因（open 預覽蓋掉主持人的鎖定按鈕），unit / typecheck / build / OpenSpec strict / full E2E（CASE-01～21）在 CI 通過，1 → 2 → 3 人 runtime smoke、locked / revealed late join 與 privacy / RLS smoke 也已通過。archive review 與 release 版本號核准完成前，不會把 Solo-start 併入 `openspec/specs/`。
+
+詳細測試追溯與完成 gate：`docs/solo-start-test-plan.md`。
+
+
+## Release versioning
+
+App Release 使用 Semantic Versioning，與資料欄位 `questionnaire_version` 分開管理：
+
+- `package.json#version` / Git tag / GitHub Release：代表整個 Web App 的發布版本。
+- `questionnaire_version`：只代表題組與對應 domain algorithm contract，不等於 App Release。
+
+Solo-start 預定版本：
+
+- `v0.2.0-rc.1`：功能實作完成並進入完整驗證時的 release candidate。
+- `v0.2.0`：相關 unit / typecheck / build / E2E / runtime smoke 全部通過，先整合 `dev`，再由 `dev → main` 合併後建立正式 Release。
+
+正式 Release 不從未驗證的 feature branch 建立。若 RC 驗證失敗，修正後依序使用 `v0.2.0-rc.2`、`v0.2.0-rc.3`，直到符合 release gate。

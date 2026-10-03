@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { buildResultSnapshot, calculateGroupStats, isCompleteResponse } from '../domain/domain'
+import { buildProvisionalGroupPreview, buildResultSnapshot, calculateGroupStats, isCompleteResponse } from '../domain/domain'
 import { selectQuestionsForSession } from '../domain/questions'
 import type { Json } from './database.types'
 import type {
@@ -178,6 +178,17 @@ export async function lockSession(session: SessionRecord): Promise<void> {
     .eq('status', 'open')
 
   if (error) throw error
+}
+
+export async function previewOpenGroupStats(session: SessionRecord): Promise<GroupQuestionStat[]> {
+  if (session.status !== 'open') return []
+  const responses = await listResponses(session.id)
+  const questions = selectQuestionsForSession(session.code, session.questionnaire_version)
+  return buildProvisionalGroupPreview(
+    responses,
+    questions,
+    session.questionnaire_version,
+  ).groupStats
 }
 
 export async function previewLockedGroupStats(session: SessionRecord): Promise<GroupQuestionStat[]> {
