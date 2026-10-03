@@ -487,7 +487,8 @@ async function refreshSessionState() {
       if (requestedRoomOverview.value) {
         screen.value = 'overview'
         await loadLiveOverview()
-      } else {
+      } else if (screen.value !== 'result') {
+        // finalizeReveal 逐筆寫入 participant_results，晚到的 realtime 事件不得把正在看自己人格卡的主持人拉回控制室
         screen.value = 'host'
       }
       return
