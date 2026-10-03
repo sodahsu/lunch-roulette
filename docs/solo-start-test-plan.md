@@ -268,16 +268,16 @@ lock → provisional 停止 → Stage A → Stage B → persisted results。
 
 只有以下全部成立，Solo Start 才可標記完成：
 
-- [ ] `pnpm test:unit` PASS
-- [ ] `pnpm typecheck` PASS
-- [ ] `pnpm build` PASS
-- [ ] OpenSpec strict PASS
-- [ ] `pnpm test:e2e` full suite PASS
-- [ ] 1 → 2 → 3+ runtime smoke PASS
-- [ ] Host-as-participant multi-browser smoke PASS
-- [ ] locked / revealed late-join regression PASS
-- [ ] privacy / RLS regression PASS
-- [ ] README / tasks / HANDOFF 與 runtime 證據一致
+- [x] `pnpm test:unit` PASS（CI）
+- [x] `pnpm typecheck` PASS（CI）
+- [x] `pnpm build` PASS（CI）
+- [x] OpenSpec strict PASS（CI）
+- [x] `pnpm test:e2e` full suite PASS（PR #7/#8 CI 21/21）
+- [x] 1 → 2 → 3+ runtime smoke PASS（2026-10-03）
+- [x] Host-as-participant multi-browser smoke PASS（2026-10-03）
+- [x] locked / revealed late-join regression PASS（2026-10-03）
+- [x] privacy / RLS regression PASS（2026-10-03 runtime smoke；repo 內尚無自動化 case）
+- [x] README / tasks / HANDOFF 與 runtime 證據一致（2026-10-03 同步）
 - [ ] archive readiness review 完成
 
 在此之前：
