@@ -87,7 +87,8 @@ async function revealDinnerSuccess(page: Page) {
   await expect(page.getByText(/我們這團今晚約成飯的成功率/)).toBeVisible({
     timeout: 15_000,
   })
-  await expect(page.locator('.success-score')).toBeVisible()
+  // 倒數 3 拍 + 兩段鋪陳 + 讀取 locked stats 約需 5 秒，預設 5 秒 expect 在慢機器上會在鋪陳中途逾時
+  await expect(page.locator('.success-score')).toBeVisible({ timeout: 15_000 })
 }
 
 async function flipPersonaCards(page: Page) {
