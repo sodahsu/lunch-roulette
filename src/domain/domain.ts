@@ -1,4 +1,5 @@
 import { calculateFoodAvoidStat, decodeFoodAvoid, FOOD_AVOID_ID } from './foods'
+import { hashFnv1a } from './hash'
 import { PERSONA_PRIORITY, PERSONAS, QUESTIONS } from './questions'
 import type {
   AnswerValue,
@@ -10,6 +11,12 @@ import type {
   ResponseRecord,
   ResultSnapshot,
 } from './types'
+
+export const DINNER_SUCCESS_THRESHOLDS = {
+  HIGH_CONSENSUS: 80,
+  REASONABLE_CONSENSUS: 68,
+  DIVIDED_CONSENSUS: 56,
+} as const
 
 export function isCompleteQuestionnaire(
   answers: Record<string, AnswerValue>,
@@ -72,7 +79,7 @@ function calculateDinnerSuccessRateV1(stats: GroupQuestionStat[]): DinnerSuccess
 
   const score = Math.round(agreement * 100)
 
-  if (score >= 80) {
+  if (score >= DINNER_SUCCESS_THRESHOLDS.HIGH_CONSENSUS) {
     return {
       score,
       verdict: '今晚直接出門，不要再討論',
@@ -80,7 +87,7 @@ function calculateDinnerSuccessRateV1(stats: GroupQuestionStat[]): DinnerSuccess
     }
   }
 
-  if (score >= 68) {
+  if (score >= DINNER_SUCCESS_THRESHOLDS.REASONABLE_CONSENSUS) {
     return {
       score,
       verdict: '今晚約得成，找一個人負責訂位',
@@ -88,7 +95,7 @@ function calculateDinnerSuccessRateV1(stats: GroupQuestionStat[]): DinnerSuccess
     }
   }
 
-  if (score >= 56) {
+  if (score >= DINNER_SUCCESS_THRESHOLDS.DIVIDED_CONSENSUS) {
     return {
       score,
       verdict: '約得成，但不要再開全民表決',
@@ -188,13 +195,13 @@ export function assignPersona(
 }
 
 export function calculateSimilarity(
-  a: Record<string, AnswerValue>,
-  b: Record<string, AnswerValue>,
+  answersA: Record<string, AnswerValue>,
+  answersB: Record<string, AnswerValue>,
   questions: Question[] = QUESTIONS,
 ): number {
-  const comparable = questions.filter((question) => a[question.id] && b[question.id])
+  const comparable = questions.filter((question) => answersA[question.id] && answersB[question.id])
   if (comparable.length === 0) return 0
-  const same = comparable.filter((question) => a[question.id] === b[question.id]).length
+  const same = comparable.filter((question) => answersA[question.id] === answersB[question.id]).length
   return same / comparable.length
 }
 
@@ -208,12 +215,8 @@ function rareFields(participantId: string): { rare: boolean; rareReason?: string
 
 // 以參加者 ID 雜湊出 [0,1) 的抽籤值；同一人重算永遠同一個值，ID 為隨機 UUID 所以等同抽獎
 export function rareRoll(participantId: string): number {
-  let hash = 2166136261
-  for (const char of `rare-card:${participantId}`) {
-    hash ^= char.charCodeAt(0)
-    hash = Math.imul(hash, 16777619)
-  }
-  return (hash >>> 0) / 2 ** 32
+  const hash = hashFnv1a(`rare-card:${participantId}`)
+  return hash / 2 ** 32
 }
 
 export function isRareCard(participantId: string): boolean {

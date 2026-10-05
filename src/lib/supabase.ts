@@ -1,15 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
-const url =
-  import.meta.env.VITE_SUPABASE_URL ??
-  'https://hvaxoopyccwsqmhjnibg.supabase.co'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
-const key =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
-  'sb_publishable_TTIx4ujs2WkdRzl6_y6zrA_BJN8PhaI'
+if (!supabaseUrl || !supabasePublishableKey) {
+  throw new Error(
+    '缺少 Supabase 環境變數：請設定 VITE_SUPABASE_URL 與 VITE_SUPABASE_PUBLISHABLE_KEY（可參照 .env.example）。',
+  )
+}
 
-export const supabase = createClient<Database>(url, key, {
+export const supabase = createClient<Database>(supabaseUrl, supabasePublishableKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
