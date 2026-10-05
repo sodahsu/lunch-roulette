@@ -27,22 +27,37 @@ export async function ensureUserId(): Promise<string> {
   return data.user.id
 }
 
-function createCode(): string {
+export const MAX_CREATE_SESSION_ATTEMPTS = 3
+
+export function createCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const values = crypto.getRandomValues(new Uint8Array(6))
   return Array.from(values, (value) => chars[value % chars.length]).join('')
 }
 
-export async function createSession(): Promise<SessionRecord> {
+export async function createSession(maxAttempts = MAX_CREATE_SESSION_ATTEMPTS): Promise<SessionRecord> {
   const userId = await ensureUserId()
-  const { data, error } = await supabase
-    .from('sessions')
-    .insert({ code: createCode(), host_user_id: userId, questionnaire_version: 'v0.2' })
-    .select()
-    .single()
+  let lastError: unknown = null
 
-  if (error) throw error
-  return data as SessionRecord
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const code = createCode()
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert({ code, host_user_id: userId, questionnaire_version: 'v0.2' })
+      .select()
+      .single()
+
+    if (!error && data) {
+      return data as SessionRecord
+    }
+
+    lastError = error
+    if (error && error.code !== '23505') {
+      throw error
+    }
+  }
+
+  throw lastError ?? new Error(`建立場次失敗：嘗試 ${maxAttempts} 次均遭遇房號衝突，請再試一次。`)
 }
 
 export class SessionNotFoundError extends Error {

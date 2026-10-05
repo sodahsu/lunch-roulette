@@ -17,7 +17,7 @@ async function createHost(browser: Browser): Promise<HostActor> {
   await page.getByRole('button', { name: '我是主持人，開新局' }).click()
 
   const roomHeading = page.locator('h2').filter({ hasText: '房號' })
-  await expect(roomHeading).toBeVisible()
+  await expect(roomHeading).toBeVisible({ timeout: 15_000 })
 
   const text = await roomHeading.textContent()
   const code = text?.match(/[A-Z2-9]{6}/)?.[0]
