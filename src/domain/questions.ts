@@ -45,15 +45,15 @@ export const QUESTION_CATEGORIES: QuestionCategory[] = [
 export const SESSION_QUESTION_COUNT = 12
 
 /**
- * 答題過程中的節奏事件觸發題號（1-indexed）：
- * - 4: 第一階段（1/3 進度）場面觀察，初次出現少數派分岐
- * - 8: 第二階段（2/3 進度）中場警報，共識開始瓦解
- * - 11: 結尾前夕（倒數兩題）決戰倒數，提醒慎選
+ * 答題過程中的節奏事件觸發題號（1-indexed），由題數推導，改題數時節奏跟著走：
+ * - MINORITY_DETECTED：1/3 進度，場面觀察
+ * - CONSENSUS_COLLAPSING：2/3 進度，中場警報
+ * - FINAL_TWO：倒數第二題，文案寫「最後兩題」
  */
 export const QUIZ_PACING_QUESTION_NUMBERS = {
-  MINORITY_DETECTED: 4,
-  CONSENSUS_COLLAPSING: 8,
-  FINAL_TWO: 11,
+  MINORITY_DETECTED: Math.round(SESSION_QUESTION_COUNT / 3),
+  CONSENSUS_COLLAPSING: Math.round((SESSION_QUESTION_COUNT * 2) / 3),
+  FINAL_TWO: SESSION_QUESTION_COUNT - 1,
 } as const
 
 const LEGACY_V01_QUESTION_IDS = [

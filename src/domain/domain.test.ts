@@ -4,6 +4,7 @@ import {
   PERSONA_PRIORITY,
   QUESTION_BANK,
   QUESTION_CATEGORIES,
+  QUIZ_PACING_QUESTION_NUMBERS,
   SESSION_QUESTION_COUNT,
   selectQuestionsForSession,
 } from './questions'
@@ -83,6 +84,14 @@ describe('v0.2 questionnaire contract', () => {
       'last-bite',
       'self-image',
     ])
+  })
+
+  it('places quiz pacing beats at 1/3, 2/3 and the second-to-last question', () => {
+    expect(QUIZ_PACING_QUESTION_NUMBERS).toEqual({
+      MINORITY_DETECTED: 4,
+      CONSENSUS_COLLAPSING: 8,
+      FINAL_TWO: 11,
+    })
   })
 })
 

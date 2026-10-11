@@ -182,29 +182,25 @@ const overviewSuccess = computed(() => (isLiveOverview.value ? dinnerSuccess.val
 const overviewSampleSize = computed(() => (isLiveOverview.value ? resultSampleSize.value : overviewTotal.value))
 
 const quizEvent = computed(() => {
-  const currentNumber = questionIndex.value + 1
-  if (currentNumber === QUIZ_PACING_QUESTION_NUMBERS.MINORITY_DETECTED) {
-    return {
+  const events: Record<number, { eyebrow: string; headline: string; text: string }> = {
+    [QUIZ_PACING_QUESTION_NUMBERS.MINORITY_DETECTED]: {
       eyebrow: '📡 場面觀察',
       headline: 'MINORITY DETECTED',
       text: '有人開始跟全場走不同方向。先不要找戰犯。',
-    }
-  }
-  if (currentNumber === QUIZ_PACING_QUESTION_NUMBERS.CONSENSUS_COLLAPSING) {
-    return {
+    },
+    [QUIZ_PACING_QUESTION_NUMBERS.CONSENSUS_COLLAPSING]: {
       eyebrow: '⚠️ 中場警報',
       headline: 'CONSENSUS IS COLLAPSING',
       text: '如果你已經改過答案，代表你開始害怕被看穿了。',
-    }
-  }
-  if (currentNumber === QUIZ_PACING_QUESTION_NUMBERS.FINAL_TWO) {
-    return {
+    },
+    [QUIZ_PACING_QUESTION_NUMBERS.FINAL_TWO]: {
       eyebrow: '🧨 最後兩題',
       headline: 'FINAL TWO',
       text: '友情還有機會。請慎選，系統都有看到。',
-    }
+    },
   }
-  return null
+
+  return events[questionIndex.value + 1] ?? null
 })
 
 const waitingMessage = computed(() => {
