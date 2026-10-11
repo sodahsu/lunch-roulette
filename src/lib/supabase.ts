@@ -1,16 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+// publishable key 本來就會打包進前端，fallback 不是外洩；拿掉它會讓沒設 env 的 Vercel 環境（目前的 Preview）直接白畫面
+const url =
+  import.meta.env.VITE_SUPABASE_URL ??
+  'https://hvaxoopyccwsqmhjnibg.supabase.co'
 
-if (!supabaseUrl || !supabasePublishableKey) {
-  throw new Error(
-    '缺少 Supabase 環境變數：請設定 VITE_SUPABASE_URL 與 VITE_SUPABASE_PUBLISHABLE_KEY（可參照 .env.example）。',
-  )
-}
+const key =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  'sb_publishable_TTIx4ujs2WkdRzl6_y6zrA_BJN8PhaI'
 
-export const supabase = createClient<Database>(supabaseUrl, supabasePublishableKey, {
+export const supabase = createClient<Database>(url, key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
