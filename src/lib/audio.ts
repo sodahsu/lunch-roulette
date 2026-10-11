@@ -8,10 +8,31 @@ export type AudioCue =
 
 const STORAGE_KEY = 'lunch-roulette-audio-muted'
 
+function readMutedPreference(): boolean {
+  try {
+    if (typeof window !== 'undefined' && typeof window.localStorage?.getItem === 'function') {
+      return window.localStorage.getItem(STORAGE_KEY) === '1'
+    }
+    return false
+  } catch {
+    return false
+  }
+}
+
 let context: AudioContext | null = null
 let masterGain: GainNode | null = null
 let lobbyInterval: number | null = null
-let muted = localStorage.getItem(STORAGE_KEY) === '1'
+let muted = readMutedPreference()
+
+function writeMutedPreference(next: boolean): void {
+  try {
+    if (typeof window !== 'undefined' && typeof window.localStorage?.setItem === 'function') {
+      window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
+    }
+  } catch {
+    // 忽略隱私瀏覽模式或安全限制拋錯
+  }
+}
 
 function getContext() {
   if (typeof window === 'undefined') return null
@@ -30,7 +51,7 @@ export function isAudioMuted() {
 
 export function setAudioMuted(next: boolean) {
   muted = next
-  localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
+  writeMutedPreference(next)
   if (masterGain && context) {
     masterGain.gain.cancelScheduledValues(context.currentTime)
     masterGain.gain.setTargetAtTime(next ? 0 : 0.16, context.currentTime, 0.025)

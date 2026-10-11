@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
+// publishable key 本來就會打包進前端，fallback 不是外洩；拿掉它會讓沒設 env 的 Vercel 環境（目前的 Preview）直接白畫面
 const url =
   import.meta.env.VITE_SUPABASE_URL ??
   'https://hvaxoopyccwsqmhjnibg.supabase.co'
