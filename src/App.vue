@@ -4,7 +4,11 @@ import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
 import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
-import { PERSONAS, selectQuestionsForSession } from './domain/questions'
+import {
+  PERSONAS,
+  QUIZ_PACING_QUESTION_NUMBERS,
+  selectQuestionsForSession,
+} from './domain/questions'
 import { assignPersona, calculateDinnerSuccessRate, isCompleteResponse, RARE_CARD_REASON } from './domain/domain'
 import {
   calculateFoodConsensus,
@@ -62,10 +66,10 @@ const hasRoomParam = initialUrl.searchParams.has('room')
 const requestedRoomOverview = ref(initialUrl.searchParams.get('view') === 'overview')
 const restoringFromUrl = ref(hasRoomParam)
 const screen = ref<Screen>('landing')
-const busy = ref(false)
+const isSubmitting = ref(false)
 const errorMessage = ref('')
 const roomCode = ref('')
-const name = ref('')
+const displayName = ref('')
 const session = ref<SessionRecord | null>(null)
 const participant = ref<Participant | null>(null)
 const participants = ref<Participant[]>([])
@@ -81,13 +85,15 @@ const overviewLoadError = ref('')
 const isHost = ref(false)
 const revealStep = ref(3)
 const qrCodeDataUrl = ref('')
+const qrCodeError = ref(false)
 const copiedLink = ref(false)
 const successRevealBeat = ref(0)
 const quizInterstitialVisible = ref(false)
 const audioMuted = ref(isAudioMuted())
 let quizInterstitialTimer: number | null = null
-let hostLobbyRefreshTimer: number | null = null
 let openPreviewFingerprint = ''
+// 每開新的一局就遞增；上一局尚未完成的 refreshSessionState 回來時據此丟棄結果
+let roundGeneration = 0
 let unsubscribe: (() => void) | null = null
 
 const activeQuestions = computed(() => {
@@ -177,17 +183,17 @@ const overviewSampleSize = computed(() => (isLiveOverview.value ? resultSampleSi
 
 const quizEvent = computed(() => {
   const events: Record<number, { eyebrow: string; headline: string; text: string }> = {
-    4: {
+    [QUIZ_PACING_QUESTION_NUMBERS.MINORITY_DETECTED]: {
       eyebrow: '📡 場面觀察',
       headline: 'MINORITY DETECTED',
       text: '有人開始跟全場走不同方向。先不要找戰犯。',
     },
-    8: {
+    [QUIZ_PACING_QUESTION_NUMBERS.CONSENSUS_COLLAPSING]: {
       eyebrow: '⚠️ 中場警報',
       headline: 'CONSENSUS IS COLLAPSING',
       text: '如果你已經改過答案，代表你開始害怕被看穿了。',
     },
-    11: {
+    [QUIZ_PACING_QUESTION_NUMBERS.FINAL_TWO]: {
       eyebrow: '🧨 最後兩題',
       headline: 'FINAL TWO',
       text: '友情還有機會。請慎選，系統都有看到。',
@@ -271,14 +277,14 @@ function fail(error: unknown) {
 }
 
 async function withBusy(task: () => Promise<void>) {
-  busy.value = true
+  isSubmitting.value = true
   errorMessage.value = ''
   try {
     await task()
   } catch (error) {
     fail(error)
   } finally {
-    busy.value = false
+    isSubmitting.value = false
   }
 }
 
@@ -303,25 +309,16 @@ function setRoomView(view: 'overview' | undefined) {
   window.history.replaceState({}, '', url)
 }
 
-function stopHostLobbyRefresh() {
-  if (hostLobbyRefreshTimer === null) return
-  window.clearInterval(hostLobbyRefreshTimer)
-  hostLobbyRefreshTimer = null
-}
-
-function startHostLobbyRefresh() {
-  stopHostLobbyRefresh()
-  if (!isHost.value || session.value?.status !== 'open') return
-
-  hostLobbyRefreshTimer = window.setInterval(() => {
-    if (document.visibilityState !== 'visible') return
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible' && session.value) {
     void refreshSessionState().catch(fail)
-  }, 3000)
+  }
 }
 
 async function updateJoinQr() {
   if (!joinUrl.value) return
   try {
+    qrCodeError.value = false
     qrCodeDataUrl.value = await QRCode.toDataURL(joinUrl.value, {
       width: 280,
       margin: 1,
@@ -329,6 +326,8 @@ async function updateJoinQr() {
     })
   } catch (error) {
     console.warn('QR code generation failed', error)
+    qrCodeError.value = true
+    qrCodeDataUrl.value = ''
   }
 }
 
@@ -367,7 +366,7 @@ async function restoreFromUrl() {
     if (isHost.value) await updateJoinQr()
 
     if (participant.value) {
-      name.value = participant.value.display_name
+      displayName.value = participant.value.display_name
       const ownResponse = await getOwnResponse(session.value.id, participant.value.id)
       if (ownResponse) answers.value = ownResponse.answers
       foodAvoid.value = decodeFoodAvoid(answers.value[FOOD_AVOID_ID]) ?? []
@@ -386,7 +385,6 @@ async function restoreFromUrl() {
       // 主持人兼參加者也回控制室：大螢幕要顯示的是控制室，參加者身分由控制室按鈕切回
       if (isHost.value) {
         screen.value = 'host'
-        startHostLobbyRefresh()
       } else if (participant.value) {
         screen.value = !areScoredQuestionsComplete()
           ? 'quiz'
@@ -447,9 +445,14 @@ function closeLiveOverview() {
 
 async function refreshSessionState() {
   if (!session.value) return
+  const round = roundGeneration
+  const stale = () => round !== roundGeneration
   const latest = await getSessionByCode(session.value.code)
+  if (stale()) return
   session.value = latest
-  participants.value = await listParticipants(latest.id)
+  const latestParticipants = await listParticipants(latest.id)
+  if (stale()) return
+  participants.value = latestParticipants
   completedCount.value = participants.value.filter((item) => Boolean(item.completed_at)).length
 
   if (latest.status === 'open') {
@@ -461,7 +464,9 @@ async function refreshSessionState() {
         .join('|')
 
       if (nextFingerprint !== openPreviewFingerprint) {
-        groupStats.value = completedCount.value > 0 ? await previewOpenGroupStats(latest) : null
+        const preview = completedCount.value > 0 ? await previewOpenGroupStats(latest) : null
+        if (stale()) return
+        groupStats.value = preview
         openPreviewFingerprint = nextFingerprint
       }
     } else {
@@ -471,19 +476,21 @@ async function refreshSessionState() {
   }
 
   if (latest.status === 'locked') {
-    stopHostLobbyRefresh()
     if (successRevealBeat.value === 0) groupStats.value = null
     screen.value = isHost.value ? 'host' : 'revealing'
     return
   }
 
   if (latest.status === 'revealed') {
-    stopHostLobbyRefresh()
-    groupStats.value = await getGroupStats(latest.id)
+    const finalStats = await getGroupStats(latest.id)
+    if (stale()) return
+    groupStats.value = finalStats
 
     if (isHost.value) {
       if (participant.value) {
-        personalResult.value = await getPersonalResult(latest.id, participant.value.id)
+        const ownResult = await getPersonalResult(latest.id, participant.value.id)
+        if (stale()) return
+        personalResult.value = ownResult
       }
       if (requestedRoomOverview.value) {
         screen.value = 'overview'
@@ -498,7 +505,9 @@ async function refreshSessionState() {
     if (participant.value) {
       isLiveOverview.value = false
       liveOverviewCards.value = []
-      personalResult.value = await getPersonalResult(latest.id, participant.value.id)
+      const ownResult = await getPersonalResult(latest.id, participant.value.id)
+      if (stale()) return
+      personalResult.value = ownResult
       screen.value = 'result'
     }
   }
@@ -531,29 +540,27 @@ async function startHost() {
     roomCode.value = session.value.code
     isHost.value = true
     setRoomInUrl(session.value.code)
+    screen.value = 'host'
     await updateJoinQr()
     await attachRealtime()
-    screen.value = 'host'
     if (!audioMuted.value) startLobbyLoop()
     await refreshSessionState()
-    screen.value = 'host'
-    startHostLobbyRefresh()
   })
 }
 
 async function startAsHostParticipant() {
   if (!session.value || !isHost.value || session.value.status !== 'open') return
 
-  const displayName = (name.value || participant.value?.display_name || '').trim()
-  if (!displayName) {
+  const resolvedName = (displayName.value || participant.value?.display_name || '').trim()
+  if (!resolvedName) {
     errorMessage.value = '先輸入你的暱稱，再開始自己的這局。'
     return
   }
 
   await withBusy(async () => {
     stopLobbyLoop()
-    participant.value = await joinSession(session.value!.id, displayName)
-    name.value = participant.value.display_name
+    participant.value = await joinSession(session.value!.id, resolvedName)
+    displayName.value = participant.value.display_name
 
     const ownResponse = await getOwnResponse(session.value!.id, participant.value.id)
     answers.value = ownResponse?.answers ?? {}
@@ -583,7 +590,6 @@ async function returnToHost() {
     await refreshSessionState()
     screen.value = 'host'
     if (session.value?.status === 'open') {
-      startHostLobbyRefresh()
       if (!audioMuted.value) startLobbyLoop()
     }
   })
@@ -600,9 +606,9 @@ async function openHostPersonalResult() {
 
 // 開下一局前清掉上一局的全部狀態；暱稱保留，玩家不用重打
 function resetRound() {
+  roundGeneration += 1
   unsubscribe?.()
   unsubscribe = null
-  stopHostLobbyRefresh()
   if (quizInterstitialTimer !== null) {
     window.clearTimeout(quizInterstitialTimer)
     quizInterstitialTimer = null
@@ -661,7 +667,7 @@ async function startJoin() {
 }
 
 async function joinRoom() {
-  if (!roomCode.value.trim() || !name.value.trim()) {
+  if (!roomCode.value.trim() || !displayName.value.trim()) {
     errorMessage.value = '請輸入房號和暱稱。'
     return
   }
@@ -669,7 +675,7 @@ async function joinRoom() {
   await withBusy(async () => {
     session.value = await getSessionByCode(roomCode.value.trim())
     if (session.value.status !== 'open') throw new Error('這一局已經開始揭曉囉。')
-    participant.value = await joinSession(session.value.id, name.value.trim())
+    participant.value = await joinSession(session.value.id, displayName.value.trim())
     setRoomInUrl(session.value.code)
     await attachRealtime()
     screen.value = 'quiz'
@@ -866,6 +872,7 @@ function showDemoOverview() {
 }
 
 onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   const params = new URL(window.location.href).searchParams
   if (params.get('demo') === 'result') {
     if (params.get('view') === 'overview') showDemoOverview()
@@ -881,15 +888,20 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   stopLobbyLoop()
   unsubscribe?.()
-  stopHostLobbyRefresh()
   if (quizInterstitialTimer !== null) window.clearTimeout(quizInterstitialTimer)
 })
 </script>
 
 <template>
   <main class="app-shell">
+    <p v-if="errorMessage" class="error" role="alert">
+      <span>{{ errorMessage }}</span>
+      <button class="error-close" type="button" aria-label="關閉錯誤" @click="errorMessage = ''">×</button>
+    </p>
+
     <button
       class="audio-toggle"
       type="button"
@@ -933,8 +945,8 @@ onBeforeUnmount(() => {
       </h1>
       <p class="lede landing-lede">大家都說「都可以」，一問去哪吃就全員裝死。今晚來抓內鬼。</p>
       <div class="action-stack landing-actions">
-        <button class="primary" type="button" :disabled="busy" @click="startJoin">加入飯局 →</button>
-        <button class="secondary host-mode-button" type="button" aria-label="我是主持人，開新局" :disabled="busy" @click="startHost">HOST MODE / 開新局</button>
+        <button class="primary" type="button" :disabled="isSubmitting" @click="startJoin">加入飯局 →</button>
+        <button class="secondary host-mode-button" type="button" aria-label="我是主持人，開新局" :disabled="isSubmitting" @click="startHost">HOST MODE / 開新局</button>
       </div>
       <p class="landing-footnote">DINNER PERSONALITY / GROUP CONSENSUS / LIVE REVEAL</p>
     </section>
@@ -949,11 +961,11 @@ onBeforeUnmount(() => {
       </label>
       <label>
         暱稱
-        <input v-model="name" maxlength="24" autocomplete="nickname" placeholder="例如：Soda" />
+        <input v-model="displayName" maxlength="24" autocomplete="nickname" placeholder="例如：Soda" />
       </label>
       <div class="bottom-actions">
-        <button class="primary" type="button" :disabled="busy" @click="joinRoom">
-          {{ busy ? '加入中…' : '加入這一局' }}
+        <button class="primary" type="button" :disabled="isSubmitting" @click="joinRoom">
+          {{ isSubmitting ? '加入中…' : '加入這一局' }}
         </button>
       </div>
     </section>
@@ -988,7 +1000,7 @@ onBeforeUnmount(() => {
       </template>
       <div class="bottom-actions inline">
         <button class="secondary" type="button" :disabled="questionIndex === 0" @click="previousQuestion">上一題</button>
-        <button class="primary" type="button" :disabled="!currentAnswer || busy" @click="nextQuestion">
+        <button class="primary" type="button" :disabled="!currentAnswer || isSubmitting" @click="nextQuestion">
           {{ questionIndex === activeQuestions.length - 1 ? '填寫忌口' : '下一題' }}
         </button>
       </div>
@@ -1016,7 +1028,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="bottom-actions inline">
         <button class="secondary" type="button" @click="screen = 'quiz'">回上一題</button>
-        <button class="primary" type="button" :disabled="busy" @click="submitFood">
+        <button class="primary" type="button" :disabled="isSubmitting" @click="submitFood">
           {{ foodAvoid.length === 0 ? '我都能吃，交卷' : '排除 ' + foodAvoid.length + ' 項，交卷' }}
         </button>
       </div>
@@ -1058,7 +1070,7 @@ onBeforeUnmount(() => {
 
       <div v-if="session?.status === 'open'" class="bottom-actions inline">
         <button class="secondary" type="button" @click="editAnswers">修改答案 ↗</button>
-        <button v-if="isHost" class="primary" type="button" :disabled="busy" @click="returnToHost">回主持畫面 →</button>
+        <button v-if="isHost" class="primary" type="button" :disabled="isSubmitting" @click="returnToHost">回主持畫面 →</button>
       </div>
       <p v-else class="locked-copy">主持人已鎖定答案，準備揭曉。</p>
     </section>
@@ -1083,6 +1095,10 @@ onBeforeUnmount(() => {
 
       <div class="host-join-card">
         <img v-if="qrCodeDataUrl" class="join-qr" :src="qrCodeDataUrl" alt="加入這一局的 QR Code" />
+        <div v-else-if="qrCodeError" class="join-qr qr-fallback" role="alert">
+          <p class="qr-error-hint">QR Code 產生失敗</p>
+          <button class="secondary compact-button" type="button" @click="updateJoinQr">重試 QR Code</button>
+        </div>
         <div class="host-join-copy">
           <div class="eyebrow">掃碼加入</div>
           <strong class="room-code">{{ session?.code }}</strong>
@@ -1100,10 +1116,10 @@ onBeforeUnmount(() => {
         </div>
         <label v-if="!participant" class="host-name-field">
           主持人暱稱
-          <input v-model="name" maxlength="24" autocomplete="nickname" placeholder="例如：Soda" />
+          <input v-model="displayName" maxlength="24" autocomplete="nickname" placeholder="例如：Soda" />
         </label>
-        <button class="primary" type="button" :disabled="busy" @click="startAsHostParticipant">
-          {{ busy ? '同步中…' : hostParticipantActionLabel }}
+        <button class="primary" type="button" :disabled="isSubmitting" @click="startAsHostParticipant">
+          {{ isSubmitting ? '同步中…' : hostParticipantActionLabel }}
         </button>
       </div>
 
@@ -1146,8 +1162,8 @@ onBeforeUnmount(() => {
           <h3>{{ dinnerSuccess.verdict }}</h3>
           <p class="lede">{{ dinnerSuccess.detail }}</p>
           <p class="persona-tease">成功率看完了。現在看看問題到底出在誰身上。</p>
-          <button class="primary persona-reveal-button" type="button" :disabled="busy" @click="revealPersonas">
-            {{ busy ? '正在翻牌…' : '公開處刑 🎴' }}
+          <button class="primary persona-reveal-button" type="button" :disabled="isSubmitting" @click="revealPersonas">
+            {{ isSubmitting ? '正在翻牌…' : '公開處刑 🎴' }}
           </button>
         </template>
       </div>
@@ -1157,7 +1173,7 @@ onBeforeUnmount(() => {
         <p class="host-joke">正在計算你們今晚到底約不約得成…</p>
         <div class="countdown-number">{{ revealStep }}</div>
         <button
-          v-if="!busy"
+          v-if="!isSubmitting"
           class="secondary resume-reveal"
           type="button"
           @click="continueReveal"
@@ -1222,9 +1238,9 @@ onBeforeUnmount(() => {
         <p class="host-result-footer">手機已同步翻牌。剩下的交給你們互相吐槽。</p>
 
         <div class="bottom-actions inline">
-          <button v-if="participant && personalResult" class="secondary" type="button" :disabled="busy" @click="openHostPersonalResult">查看我的人格卡 ↗</button>
-          <button class="secondary" type="button" :disabled="busy" @click="openLiveOverview">查看全員人格 ↗</button>
-          <button class="primary" type="button" :disabled="busy" @click="playAgainAsHost">重新開局 ↻</button>
+          <button v-if="participant && personalResult" class="secondary" type="button" :disabled="isSubmitting" @click="openHostPersonalResult">查看我的人格卡 ↗</button>
+          <button class="secondary" type="button" :disabled="isSubmitting" @click="openLiveOverview">查看全員人格 ↗</button>
+          <button class="primary" type="button" :disabled="isSubmitting" @click="playAgainAsHost">重新開局 ↻</button>
         </div>
       </div>
 
@@ -1276,8 +1292,8 @@ onBeforeUnmount(() => {
         </article>
 
         <div class="bottom-actions">
-          <button class="primary" type="button" :disabled="busy || completedCount === 0" @click="reveal">
-            {{ busy ? '正在公開處刑…' : '鎖定並揭曉' }}
+          <button class="primary" type="button" :disabled="isSubmitting || completedCount === 0" @click="reveal">
+            {{ isSubmitting ? '正在公開處刑…' : '鎖定並揭曉' }}
           </button>
         </div>
       </div>
@@ -1440,7 +1456,5 @@ onBeforeUnmount(() => {
         <button v-else class="secondary" type="button" @click="playAgainAsPlayer">加入新的一局 ↻</button>
       </div>
     </section>
-
-    <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
   </main>
 </template>

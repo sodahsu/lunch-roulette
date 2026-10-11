@@ -1,3 +1,4 @@
+import { hashFnv1a } from './hash'
 import type {
   PersonaDefinition,
   PersonaKey,
@@ -42,6 +43,18 @@ export const QUESTION_CATEGORIES: QuestionCategory[] = [
 ]
 
 export const SESSION_QUESTION_COUNT = 12
+
+/**
+ * 答題過程中的節奏事件觸發題號（1-indexed），由題數推導，改題數時節奏跟著走：
+ * - MINORITY_DETECTED：1/3 進度，場面觀察
+ * - CONSENSUS_COLLAPSING：2/3 進度，中場警報
+ * - FINAL_TWO：倒數第二題，文案寫「最後兩題」
+ */
+export const QUIZ_PACING_QUESTION_NUMBERS = {
+  MINORITY_DETECTED: Math.round(SESSION_QUESTION_COUNT / 3),
+  CONSENSUS_COLLAPSING: Math.round((SESSION_QUESTION_COUNT * 2) / 3),
+  FINAL_TWO: SESSION_QUESTION_COUNT - 1,
+} as const
 
 const LEGACY_V01_QUESTION_IDS = [
   'group-choice',
@@ -302,19 +315,10 @@ export const QUESTION_BANK: Question[] = [
   },
 ]
 
-function hashText(value: string): number {
-  let hash = 2166136261
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 16777619)
-  }
-  return hash >>> 0
-}
-
 function sortBySeed(questions: Question[], seed: string): Question[] {
   return [...questions].sort((a, b) => {
-    const aHash = hashText(`${seed}:${a.id}`)
-    const bHash = hashText(`${seed}:${b.id}`)
+    const aHash = hashFnv1a(`${seed}:${a.id}`)
+    const bHash = hashFnv1a(`${seed}:${b.id}`)
     if (aHash !== bHash) return aHash - bHash
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
   })

@@ -27,22 +27,38 @@ export async function ensureUserId(): Promise<string> {
   return data.user.id
 }
 
-function createCode(): string {
+export const MAX_CREATE_SESSION_ATTEMPTS = 3
+
+export function createCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const values = crypto.getRandomValues(new Uint8Array(6))
   return Array.from(values, (value) => chars[value % chars.length]).join('')
 }
 
-export async function createSession(): Promise<SessionRecord> {
+export async function createSession(maxAttempts = MAX_CREATE_SESSION_ATTEMPTS): Promise<SessionRecord> {
   const userId = await ensureUserId()
-  const { data, error } = await supabase
-    .from('sessions')
-    .insert({ code: createCode(), host_user_id: userId, questionnaire_version: 'v0.2' })
-    .select()
-    .single()
+  let lastError: unknown = null
 
-  if (error) throw error
-  return data as SessionRecord
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const code = createCode()
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert({ code, host_user_id: userId, questionnaire_version: 'v0.2' })
+      .select()
+      .single()
+
+    if (!error && data) {
+      return data as SessionRecord
+    }
+
+    lastError = error
+    if (error && error.code !== '23505') {
+      throw error
+    }
+  }
+
+  // App 的 fail() 直接顯示 error.message，原始 23505 訊息對使用者沒有意義，保留在 cause 供除錯
+  throw Object.assign(new Error('建立場次失敗：房號一直撞號，請再試一次。'), { cause: lastError })
 }
 
 export class SessionNotFoundError extends Error {
@@ -284,6 +300,7 @@ export function subscribeToSession(
   onChange: () => void,
   onSubscribed?: () => void,
 ): () => void {
+  let joinedOnce = false
   const channel = supabase
     .channel(`session:${sessionId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, onChange)
@@ -292,7 +309,15 @@ export function subscribeToSession(
     .on('postgres_changes', { event: '*', schema: 'public', table: 'result_snapshots', filter: `session_id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results', filter: `session_id=eq.${sessionId}` }, onChange)
     .subscribe((status) => {
-      if (status === 'SUBSCRIBED') onSubscribed?.()
+      if (status !== 'SUBSCRIBED') return
+      // SDK 斷線或 CHANNEL_ERROR 後會自動 rejoin 並再回報 SUBSCRIBED，但斷線期間的 postgres_changes 不會補發；
+      // 主持人大螢幕常駐前景、visibilitychange 不會觸發，只能靠這裡補一次刷新
+      if (joinedOnce) {
+        onChange()
+        return
+      }
+      joinedOnce = true
+      onSubscribed?.()
     })
 
   return () => {

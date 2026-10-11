@@ -10,9 +10,10 @@ const AVATARS = Object.keys(files)
   .map((key) => files[key])
 
 export function avatarFor(id: string): string {
+  if (AVATARS.length === 0) return ''
   let hash = 0
   for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  return AVATARS[hash % AVATARS.length]!
+  return AVATARS[hash % AVATARS.length] ?? AVATARS[0] ?? ''
 }
 
 const personaFiles = import.meta.glob<string>('../assets/personas/*.webp', {
