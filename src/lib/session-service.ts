@@ -57,7 +57,8 @@ export async function createSession(maxAttempts = MAX_CREATE_SESSION_ATTEMPTS): 
     }
   }
 
-  throw lastError ?? new Error(`建立場次失敗：嘗試 ${maxAttempts} 次均遭遇房號衝突，請再試一次。`)
+  // App 的 fail() 直接顯示 error.message，原始 23505 訊息對使用者沒有意義，保留在 cause 供除錯
+  throw Object.assign(new Error('建立場次失敗：房號一直撞號，請再試一次。'), { cause: lastError })
 }
 
 export class SessionNotFoundError extends Error {

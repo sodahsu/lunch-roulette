@@ -145,8 +145,12 @@ describe('session-service', () => {
         }),
       })
 
-      await expect(createSession(MAX_CREATE_SESSION_ATTEMPTS)).rejects.toMatchObject({
-        code: '23505',
+      const failure = await createSession(MAX_CREATE_SESSION_ATTEMPTS).catch((error: unknown) => error)
+
+      expect(failure).toBeInstanceOf(Error)
+      expect(failure).toMatchObject({
+        message: '建立場次失敗：房號一直撞號，請再試一次。',
+        cause: { code: '23505' },
       })
       expect(mockFrom).toHaveBeenCalledTimes(MAX_CREATE_SESSION_ATTEMPTS)
     })
