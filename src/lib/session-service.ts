@@ -310,12 +310,10 @@ export function subscribeToSession(
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results', filter: `session_id=eq.${sessionId}` }, onChange)
     .subscribe((status) => {
       if (status !== 'SUBSCRIBED') return
-      // SDK 斷線或 CHANNEL_ERROR 後會自動 rejoin 並再回報 SUBSCRIBED，但斷線期間的 postgres_changes 不會補發；
-      // 主持人大螢幕常駐前景、visibilitychange 不會觸發，只能靠這裡補一次刷新
-      if (joinedOnce) {
-        onChange()
-        return
-      }
+      // 訂閱生效前（首次握手、或斷線後 SDK 自動 rejoin 前）發生的 postgres_changes 不會補發；
+      // 主持人大螢幕常駐前景、visibilitychange 不會觸發，所以每次 SUBSCRIBED 都補一次刷新，含第一次
+      onChange()
+      if (joinedOnce) return
       joinedOnce = true
       onSubscribed?.()
     })
