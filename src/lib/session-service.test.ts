@@ -236,6 +236,16 @@ describe('session-service', () => {
   })
 
   describe('subscribeToSession reconnect', () => {
+    it('holds SUBSCRIBED until the server confirms postgres_changes, so the refresh is not too early', () => {
+      mockRealtimeChannel()
+
+      subscribeToSession('session-1', vi.fn())
+
+      expect(mockChannel).toHaveBeenCalledWith('session:session-1', {
+        config: { postgres_changes_options: { wait: true } },
+      })
+    })
+
     it('refreshes on the first SUBSCRIBED because changes made before the handshake are not replayed', () => {
       const { emitStatus } = mockRealtimeChannel()
       const onChange = vi.fn()

@@ -302,7 +302,9 @@ export function subscribeToSession(
 ): () => void {
   let joinedOnce = false
   const channel = supabase
-    .channel(`session:${sessionId}`)
+    // 預設在 channel join 後就回報 SUBSCRIBED，此時伺服器的 postgres_changes 可能還沒建好（實測約 500ms 空窗），
+    // 空窗內的變更不會送事件；wait 讓 SUBSCRIBED 等到伺服器確認，下面的刷新才不會早於它
+    .channel(`session:${sessionId}`, { config: { postgres_changes_options: { wait: true } } })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `session_id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'responses', filter: `session_id=eq.${sessionId}` }, onChange)
@@ -310,8 +312,8 @@ export function subscribeToSession(
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results', filter: `session_id=eq.${sessionId}` }, onChange)
     .subscribe((status) => {
       if (status !== 'SUBSCRIBED') return
-      // 訂閱生效前（首次握手、或斷線後 SDK 自動 rejoin 前）發生的 postgres_changes 不會補發；
-      // 主持人大螢幕常駐前景、visibilitychange 不會觸發，所以每次 SUBSCRIBED 都補一次刷新，含第一次
+      // 訂閱生效前（首次 join、或斷線後 SDK 自動 rejoin 前）發生的變更不會補發；主持人大螢幕常駐前景、
+      // visibilitychange 不會觸發，所以每次 SUBSCRIBED 都補一次刷新，含第一次
       onChange()
       if (joinedOnce) return
       joinedOnce = true
