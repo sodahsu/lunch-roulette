@@ -1,6 +1,6 @@
 ---
 title: "Lunch Roulette《都可以？》Solo Start｜AI 工作交接"
-date: "2026-10-03"
+date: "2026-10-11"
 handoff_status: ready_for_handoff
 ---
 
@@ -8,24 +8,60 @@ handoff_status: ready_for_handoff
 
 ## Resume Here
 
-**交付定位：**Solo Start 已以 `v0.2.0` 上 production。這份文件是 2026-10-03 收尾時的狀態快照，供下一個 Agent 接手後續優化或 archive；文件本身不授權 merge 到 `main`、建立 tag / Release，也不授權修改遠端 DB。
+**交付定位：**production 目前是 `v0.2.1`。這份文件是 2026-10-11 收尾時的狀態快照，供下一個 Agent 接手後續優化或 archive；文件本身不授權 merge 到 `main`、建立 tag / Release，也不授權修改遠端 DB。
 
-- 目標與交付物：同一個 session 支援「1 人先開局 → 朋友後加入 → open 階段暫時人格 / 暫定成功率 → 沿用正式兩段式 Reveal」。**已完成並上線**（`v0.2.0`）。
+- 目標與交付物：同一個 session 支援「1 人先開局 → 朋友後加入 → open 階段暫時人格 / 暫定成功率 → 沿用正式兩段式 Reveal」。**已完成並上線**（`v0.2.0`）；`v0.2.1` 是 Realtime 同步與保哥審查修正。
 - 非目標（沿用）：不新增獨立 Solo session type、不改 `open → locked → revealed`、不把單人結果硬算成群體成功率、不放寬 participant 讀取他人 response / result 的隱私邊界。
-- 本次已做：PR #6～#15，詳見下方「2026-10-03｜v0.2.0 上線」。
-- 第一個安全動作：`git fetch` 後確認 `origin/main` 與 `origin/dev` 都在 `v0.2.0` 之後、沒有新的分歧（`git log origin/main..origin/dev`），再讀「剩餘工作」挑一項。
+- 本次已做：PR #17～#22，詳見下方「2026-10-11｜v0.2.1 上線」；v0.2.0 的 PR #6～#15 見「2026-10-03｜v0.2.0 上線」。
+- 第一個安全動作：`git fetch` 後確認 `origin/main` 與 `origin/dev` 都在 `v0.2.1` 之後、沒有新的分歧（`git log origin/main..origin/dev --no-merges`），再讀「剩餘工作」挑一項。
 - 停止條件：`dev` 與 `main` 出現分歧、CI 紅、或要動遠端 Supabase schema 時，先停下來問使用者。
 
 ```yaml
 handoff_purpose: follow_up_and_archive
-task_state: released_v0.2.0
+task_state: released_v0.2.1
 code_changed: true
 repository_reverified: true
 current_integration_branch: dev
-production_release: v0.2.0 (cde197b, https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.0)
-release_candidate: v0.2.0-rc.1 (1a0e83f)
-approval_evidence: 使用者 2026-10-03 選「RC 再正式版」並回「做」
+production_release: v0.2.1 (1d05fad, https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.1)
+previous_release: v0.2.0 (cde197b)
+production_url: https://lunch-roulette-xi.vercel.app
+approval_evidence: 使用者 2026-10-11 選「發 v0.2.1」並回「做」；PR preview 政策選「保留 PR preview」
 ```
+
+## 2026-10-11｜v0.2.1 上線
+
+### PR 時間線（全部 merge commit）
+
+| PR | base | 內容 |
+|---|---|---|
+| #17 | dev | 開新的一局後，丟棄上一局晚到的 `refreshSessionState` 結果（`roundGeneration`） |
+| #18 | dev | 保哥審查重構：撞號重試、拿掉 Host 3 秒輪詢改 Realtime 驅動、FNV-1a 抽模組、QR 重試、錯誤可關閉、命名。審查後追加：恢復 Supabase fallback（原改動讓 Preview 白畫面）、Realtime rejoin 補刷新、撞號中文訊息、節奏題號由題數推導、`.gitignore` 忽略本機環境變數檔 |
+| #19 | dev | version → `0.2.1` |
+| #20 | main | `dev → main`（`7c17ac5`）。上線後 smoke 抓到 CASE-12 間歇失敗，**未打 tag** |
+| #21 | dev | 修 Realtime 訂閱空窗：`postgres_changes_options.wait` + 每次 `SUBSCRIBED` 刷新 |
+| #22 | main | `dev → main`（`1d05fad`），tag `v0.2.1`，GitHub Release |
+
+### 驗證（FACT）
+
+- CI（`verify`）：unit 68/68、typecheck、build、OpenSpec strict、full E2E。
+- Production runtime smoke（Playwright，每個角色獨立 browser context，config 指向 production、不起本機 dev server）：CASE-01、CASE-12 ×5、CASE-20 全部 PASS。
+- `7c17ac5` 在 production 約 06:46～07:38 期間有「重新開局後主持人看不到加入者」的回歸（smoke 4 次失敗 2 次），由 #21 修正。
+
+### 剩餘工作（未做）
+
+1. solo-start 尚未 archive：`openspec/changes/solo-start/` 還沒併入 `openspec/specs/`；`tasks.md` 的 archive gate 與「確認 specs / README 與 runtime 同步」未勾。
+2. 人工檢查未做：多人加入時的局勢更新 cue、375 / 768 / desktop responsive、focus / keyboard / reduced-motion、暫時結果與正式結果的視覺區隔。
+3. 主持人可讀全場 response 的逐題答案（MVP 既有 policy「self or host can read responses」，鎖定時由主持人端計算 snapshot 需要）。目前 UI 不顯示，若要收緊需要把計算移到 server 端。
+4. Production 是否設了 `VITE_SUPABASE_*`：UNKNOWN（Preview 確定沒設）。若 production 也走 fallback，CI / smoke 的 E2E 測試房間與正式資料寫在同一個 Supabase project。
+5. Host 大廳不再定期輪詢：Realtime 長時間連不上（非短暫斷線）時，人數要等重新連上才更新。
+
+### 踩坑紀錄（給下一個 Agent）
+
+- **Supabase 的 `SUBSCRIBED` 早於 `postgres_changes` 生效**：預設 `phx_reply ok` 比伺服器的 `system: Subscribed to PostgreSQL` 早約 500ms，空窗內的變更不送事件。要開 `postgres_changes_options: { wait: true }`，且在 `SUBSCRIBED` 後主動刷新一次。查這類問題要錄 WebSocket 訊框（`page.on('websocket')` 的 `framereceived`），只看 UI 會誤判成「握手太慢」。
+- **拿掉輪詢前先想它在補什麼**：v0.2.0 的 3 秒輪詢一直默默蓋住上面的空窗，拿掉後才浮現。
+- **不要拿掉 Supabase fallback**：Vercel Preview 沒設 `VITE_SUPABASE_*`，頂層 `throw` 會被打包成無條件拋錯，bundle 只剩 57 KB、畫面全白；CI 若先複製 `.env.example` 會綠燈，把問題蓋掉。publishable key 本來就公開。
+- **`vercel.json` 的 `"*": false` 對不到含斜線的分支名**：部署紀錄顯示 `dev` 從未部署、`task/*` 每個 commit 都有 Preview（INFERENCE：glob 的 `*` 不跨 `/`）。2026-10-11 使用者決定保留 PR preview，`vercel.json` 不改。Vercel project 在 `piscean0619-7206s-projects` scope 底下，不在 `sodahsu0314-3323`。
+- **Production smoke 的跑法**：在 scratchpad 放一份 Playwright config，`testDir` 指向 repo 的 `tests/e2e`、`use.baseURL` 指向 production、不設 `webServer`，用 `-g "CASE-(01|12|20) "` 挑案例。CASE-22 / CASE-23 用 `import('/src/lib/supabase.ts')`，只在 Vite dev server 能跑，不能拿來打部署環境。
 
 ## 2026-10-03｜v0.2.0 上線
 
@@ -51,6 +87,8 @@ approval_evidence: 使用者 2026-10-03 選「RC 再正式版」並回「做」
 - 遠端 Supabase：`20261002_require_food_submission_for_completion.sql` 已手動套用（19 筆 → 0）。v0.2.0 不需要新的 migration。
 
 ### 剩餘工作（未做）
+
+> 2026-10-11：本清單已由上方「2026-10-11｜v0.2.1 上線」的剩餘工作取代；第 3 項（PR preview）已查明，見該段踩坑紀錄。
 
 0. 這份 HANDOFF 更新只合進 `dev`，下一次 `dev → main` 時才會進 `main`。
 
@@ -124,11 +162,11 @@ Vercel Production
 - `dev` 已由目前 `main` 建立，作為後續功能整合基準。
 - Solo Start 已進 `dev`；Codex 後續直接以 `dev` 為整合基準修 CASE-01 / E2E / runtime / RLS，**不要直接 merge main**。
 - `main` 只有在 `dev` 的整合驗證通過後才接受 PR。
-- `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。
+- `vercel.json` 已限制 `deploymentEnabled["*"] = false`、`main = true`，因此 dev / feature / PR 不觸發 Vercel。（2026-10-11 更正：實際上 `task/*` 分支都會部署 Preview，只有 `dev` 不部署；使用者決定保留 PR preview，見「2026-10-11｜v0.2.1 上線」。）
 - `.github/workflows/branch-policy.yml` 會阻擋非 `dev` 來源直接 PR 到 `main`；因 GitHub default branch 目前仍是 `main` 且 connector 無 repository-settings 寫入能力，這個 CI guard 用來防止誤送 production PR。
 - Solo Start CI 已改為監聽 PR 到 `dev` / `main`，並在 push 到 `dev` 時重跑整合驗證；因此 feature → dev 與 dev 整合後都有自動 gate。
 - tag / GitHub Release / production deploy 都屬 `dev → main` 之後的獨立 production gate。
-- **Vercel workspace verification：**目前已連線的 team `sodahsu0314-3323` 只列出 `beloved-agent`，未列出 `lunch-roulette`。因此 repo-level `vercel.json` main-only policy 已確認，但 Dashboard/project-level production branch 尚無可驗證的 lunch-roulette project；不得宣稱 Vercel 專案已完成連線。
+- **Vercel workspace verification：**目前已連線的 team `sodahsu0314-3323` 只列出 `beloved-agent`，未列出 `lunch-roulette`。因此 repo-level `vercel.json` main-only policy 已確認，但 Dashboard/project-level production branch 尚無可驗證的 lunch-roulette project；不得宣稱 Vercel 專案已完成連線。（2026-10-11 更正：project 在 `piscean0619-7206s-projects` scope 底下，已有 Production 與 Preview 部署，production 網址 `https://lunch-roulette-xi.vercel.app`。）
 
 ## 2026-10-02｜測試前置收斂完成
 
@@ -1198,6 +1236,8 @@ UNKNOWN：
 ---
 
 ## 11. Vercel
+
+> 2026-10-11 更正：project 已存在於 `piscean0619-7206s-projects` scope，production 網址 `https://lunch-roulette-xi.vercel.app`。`main` 的 merge commit 部署 Production，`task/*` 分支部署 Preview（使用者決定保留），`dev` 不部署。Preview 未設 `VITE_SUPABASE_*`，靠 `src/lib/supabase.ts` 的 fallback 運作。以下為 2026-10-01 的原始規劃。
 
 目前沒有已驗證的 `lunch-roulette` Vercel Demo。
 
