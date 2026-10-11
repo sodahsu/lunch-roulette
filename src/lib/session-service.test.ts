@@ -1,17 +1,21 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { mockAuth, mockFrom } = vi.hoisted(() => ({
+const { mockAuth, mockFrom, mockChannel, mockRemoveChannel } = vi.hoisted(() => ({
   mockAuth: {
     getSession: vi.fn(),
     signInAnonymously: vi.fn(),
   },
   mockFrom: vi.fn(),
+  mockChannel: vi.fn(),
+  mockRemoveChannel: vi.fn(),
 }))
 
 vi.mock('./supabase', () => ({
   supabase: {
     auth: mockAuth,
     from: mockFrom,
+    channel: mockChannel,
+    removeChannel: mockRemoveChannel,
   },
 }))
 
@@ -21,8 +25,24 @@ import {
   finalizeReveal,
   SessionNotFoundError,
   MAX_CREATE_SESSION_ATTEMPTS,
+  subscribeToSession,
   type SessionRecord,
 } from './session-service'
+
+type SubscribeStatusCallback = (status: string) => void
+
+function mockRealtimeChannel() {
+  let statusCallback: SubscribeStatusCallback = () => {}
+  const channel = {
+    on: vi.fn(() => channel),
+    subscribe: vi.fn((callback: SubscribeStatusCallback) => {
+      statusCallback = callback
+      return channel
+    }),
+  }
+  mockChannel.mockReturnValue(channel)
+  return { channel, emitStatus: (status: string) => statusCallback(status) }
+}
 
 describe('session-service', () => {
   beforeEach(() => {
@@ -208,6 +228,56 @@ describe('session-service', () => {
       const groupStats = await finalizeReveal(session)
       expect(groupStats).toBeDefined()
       expect(Array.isArray(groupStats)).toBe(true)
+    })
+  })
+
+  describe('subscribeToSession reconnect', () => {
+    it('reports the first SUBSCRIBED as the initial handshake without refreshing', () => {
+      const { emitStatus } = mockRealtimeChannel()
+      const onChange = vi.fn()
+      const onSubscribed = vi.fn()
+
+      subscribeToSession('session-1', onChange, onSubscribed)
+      emitStatus('SUBSCRIBED')
+
+      expect(onSubscribed).toHaveBeenCalledTimes(1)
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('refreshes once per rejoin because events missed while disconnected are not replayed', () => {
+      const { emitStatus } = mockRealtimeChannel()
+      const onChange = vi.fn()
+      const onSubscribed = vi.fn()
+
+      subscribeToSession('session-1', onChange, onSubscribed)
+      emitStatus('SUBSCRIBED')
+      emitStatus('CHANNEL_ERROR')
+      emitStatus('SUBSCRIBED')
+      emitStatus('TIMED_OUT')
+      emitStatus('SUBSCRIBED')
+
+      expect(onSubscribed).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledTimes(2)
+    })
+
+    it('ignores error states on their own; the SDK rejoin decides when to refresh', () => {
+      const { emitStatus } = mockRealtimeChannel()
+      const onChange = vi.fn()
+
+      subscribeToSession('session-1', onChange)
+      emitStatus('CHANNEL_ERROR')
+      emitStatus('TIMED_OUT')
+
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('removes the channel on unsubscribe', () => {
+      const { channel } = mockRealtimeChannel()
+
+      const unsubscribe = subscribeToSession('session-1', vi.fn())
+      unsubscribe()
+
+      expect(mockRemoveChannel).toHaveBeenCalledWith(channel)
     })
   })
 })

@@ -299,6 +299,7 @@ export function subscribeToSession(
   onChange: () => void,
   onSubscribed?: () => void,
 ): () => void {
+  let joinedOnce = false
   const channel = supabase
     .channel(`session:${sessionId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, onChange)
@@ -307,7 +308,15 @@ export function subscribeToSession(
     .on('postgres_changes', { event: '*', schema: 'public', table: 'result_snapshots', filter: `session_id=eq.${sessionId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_results', filter: `session_id=eq.${sessionId}` }, onChange)
     .subscribe((status) => {
-      if (status === 'SUBSCRIBED') onSubscribed?.()
+      if (status !== 'SUBSCRIBED') return
+      // SDK 斷線或 CHANNEL_ERROR 後會自動 rejoin 並再回報 SUBSCRIBED，但斷線期間的 postgres_changes 不會補發；
+      // 主持人大螢幕常駐前景、visibilitychange 不會觸發，只能靠這裡補一次刷新
+      if (joinedOnce) {
+        onChange()
+        return
+      }
+      joinedOnce = true
+      onSubscribed?.()
     })
 
   return () => {
