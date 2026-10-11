@@ -236,19 +236,30 @@ describe('session-service', () => {
   })
 
   describe('subscribeToSession reconnect', () => {
-    it('reports the first SUBSCRIBED as the initial handshake without refreshing', () => {
+    it('holds SUBSCRIBED until the server confirms postgres_changes, so the refresh is not too early', () => {
+      mockRealtimeChannel()
+
+      subscribeToSession('session-1', vi.fn())
+
+      expect(mockChannel).toHaveBeenCalledWith('session:session-1', {
+        config: { postgres_changes_options: { wait: true } },
+      })
+    })
+
+    it('refreshes on the first SUBSCRIBED because changes made before the handshake are not replayed', () => {
       const { emitStatus } = mockRealtimeChannel()
       const onChange = vi.fn()
       const onSubscribed = vi.fn()
 
       subscribeToSession('session-1', onChange, onSubscribed)
+      expect(onChange).not.toHaveBeenCalled()
       emitStatus('SUBSCRIBED')
 
       expect(onSubscribed).toHaveBeenCalledTimes(1)
-      expect(onChange).not.toHaveBeenCalled()
+      expect(onChange).toHaveBeenCalledTimes(1)
     })
 
-    it('refreshes once per rejoin because events missed while disconnected are not replayed', () => {
+    it('refreshes again on every rejoin because events missed while disconnected are not replayed', () => {
       const { emitStatus } = mockRealtimeChannel()
       const onChange = vi.fn()
       const onSubscribed = vi.fn()
@@ -261,7 +272,7 @@ describe('session-service', () => {
       emitStatus('SUBSCRIBED')
 
       expect(onSubscribed).toHaveBeenCalledTimes(1)
-      expect(onChange).toHaveBeenCalledTimes(2)
+      expect(onChange).toHaveBeenCalledTimes(3)
     })
 
     it('ignores error states on their own; the SDK rejoin decides when to refresh', () => {
