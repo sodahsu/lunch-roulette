@@ -118,8 +118,8 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] `.github/workflows/branch-policy.yml` 阻擋 feature/task branch 直接 PR 到 `main`；production PR 只允許 `dev → main`。
 - [x] Solo Start CI 已監聽 `pull_request` 到 `dev` / `main`，並在 `push: dev` 時重跑整合驗證。
 - [x] Branch Policy run #2 已在目前 PR base=`dev` 上 PASS。
-- [x] `vercel.json` 已限制只有 `main` Git deployment；`dev` / PR / feature branches 不部署。
-- [ ] Vercel workspace 目前未列出 `lunch-roulette` project；若後續連線／建立專案，需再驗證 Production Branch = `main`，不得啟用 dev / PR preview deploy。
+- [x] `vercel.json` 讓 `dev` 不部署、`main` 部署。（2026-10-11 更正：`"*": false` 對不到含斜線的 `task/*`，PR 分支實際會部署 Preview。）
+- [x] Vercel project 在 `piscean0619-7206s-projects` scope；Production 部署全部來自 `main` 上的 commit（2026-10-11 核對 GitHub deployments 近 20 筆）。PR preview 依使用者 2026-10-11 決定保留，不再列為禁止。
 - [x] `task/solo-start → dev` 已完成整合；Codex 後續直接在 `dev` 修正 CASE-01 / full E2E / runtime / RLS。
 - [x] 在 `dev` 上完成整合驗證（CASE-01 / full E2E / runtime / RLS 仍待 Codex）。（PR #7/#8 CI full E2E 21/21 + 2026-10-03 runtime smoke）
 - [x] 只有 `dev` 整合驗證通過後，才建立／更新 `dev → main` production PR（PR #10）。
@@ -133,9 +133,9 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [ ] capability delta 與 code 無 contract drift。
 - [ ] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
 
-**Current verdict: VALIDATED ON DEV / ARCHIVE & RELEASE PENDING**
+**Current verdict: RELEASED v0.2.0 / ARCHIVE PENDING**
 
-仍未勾選：多人加入 cue、responsive / a11y、Provisional 與 Final 視覺區隔的人工檢查、archive review 與 release 版本號。
+仍未勾選：多人加入 cue、responsive / a11y、Provisional 與 Final 視覺區隔的人工檢查、archive review。
 
 
 ## 9. Release gate
@@ -146,5 +146,5 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag（rc.1 未需修正）。
 - [ ] `dev` 的 Solo Start 整合驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。
 - [x] 建立 `dev → main` production PR（#10，已合併 `a5d17ca`）；App version 更新為 `0.2.0`。
-- [ ] 建立 immutable Git tag `v0.2.0`。
-- [ ] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制。
+- [x] 建立 immutable Git tag `v0.2.0`（指向 `cde197b`）。
+- [x] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制（https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.0）。
