@@ -57,6 +57,8 @@ approval_evidence: 使用者 2026-10-11 選「發 v0.2.1」並回「做」；PR 
 
 ### 踩坑紀錄（給下一個 Agent）
 
+- **Supabase 防暫停**：免費專案一週內使用者資料庫活動過少會暫停，官方建議每天幾次資料庫請求，因此每天排程三次唯讀查詢。
+  GitHub 排程只從預設分支 `main` 執行，須先由 dev 發布至 main；公開 repo 連續 60 天沒有任何活動時排程會被自動停用，專案仍可能再被暫停。
 - **Supabase 的 `SUBSCRIBED` 早於 `postgres_changes` 生效**：預設 `phx_reply ok` 比伺服器的 `system: Subscribed to PostgreSQL` 早約 500ms，空窗內的變更不送事件。要開 `postgres_changes_options: { wait: true }`，且在 `SUBSCRIBED` 後主動刷新一次。查這類問題要錄 WebSocket 訊框（`page.on('websocket')` 的 `framereceived`），只看 UI 會誤判成「握手太慢」。
 - **拿掉輪詢前先想它在補什麼**：v0.2.0 的 3 秒輪詢一直默默蓋住上面的空窗，拿掉後才浮現。
 - **不要拿掉 Supabase fallback**：Vercel Preview 沒設 `VITE_SUPABASE_*`，頂層 `throw` 會被打包成無條件拋錯，bundle 只剩 57 KB、畫面全白；CI 若先複製 `.env.example` 會綠燈，把問題蓋掉。publishable key 本來就公開。
