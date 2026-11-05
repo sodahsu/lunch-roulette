@@ -1,0 +1,35 @@
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Query Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          url=$(grep -oE 'https://[a-z0-9]+\.supabase\.co' src/lib/supabase.ts | head -1)
+          key=$(grep -oE 'sb_publishable_[A-Za-z0-9_-]+' src/lib/supabase.ts | head -1)
+          test -n "$url" && test -n "$key"
+          echo "::add-mask::$key"
+          for attempt in 1 2 3; do
+            code=$(curl --silent --show-error --fail --max-time 15 -o /dev/null -w '%{http_code}' \
+              -H "apikey: $key" -H "Authorization: Bearer $key" \
+              "$url/rest/v1/sessions?select=id&limit=1")
+            echo "Request $attempt: HTTP $code"
+            test "$code" = 200
+            if [ "$attempt" -lt 3 ]; then sleep 3; fi
+          done
