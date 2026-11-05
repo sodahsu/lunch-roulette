@@ -378,7 +378,7 @@ async function restoreFromUrl() {
         firstUnanswered === -1 ? Math.max(0, activeQuestions.value.length - 1) : firstUnanswered
     }
 
-    await attachRealtime()
+    attachRealtime()
     await refreshSessionState()
 
     if (session.value.status === 'open') {
@@ -513,24 +513,15 @@ async function refreshSessionState() {
   }
 }
 
-function attachRealtime(): Promise<void> {
+function attachRealtime() {
   unsubscribe?.()
-  if (!session.value) return Promise.resolve()
+  if (!session.value) return
 
-  let resolveSubscribed: (() => void) | undefined
-  const subscribed = new Promise<void>((resolve) => {
-    resolveSubscribed = resolve
+  // 不等握手：訂閱生效時 subscribeToSession 會自己補刷新，握手前的變更由那次刷新補抓；
+  // 等它只會拖慢畫面（開 postgres_changes wait 後約 550ms，上限曾是 1.5 秒）
+  unsubscribe = subscribeToSession(session.value.id, () => {
+    void refreshSessionState().catch(fail)
   })
-  unsubscribe = subscribeToSession(
-    session.value.id,
-    () => {
-      void refreshSessionState().catch(fail)
-    },
-    () => resolveSubscribed?.(),
-  )
-
-  // 即時頻道建立需要非同步握手；重新開局後若太早讓參加者加入，主持人會漏掉第一筆事件。
-  return Promise.race([subscribed, wait(1500)]).then(() => undefined)
 }
 
 async function startHost() {
@@ -542,7 +533,7 @@ async function startHost() {
     setRoomInUrl(session.value.code)
     screen.value = 'host'
     await updateJoinQr()
-    await attachRealtime()
+    attachRealtime()
     if (!audioMuted.value) startLobbyLoop()
     await refreshSessionState()
   })
@@ -677,7 +668,7 @@ async function joinRoom() {
     if (session.value.status !== 'open') throw new Error('這一局已經開始揭曉囉。')
     participant.value = await joinSession(session.value.id, displayName.value.trim())
     setRoomInUrl(session.value.code)
-    await attachRealtime()
+    attachRealtime()
     screen.value = 'quiz'
     await refreshSessionState()
   })

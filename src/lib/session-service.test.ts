@@ -249,29 +249,25 @@ describe('session-service', () => {
     it('refreshes on the first SUBSCRIBED because changes made before the handshake are not replayed', () => {
       const { emitStatus } = mockRealtimeChannel()
       const onChange = vi.fn()
-      const onSubscribed = vi.fn()
 
-      subscribeToSession('session-1', onChange, onSubscribed)
+      subscribeToSession('session-1', onChange)
       expect(onChange).not.toHaveBeenCalled()
       emitStatus('SUBSCRIBED')
 
-      expect(onSubscribed).toHaveBeenCalledTimes(1)
       expect(onChange).toHaveBeenCalledTimes(1)
     })
 
     it('refreshes again on every rejoin because events missed while disconnected are not replayed', () => {
       const { emitStatus } = mockRealtimeChannel()
       const onChange = vi.fn()
-      const onSubscribed = vi.fn()
 
-      subscribeToSession('session-1', onChange, onSubscribed)
+      subscribeToSession('session-1', onChange)
       emitStatus('SUBSCRIBED')
       emitStatus('CHANNEL_ERROR')
       emitStatus('SUBSCRIBED')
       emitStatus('TIMED_OUT')
       emitStatus('SUBSCRIBED')
 
-      expect(onSubscribed).toHaveBeenCalledTimes(1)
       expect(onChange).toHaveBeenCalledTimes(3)
     })
 
