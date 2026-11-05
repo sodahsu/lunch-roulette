@@ -125,12 +125,14 @@ test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ 
     await expect(ben.page.getByText(/全場結算中/)).toBeVisible()
     await expect(amy.page.getByText('你的飲食人格')).toHaveCount(0)
     await expect(ben.page.getByText('你的飲食人格')).toHaveCount(0)
+    await expect(amy.page.getByRole('button', { name: '分享人格卡' })).toHaveCount(0)
 
     await flipPersonaCards(host.page)
     // 翻牌時才寫入 food-avoid stat；成功率不得因此變動
     await expect(host.page.locator('.compatibility-score')).toHaveText(stageOneScore ?? '')
 
     await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+    await expect(amy.page.getByRole('button', { name: '分享人格卡' })).toBeVisible()
     await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(amy.page.getByText('靈魂飯友')).toBeVisible()
     await expect(ben.page.getByText('飲食天敵')).toBeVisible()

@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
+import { sharePersonaCard } from './lib/share-card'
 import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
 import {
   PERSONAS,
@@ -119,6 +120,17 @@ function pairedPeople(pairs: { participantId: string }[]) {
 }
 const soulmates = computed(() => (meResult.value ? pairedPeople(meResult.value.soulmates) : []))
 const opposites = computed(() => (meResult.value ? pairedPeople(meResult.value.opposites) : []))
+
+async function exportPersonaCard() {
+  if (!meResult.value) return
+  errorMessage.value = ''
+  try {
+    await sharePersonaCard(meResult.value)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') return
+    errorMessage.value = error instanceof Error ? error.message : '圖片匯出失敗，請再試一次'
+  }
+}
 
 const joinUrl = computed(() => {
   if (!session.value) return ''
@@ -1420,6 +1432,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </article>
+        <button v-if="session?.status === 'revealed'" class="secondary" type="button" @click="exportPersonaCard">分享人格卡</button>
       </template>
       <template v-else>
         <div class="state-code">N/A</div>
