@@ -62,12 +62,12 @@
 - [x] Landing / Host create flow 支援「建立後立即自己玩」。（CASE-19）
 - [x] 單人 provisional result hub。（CASE-19；2026-10-03 runtime smoke A）
 - [x] 單人 hub 保留分享 QR / 房號。（2026-10-03 runtime smoke：主持畫面保留房號與「複製加入連結」）
-- [ ] 多人加入時顯示局勢更新 cue。
+- [x] 多人加入時顯示局勢更新 cue。（CASE-20：第二人加入後狀態提示可見）
 - [x] joined / completed count 更新。（CASE-20；2026-10-03 runtime smoke B/C）
 - [x] 飯局難度只依 joined count 呈現，與 scoring 解耦。（source：`hostDifficulty` 只讀 `participants.length`）
-- [ ] 375 / 768 / desktop responsive。
-- [ ] focus / keyboard / reduced-motion 不 regression。
-- [ ] Provisional 與 Final 視覺標示足夠清楚，避免把暫時結果誤認為正式 Reveal。
+- [x] 375 / 768 / desktop responsive。（CASE-20：375、768、1280 預覽及鎖定結果截圖，無水平溢出）
+- [x] focus / keyboard / reduced-motion 不 regression。（CASE-20：reduced-motion 下以 Tab 聚焦鎖定按鈕、確認焦點外框並以 Enter 完成鎖定）
+- [x] Provisional 與 Final 視覺標示足夠清楚，避免把暫時結果誤認為正式 Reveal。（CASE-20：尚未鎖定與正式結果標示、六張畫面截圖）
 
 ## 6. Final Reveal regression
 
@@ -135,7 +135,7 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 
 **Current verdict: RELEASED v0.2.0 / ARCHIVE PENDING**
 
-仍未勾選：多人加入 cue、responsive / a11y、Provisional 與 Final 視覺區隔的人工檢查、archive review。
+仍未勾選：archive review。
 
 
 ## 9. Release gate

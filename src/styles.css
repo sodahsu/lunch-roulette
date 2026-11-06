@@ -2011,6 +2011,15 @@ input:focus {
   margin: 4px 0 0;
 }
 
+.preview-update {
+  margin: 0;
+  color: var(--lime);
+}
+
+.preview-update:empty {
+  display: none;
+}
+
 .difficulty-pill {
   border: 1px solid currentColor;
   padding: 8px 10px;
