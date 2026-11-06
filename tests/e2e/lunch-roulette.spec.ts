@@ -510,7 +510,7 @@ test('CASE-19 主持人可單人直接開局並先看到暫時人格', async ({ 
   }
 })
 
-test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成功率出現', async ({ browser }) => {
+test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成功率出現', async ({ browser }, testInfo) => {
   const host = await createHost(browser)
 
   try {
@@ -523,6 +523,7 @@ test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成�
     try {
       await expect(joinedMetric(host.page)).toHaveText('2')
       await expect(completedMetric(host.page)).toHaveText('1')
+      await expect(host.page.getByRole('status')).toContainText('局勢已更新')
 
       await host.page.getByRole('button', { name: /查看我的暫時人格/ }).click()
       await expect(host.page.getByTestId('provisional-persona')).toBeVisible()
@@ -534,6 +535,28 @@ test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成�
       await expect(host.page.getByTestId('provisional-success')).toBeVisible({ timeout: 15_000 })
       await expect(host.page.getByTestId('provisional-success')).toContainText(/\d+%/)
       await expect(host.page.getByTestId('open-preview')).toContainText('這不是正式結果')
+      await expect(host.page.getByTestId('open-preview')).toContainText('尚未鎖定')
+      await host.page.emulateMedia({ reducedMotion: 'reduce' })
+      for (const width of [375, 768, 1280]) {
+        await host.page.setViewportSize({ width, height: 900 })
+        await expect.poll(() => host.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+        await host.page.screenshot({ path: testInfo.outputPath(`provisional-${width}.png`), fullPage: true })
+      }
+      const lockButton = host.page.getByRole('button', { name: '鎖定並揭曉' })
+      await lockButton.focus()
+      await host.page.keyboard.press('Shift+Tab')
+      await host.page.keyboard.press('Tab')
+      await expect(lockButton).toBeFocused()
+      await expect(lockButton).toHaveCSS('outline-style', 'solid')
+      await lockButton.press('Enter')
+      await expect(host.page.locator('.success-score')).toBeVisible({ timeout: 15_000 })
+      await expect(host.page.getByText('FINAL / 正式結果 · 飯局已鎖定')).toBeVisible()
+      await expect(host.page.getByTestId('open-preview')).toHaveCount(0)
+      for (const width of [375, 768, 1280]) {
+        await host.page.setViewportSize({ width, height: 900 })
+        await expect.poll(() => host.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+        await host.page.screenshot({ path: testInfo.outputPath(`final-${width}.png`), fullPage: true })
+      }
     } finally {
       await closeActors(guest)
     }
