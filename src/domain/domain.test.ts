@@ -439,6 +439,13 @@ describe('similarity and pairing', () => {
     expect(result.soulmates).toEqual([])
     expect(result.opposites).toEqual([])
   })
+
+  it.each([['兩人', ['b']], ['多人', ['b', 'c', 'd']]])('相似度全相同時不產生配對：%s', (_label, others) => {
+    const rows = [response('a', allFirst), ...others.map((id) => response(id, allFirst))]
+    const result = buildParticipantResult('a', rows, sessionQuestions)
+    expect(result.soulmates).toEqual([])
+    expect(result.opposites).toEqual([])
+  })
 })
 
 describe('result snapshot', () => {
