@@ -857,5 +857,5 @@ export function selectQuestionsForSession(
 }
 
 // Compatibility alias for non-session-specific utilities and older imports.
-// Session runtime code should use selectQuestionsForSession(session.code).
+// Session runtime code should use selectQuestionsForSession(session.code, session.questionnaire_version).
 export const QUESTIONS = QUESTION_BANK

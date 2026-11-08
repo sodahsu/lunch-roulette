@@ -566,6 +566,7 @@ Verdict:
 ```typescript
 - v0.1: 固定 8 題（legacy room）
 - v0.2: deterministic 12 題（24 題庫，6 類，每類 2 題）
+- v0.3（2026-11-08 補註，不改寫上列歷史）：48 題庫（6 類，每類 8 題），每房仍抽 12 題，新場次使用，見 `openspec/changes/questionnaire-v03/`
 - 同一房號所有人取同一組
 - Reload 不換題
 ```
