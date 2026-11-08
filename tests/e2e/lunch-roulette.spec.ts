@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
 
 type Actor = {
@@ -107,6 +108,39 @@ async function closeActors(...actors: Actor[]) {
   await Promise.all(actors.map((actor) => actor.context.close()))
 }
 
+// PNG 的 IHDR 固定在第 16 byte 起放寬高，不必解碼就能驗證輸出尺寸
+function pngSize(buffer: Buffer) {
+  return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) }
+}
+
+// 把下載下來的 PNG 載回頁面的 canvas 取樣像素，驗證插圖、金框與成功率環真的畫上去
+async function samplePixels(page: Page, file: Buffer, points: [number, number][]) {
+  const dataUrl = `data:image/png;base64,${file.toString('base64')}`
+  return page.evaluate(
+    async ({ dataUrl, points }) => {
+      const image = new Image()
+      image.src = dataUrl
+      await image.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = image.width
+      canvas.height = image.height
+      const context = canvas.getContext('2d')!
+      context.drawImage(image, 0, 0)
+      return points.map(([x, y]) => Array.from(context.getImageData(x, y, 1, 1).data.slice(0, 3)))
+    },
+    { dataUrl, points },
+  )
+}
+
+async function downloadCard(page: Page, buttonName: string, testInfo: { outputPath: (name: string) => string }) {
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: buttonName }).click()
+  const download = await downloadPromise
+  const file = testInfo.outputPath(download.suggestedFilename())
+  await download.saveAs(file)
+  return { name: download.suggestedFilename(), data: await readFile(file) }
+}
+
 test.describe.configure({ mode: 'serial', timeout: 240_000 })
 
 test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }, testInfo) => {
@@ -126,6 +160,7 @@ test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ 
     await expect(amy.page.getByText('你的飲食人格')).toHaveCount(0)
     await expect(ben.page.getByText('你的飲食人格')).toHaveCount(0)
     await expect(amy.page.getByRole('button', { name: '分享人格卡' })).toHaveCount(0)
+    await expect(amy.page.getByRole('button', { name: '分享團體成功率卡' })).toHaveCount(0)
 
     await flipPersonaCards(host.page)
     // 翻牌時才寫入 food-avoid stat；成功率不得因此變動
@@ -138,6 +173,15 @@ test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ 
     const download = await downloadPromise
     expect(download.suggestedFilename()).toBe('dinner-persona.png')
     await download.saveAs(testInfo.outputPath('dinner-persona.png'))
+
+    await expect(amy.page.getByRole('button', { name: '分享團體成功率卡' })).toBeVisible()
+    const groupDownloadPromise = amy.page.waitForEvent('download')
+    await amy.page.getByRole('button', { name: '分享團體成功率卡' }).click()
+    const groupDownload = await groupDownloadPromise
+    expect(groupDownload.suggestedFilename()).toBe('dinner-group-success.png')
+    await groupDownload.saveAs(testInfo.outputPath('dinner-group-success.png'))
+    expect(pngSize(await readFile(testInfo.outputPath('dinner-group-success.png')))).toEqual({ width: 1080, height: 1350 })
+
     await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(amy.page.getByText('靈魂飯友')).toBeVisible()
     await expect(ben.page.getByText('飲食天敵')).toBeVisible()
@@ -678,4 +722,92 @@ test('CASE-23 參加者只讀得到自己的 response 與正式結果，open 時
   } finally {
     await closeActors(host, amy, ben)
   }
+})
+
+test('CASE-24 示意結果頁可下載含插圖的人格卡與團體成功率卡', async ({ page }, testInfo) => {
+  await page.goto('/?demo=result&persona=glutton')
+  await expect(page.getByRole('button', { name: '分享人格卡' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '分享團體成功率卡' })).toBeVisible()
+
+  const persona = await downloadCard(page, '分享人格卡', testInfo)
+  expect(persona.name).toBe('dinner-persona.png')
+  expect(pngSize(persona.data)).toEqual({ width: 1080, height: 1350 })
+  // 插圖區（720×720，左上 360,200）取樣：不是單一底色，代表人格插圖已畫入
+  const artPoints: [number, number][] = []
+  for (let row = 0; row < 8; row += 1) {
+    for (let col = 0; col < 8; col += 1) artPoints.push([380 + col * 90, 220 + row * 90])
+  }
+  const artPixels = await samplePixels(page, persona.data, artPoints)
+  expect(new Set(artPixels.map((pixel) => pixel.join(','))).size).toBeGreaterThan(30)
+  // 一般卡沒有金框：邊框位置維持低亮度的灰白細線
+  const [commonEdge] = await samplePixels(page, persona.data, [[24, 675]])
+  expect(commonEdge![0]!).toBeLessThan(90)
+
+  const group = await downloadCard(page, '分享團體成功率卡', testInfo)
+  expect(group.name).toBe('dinner-group-success.png')
+  expect(pngSize(group.data)).toEqual({ width: 1080, height: 1350 })
+  // 示意成功率約 83%：環的起點在正上方（圓心 540,650、半徑 300），應為螢光綠
+  const [gaugeTop] = await samplePixels(page, group.data, [[560, 350]])
+  expect(gaugeTop![1]!).toBeGreaterThan(200)
+  expect(gaugeTop![2]!).toBeLessThan(120)
+})
+
+test('CASE-25 稀有人格卡有金色外框；兩種卡面實際畫出的文字都不含他人暱稱', async ({ page }, testInfo) => {
+  // 記錄 canvas 實際畫出的每一段文字：隱私規則要看卡面，不是看按鈕或檔名
+  await page.addInitScript(() => {
+    const drawn: string[] = []
+    ;(window as unknown as { __drawn: string[] }).__drawn = drawn
+    const original = CanvasRenderingContext2D.prototype.fillText
+    CanvasRenderingContext2D.prototype.fillText = function (text: string, ...rest: [number, number, number?]) {
+      drawn.push(String(text))
+      return original.call(this, text, ...rest)
+    }
+  })
+  const drawnText = () =>
+    page.evaluate(() => (window as unknown as { __drawn: string[] }).__drawn.splice(0).join('|'))
+
+  // 示意頁畫面上有 Soda（自己）、Amy（靈魂飯友）、Ben（飲食天敵）
+  await page.goto('/?demo=result&persona=easygoing&rare=1')
+  const rare = await downloadCard(page, '分享人格卡', testInfo)
+  const [frame] = await samplePixels(page, rare.data, [[24, 675]])
+  // 金色：紅、綠高，藍低
+  expect(frame![0]!).toBeGreaterThan(150)
+  expect(frame![1]!).toBeGreaterThan(100)
+  expect(frame![2]!).toBeLessThan(140)
+  const personaText = await drawnText()
+  expect(personaText).toContain('真・都可以')
+  expect(personaText).toContain('頂級稀有')
+  expect(personaText).not.toMatch(/Soda|Amy|Ben|靈魂飯友|飲食天敵/)
+
+  await downloadCard(page, '分享團體成功率卡', testInfo)
+  const groupText = await drawnText()
+  expect(groupText).toContain('83%')
+  expect(groupText).toContain('有效樣本 3 人')
+  expect(groupText).toMatch(/\d{4}-\d{2}-\d{2}/)
+  expect(groupText).not.toMatch(/Soda|Amy|Ben|真・都可以|靈魂飯友|飲食天敵/)
+})
+
+test('CASE-26 連結預覽：入口 HTML 有 og 標籤，預覽圖與 favicon 可直接取得，且不含房號', async ({ request }) => {
+  const html = await (await request.get('/?room=ABC234')).text()
+  const meta = (property: string) =>
+    html.match(new RegExp(`<meta[^>]+(?:property|name)="${property}"[^>]+content="([^"]*)"`))?.[1]
+  expect(meta('og:title')).toBeTruthy()
+  expect(meta('og:description')).toBeTruthy()
+  expect(meta('og:image')).toMatch(/^https:\/\/.+\/og-image\.png$/)
+  expect(meta('og:image:width')).toBe('1200')
+  expect(meta('og:image:height')).toBe('630')
+  expect(meta('twitter:card')).toBe('summary_large_image')
+  expect(html).not.toContain('ABC234')
+
+  const og = await request.get('/og-image.png')
+  expect(og.status()).toBe(200)
+  expect(og.headers()['content-type']).toContain('image/png')
+  expect(pngSize(await og.body())).toEqual({ width: 1200, height: 630 })
+
+  const favicon = await request.get('/favicon.ico')
+  expect(favicon.status()).toBe(200)
+  expect(favicon.headers()['content-type']).toMatch(/image\//)
+  expect((await favicon.body()).readUInt16LE(2)).toBe(1)
+
+  expect((await request.get('/apple-touch-icon.png')).status()).toBe(200)
 })
