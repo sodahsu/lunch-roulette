@@ -109,7 +109,7 @@ async function closeActors(...actors: Actor[]) {
 
 test.describe.configure({ mode: 'serial', timeout: 240_000 })
 
-test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }) => {
+test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }, testInfo) => {
   const host = await createHost(browser)
   const amy = await joinParticipant(browser, host.code, 'Amy')
   const ben = await joinParticipant(browser, host.code, 'Ben')
@@ -133,6 +133,11 @@ test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ 
 
     await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(amy.page.getByRole('button', { name: '分享人格卡' })).toBeVisible()
+    const downloadPromise = amy.page.waitForEvent('download')
+    await amy.page.getByRole('button', { name: '分享人格卡' }).click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe('dinner-persona.png')
+    await download.saveAs(testInfo.outputPath('dinner-persona.png'))
     await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(amy.page.getByText('靈魂飯友')).toBeVisible()
     await expect(ben.page.getByText('飲食天敵')).toBeVisible()

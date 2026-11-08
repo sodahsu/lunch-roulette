@@ -20,7 +20,7 @@ Host 開房 / QR 加入
 → 結果頁列出大家都能吃的餐點
 ```
 
-### Solo-start（主要實作已存在，完整驗證中）
+### Solo-start
 
 `task/solo-start` 目前規格方向是「1 個人就能先開局，朋友之後再加入」，不是另外做一套 Solo mode：
 
@@ -131,7 +131,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Playwright 目前包含 CASE-01～21；CASE-19～21 為 Solo-start 覆蓋。完整 suite 目前仍被 CASE-01 timeout 阻塞，不能視為 runtime PASS。涵蓋：
+Playwright 目前包含 CASE-01～23；CASE-19～23 涵蓋 Solo-start 與隱私。實際驗證結果以執行紀錄與 CI 為準。涵蓋：
 
 - 兩段式 Reveal
 - 未完成者
