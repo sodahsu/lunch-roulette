@@ -481,6 +481,8 @@ session = revealed
 
 ### Questionnaire v0.2
 
+> 2026-11-08 補註：新場次已改用問卷 v0.3（48 題，每房仍抽 12 題），見 `openspec/changes/questionnaire-v03/`；以下為 v0.2 當時的驗收紀錄，不改寫。
+
 - [x] 24 題題庫。
 - [x] 6 類，每類 4 題。
 - [x] 每房 deterministic 抽 12 題。
