@@ -186,9 +186,10 @@ Vercel Production
 
 ```json
 {
-  "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
+  "ignoreCommand": "[ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "git": {
     "deploymentEnabled": {
+      "*": false,
       "**": false,
       "main": true
     }
@@ -196,7 +197,7 @@ Vercel Production
 }
 ```
 
-兩層並用：`deploymentEnabled` 用 minimatch 語法，`*` 不跨 `/`，所以改用 `**` 才擋得到 `sodahsu/xxx`、`docs/17-xxx` 這類含斜線的分支；`ignoreCommand` 是備援，非 `main` 時 exit 0（略過建置），`main` 時 exit 1（繼續建置）。`src/config/vercel-config.test.ts` 會斷言這個政策。
+兩層並用：`deploymentEnabled` 用 minimatch 語法，`*` 不跨 `/`，所以改用 `**` 才擋得到 `sodahsu/xxx`、`docs/17-xxx` 這類含斜線的分支；`ignoreCommand` 是備援，非 `main` 時 exit 0（略過建置），`main` 時 exit 1（繼續建置）；取不到 `VERCEL_GIT_COMMIT_REF`（空或未設定）時也 exit 1 繼續建置，避免把 `main` 的 production 一併略過，這時非 `main` 由 `deploymentEnabled` 擋下。`src/config/vercel-config.test.ts` 會斷言這個政策。
 
 Vite build output：`dist`。
 

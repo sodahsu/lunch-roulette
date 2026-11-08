@@ -12,15 +12,25 @@ const config: VercelConfig = JSON.parse(
 )
 
 // Vercel 文件：ignoreCommand exit 0 = 略過建置（CANCELED），exit 1 = 繼續建置。
-function ignoreExitCode(branch: string): number | null {
-  return spawnSync('sh', ['-c', config.ignoreCommand ?? 'exit 1'], {
-    env: { ...process.env, VERCEL_GIT_COMMIT_REF: branch },
-  }).status
+function ignoreExitCode(branch: string | undefined): number | null {
+  const env = { ...process.env }
+  delete env.VERCEL_GIT_COMMIT_REF
+  if (branch !== undefined) env.VERCEL_GIT_COMMIT_REF = branch
+  return spawnSync('sh', ['-c', config.ignoreCommand ?? 'exit 1'], { env }).status
 }
 
 describe('vercel.json 部署政策', () => {
   it('只有 main 會繼續建置', () => {
     expect(ignoreExitCode('main')).toBe(1)
+  })
+
+  // 取不到分支名時不能略過建置，否則 main 的 production 也會被一併略過；
+  // 這時非 main 由 deploymentEnabled 擋下。
+  it.each([
+    ['空字串', ''],
+    ['未設定', undefined],
+  ])('VERCEL_GIT_COMMIT_REF %s 時繼續建置', (_label, value) => {
+    expect(ignoreExitCode(value)).toBe(1)
   })
 
   // `*` 不跨 `/`，含斜線的分支（sodahsu/xxx、docs/17-xxx）曾因此產生 Preview，
@@ -41,6 +51,7 @@ describe('vercel.json 部署政策', () => {
     const rules = config.git?.deploymentEnabled
     expect(typeof rules).toBe('object')
     const map = rules as Record<string, boolean>
+    expect(map['*']).toBe(false)
     expect(map['**']).toBe(false)
     expect(map['main']).toBe(true)
     expect(Object.entries(map).filter(([, enabled]) => enabled)).toEqual([
