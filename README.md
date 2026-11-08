@@ -201,6 +201,24 @@ Vercel Production
 
 Vite build output：`dist`。
 
+### 暫不開放搜尋收錄
+
+網站維持公開、不需登入，但目前內容還不完整，所以暫時請搜尋引擎不要索引，避免不完整的版本被收錄。完整後再撤回。
+
+兩處設定（雙保險，第二處涵蓋非 Vercel 的託管情境）：
+
+- `vercel.json` 的 `headers`：對所有路徑回 `X-Robots-Tag: noindex, nofollow`。
+- `index.html` `<head>` 的 `<meta name="robots" content="noindex, nofollow">`。
+
+不要用 `robots.txt` 的 `Disallow: /`：被擋住的爬蟲讀不到 `noindex`，已收錄的頁面反而不會被移除。目前沒有 `public/robots.txt`；若日後新增，只能允許爬取（`User-agent: *` + `Allow: /`）。這項設定只影響搜尋引擎索引，不加登入保護，網站照常公開使用。
+
+撤回方式：
+
+1. 刪掉 `vercel.json` 的 `headers` 區塊。
+2. 刪掉 `index.html` 的 `<meta name="robots" ...>` 與上方註解。
+3. 刪除 `src/config/noindex.test.ts`（它斷言 noindex 存在，不刪會失敗），再跑 `pnpm test:unit`、`pnpm build` 確認其餘測試通過。
+4. 合併到 `main` 並待 Production 部署完成後，用 `curl -I <網址>` 確認已沒有 `X-Robots-Tag`。已被標記 noindex 的頁面要等搜尋引擎重新爬取才會重新收錄。
+
 ## Specs
 
 現行已驗證規格：
