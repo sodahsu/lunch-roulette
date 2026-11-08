@@ -186,14 +186,17 @@ Vercel Production
 
 ```json
 {
+  "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "git": {
     "deploymentEnabled": {
-      "*": false,
+      "**": false,
       "main": true
     }
   }
 }
 ```
+
+兩層並用：`deploymentEnabled` 用 minimatch 語法，`*` 不跨 `/`，所以改用 `**` 才擋得到 `sodahsu/xxx`、`docs/17-xxx` 這類含斜線的分支；`ignoreCommand` 是備援，非 `main` 時 exit 0（略過建置），`main` 時 exit 1（繼續建置）。`src/config/vercel-config.test.ts` 會斷言這個政策。
 
 Vite build output：`dist`。
 
