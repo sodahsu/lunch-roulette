@@ -59,6 +59,7 @@ export function calculateGroupStats(
 const DINNER_SUCCESS_ALGORITHM_BY_QUESTIONNAIRE: Record<string, 'v1'> = {
   'v0.1': 'v1',
   'v0.2': 'v1',
+  'v0.3': 'v1',
 }
 
 function calculateDinnerSuccessRateV1(stats: GroupQuestionStat[]): DinnerSuccessResult {
