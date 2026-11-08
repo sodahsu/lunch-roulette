@@ -2,9 +2,7 @@
 
 ## Purpose
 定義團體成功率與個人人格的揭曉內容、稀有卡的判定與呈現規則，以及主持人與參與者各自在結果頁看到的內容；全程不公開任何人的個人逐題答案。
-
 ## Requirements
-
 ### Requirement: Reveal 只使用完整 response
 The system SHALL calculate reveal results using only complete responses captured after the session is locked.
 
@@ -160,25 +158,35 @@ The system SHALL mark rare Persona cards independently from questionnaire answer
 - THEN rare 判定與 rare reason 應保持一致
 
 ### Requirement: Pairing 只比較 complete participants
-The system SHALL calculate participant similarity only among complete responses from the same active questionnaire.
+系統 SHALL 只比較同一份問卷的完整作答者，且同一人不得同時出現在同一份結果的飯友與天敵清單。
 
 #### Scenario: 計算 similarity
 - WHEN 比較兩位 complete participants
 - THEN similarity 應為雙方 active questions 中答案完全相同的題數除以可比較題數
 
 #### Scenario: 靈魂飯友與飲食天敵
-- WHEN 至少存在另一位 complete participant
+- WHEN 其他 complete participants 的相似度存在不同值
 - THEN 系統應列出 similarity 最高者為靈魂飯友
 - AND 列出 similarity 最低者為飲食天敵
 - AND 不得把自己列入 pairing
 
 #### Scenario: similarity 並列
-- WHEN 多人具有相同最高或最低 similarity
+- WHEN 多人具有相同最高或最低 similarity，且最高與最低不同
 - THEN 系統應保留所有並列 participants
 
+#### Scenario: 最高與最低相似度相同
+- WHEN 所有其他完整作答者的相似度相同
+- THEN 飯友與天敵清單均為空
+- AND 畫面顯示既有無配對狀態
+
+#### Scenario: 最高與最低相似度不同
+- WHEN 至少存在不同的相似度
+- THEN 飯友保留所有最高者，天敵保留所有最低者
+- AND 不得把自己列入配對
+
 #### Scenario: 只有一位 complete participant
-- WHEN 只有一位 complete participant
-- THEN 系統不得產生靈魂飯友或飲食天敵
+- WHEN 沒有其他完整作答者
+- THEN 飯友與天敵清單均為空
 
 ### Requirement: Persona Reveal 後應把注意力導回現場互動
 The system SHALL provide a final host-screen social prompt after persona cards have synchronized.
@@ -188,3 +196,77 @@ The system SHALL provide a final host-screen social prompt after persona cards h
 - THEN host 畫面應提示所有人查看自己的手機
 - AND 引導玩家找出自己的靈魂飯友與飲食天敵
 - AND 不需要公開個人逐題答案
+
+### Requirement: 個人人格卡可在正式揭曉後匯出
+系統 SHALL 讓玩家在正式 Reveal 後於個人裝置產生 PNG，支援檔案分享時使用系統分享，否則下載圖片。
+
+#### Scenario: 正式揭曉之前
+- WHEN 場次尚未正式揭曉
+- THEN 不顯示匯出按鈕
+
+#### Scenario: 匯出隱私
+- WHEN 玩家匯出人格卡
+- THEN 圖片只含自己的人格名稱、稀有度及金句等個人資訊
+- AND 不得含他人暱稱、答案、配對結果或全場成功率
+- AND 圖片在本機產生，不上傳或呼叫外部服務
+- AND 不包含房號或玩家序號（NEEDS_CONFIRMATION：是否允許加入）
+
+#### Scenario: 雙人關係卡
+- WHEN 兩人局的配對相似度相同
+- THEN 使用空配對狀態
+- AND NEEDS_CONFIRMATION：是否改為完整雙人關係卡，尚未實作
+
+### Requirement: Open 階段可顯示私有 provisional persona
+The system SHALL allow a complete participant to view a deterministic provisional persona while the session remains open, without persisting a formal participant result.
+
+#### Scenario: 單人完成答題
+- WHEN session status 為 `open`
+- AND participant 已完成 active questionnaire
+- THEN 系統應使用既有 persona scoring rules 建立該 participant 的 provisional persona
+- AND provisional persona 只能顯示給該 participant
+- AND 不得寫入正式 `participant_results`
+
+#### Scenario: Open 階段修改答案
+- WHEN participant 在 `open` 狀態修改答案
+- THEN 舊 provisional persona 應視為失效
+- AND 系統應以 latest complete answers 重新計算
+- AND 正式 persisted result 仍不得被建立
+
+### Requirement: 單一 complete participant 不得顯示團體成功率
+The system SHALL not present the dinner success percentage when fewer than two complete participants are available.
+
+#### Scenario: 只有一位 complete participant
+- WHEN session status 為 `open`
+- AND complete participant count = 1
+- THEN UI 應顯示單人狀態
+- AND 不得顯示 group dinner success percentage
+- AND 不得將缺少群體樣本解讀為 0%
+- AND 不得產生 soulmate 或 opposite
+
+### Requirement: Open 階段可顯示 provisional group preview
+The system SHALL derive a non-persisted group preview from current complete responses when at least two complete participants exist.
+
+#### Scenario: 兩位以上 complete participants
+- WHEN session status 為 `open`
+- AND complete participant count >= 2
+- THEN 系統應使用該 questionnaire version 對應的既有 dinner-success algorithm 計算 provisional success rate
+- AND 應清楚標示結果尚未鎖定
+- AND 不得寫入正式 `result_snapshots`
+
+#### Scenario: 有效樣本改變
+- WHEN open session 中 participant 完成、變成 incomplete、重新完成或修改 answers
+- THEN provisional group preview 應依 latest complete responses 重新推導
+
+### Requirement: 正式 Reveal 必須重新從 locked source of truth 建立結果
+The system SHALL rebuild formal results from locked responses instead of persisting a previously computed provisional object.
+
+#### Scenario: Host 從 provisional state 開始正式 Reveal
+- WHEN host 將 session 由 `open` 切換為 `locked`
+- THEN open provisional result 應停止更新
+- AND正式 Stage A 應由 locked complete responses 重新計算 dinner success
+- AND正式 Stage B 才能 persist `result_snapshots` 與 `participant_results`
+
+#### Scenario: Final persona 取代 provisional persona
+- WHEN session 由 `locked` 切換為 `revealed`
+- THEN complete participant 應顯示 persisted formal result
+- AND provisional persona 不再作為結果來源

@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
+import { sharePersonaCard } from './lib/share-card'
 import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
 import {
   PERSONAS,
@@ -92,6 +93,8 @@ const quizInterstitialVisible = ref(false)
 const audioMuted = ref(isAudioMuted())
 let quizInterstitialTimer: number | null = null
 let openPreviewFingerprint = ''
+let openRosterFingerprint: string | null = null
+const previewUpdateCount = ref(0)
 // 每開新的一局就遞增；上一局尚未完成的 refreshSessionState 回來時據此丟棄結果
 let roundGeneration = 0
 let unsubscribe: (() => void) | null = null
@@ -119,6 +122,17 @@ function pairedPeople(pairs: { participantId: string }[]) {
 }
 const soulmates = computed(() => (meResult.value ? pairedPeople(meResult.value.soulmates) : []))
 const opposites = computed(() => (meResult.value ? pairedPeople(meResult.value.opposites) : []))
+
+async function exportPersonaCard() {
+  if (!meResult.value) return
+  errorMessage.value = ''
+  try {
+    await sharePersonaCard(meResult.value)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') return
+    errorMessage.value = error instanceof Error ? error.message : '圖片匯出失敗，請再試一次'
+  }
+}
 
 const joinUrl = computed(() => {
   if (!session.value) return ''
@@ -457,6 +471,7 @@ async function refreshSessionState() {
 
   if (latest.status === 'open') {
     if (isHost.value) {
+      const rosterFingerprint = latestParticipants.map((person) => `${person.id}:${person.completed_at ?? ''}`).sort().join('|')
       const nextFingerprint = participants.value
         .filter((person) => Boolean(person.completed_at))
         .map((person) => `${person.id}:${person.completed_at}`)
@@ -469,6 +484,10 @@ async function refreshSessionState() {
         groupStats.value = preview
         openPreviewFingerprint = nextFingerprint
       }
+      if (openRosterFingerprint !== null && rosterFingerprint !== openRosterFingerprint) {
+        previewUpdateCount.value += 1
+      }
+      openRosterFingerprint = rosterFingerprint
     } else {
       groupStats.value = null
     }
@@ -610,6 +629,8 @@ function resetRound() {
   participants.value = []
   completedCount.value = 0
   openPreviewFingerprint = ''
+  openRosterFingerprint = null
+  previewUpdateCount.value = 0
   answers.value = {}
   questionIndex.value = 0
   groupStats.value = null
@@ -1133,7 +1154,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="session?.status === 'locked' && groupStats" class="dinner-success-reveal">
-        <div class="eyebrow">今晚的飯局命運已算出來</div>
+        <div class="eyebrow">FINAL / 正式結果 · 飯局已鎖定</div>
         <p class="success-question">🍽️ 我們這團今晚約成飯的成功率</p>
 
         <div v-if="successRevealBeat === 1" class="success-build-up" aria-live="polite">
@@ -1175,7 +1196,7 @@ onBeforeUnmount(() => {
 
       <!-- open 時 groupStats 也會被填入暫定預覽，必須限定 revealed，否則會蓋掉下方的鎖定按鈕 -->
       <div v-else-if="session?.status === 'revealed' && groupStats" class="group-result host-results">
-        <div class="eyebrow">人格卡已同步翻開 · 有效樣本 {{ resultSampleSize }} 人</div>
+        <div class="eyebrow">FINAL / 正式結果 · 人格卡已同步翻開 · 有效樣本 {{ resultSampleSize }} 人</div>
 
         <article class="group-verdict-card">
           <span class="result-kicker">🍽️ 今晚約成飯的成功率</span>
@@ -1244,6 +1265,7 @@ onBeforeUnmount(() => {
           <span class="difficulty-pill">{{ hostDifficulty.label }}</span>
         </div>
         <p class="host-joke">{{ hostDifficulty.text }}</p>
+        <p class="preview-update" role="status" aria-live="polite">{{ previewUpdateCount ? `局勢已更新 · ${previewUpdateCount}` : '' }}</p>
 
         <template v-if="resultSampleSize > 1">
           <div class="provisional-score" data-testid="provisional-success">
@@ -1369,7 +1391,7 @@ onBeforeUnmount(() => {
 
     <section v-else-if="screen === 'result'" class="panel result-panel">
       <template v-if="meResult">
-        <div class="eyebrow persona-result-label">你的飲食人格 / DINNER IDENTITY</div>
+        <div class="eyebrow persona-result-label">FINAL / 正式人格 · 你的飲食人格 / DINNER IDENTITY</div>
         <div v-if="meResult.rare" class="rare-announce">
           <p>✨ 恭喜，你拿到本場的頂級稀有卡 ✨</p>
           <p class="rare-reason"><strong>稀有原因：</strong>{{ meResult.rareReason ?? RARE_CARD_REASON }}</p>
@@ -1420,6 +1442,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </article>
+        <button v-if="session?.status === 'revealed'" class="secondary" type="button" @click="exportPersonaCard">分享人格卡</button>
       </template>
       <template v-else>
         <div class="state-code">N/A</div>

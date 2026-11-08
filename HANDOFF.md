@@ -6,6 +6,12 @@ handoff_status: ready_for_handoff
 
 # Lunch Roulette《都可以？》Solo Start｜AI 工作交接
 
+## 2026-11-08｜dev 發布驗證
+
+- 本機 typecheck、unit 71/71、build、完整 E2E 23/23 與 OpenSpec strict 通過。
+- 正式 Reveal 後下載的人格卡 PNG 已檢視，1080 × 1350 的中文字與邊界正常；此證據為單一人格卡，其他人格與實機分享仍需人工判斷。
+- `solo-start` 與 `result-share-card` 已歸檔並同步 canonical specs。main 與 dev 的 migration 目錄無差異；這次合併沒有新增 migration。
+
 ## Resume Here
 
 **交付定位：**production 目前是 `v0.2.1`。這份文件是 2026-10-11 收尾時的狀態快照，供下一個 Agent 接手後續優化或 archive；文件本身不授權 merge 到 `main`、建立 tag / Release，也不授權修改遠端 DB。

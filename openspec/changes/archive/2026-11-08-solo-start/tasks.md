@@ -62,12 +62,12 @@
 - [x] Landing / Host create flow 支援「建立後立即自己玩」。（CASE-19）
 - [x] 單人 provisional result hub。（CASE-19；2026-10-03 runtime smoke A）
 - [x] 單人 hub 保留分享 QR / 房號。（2026-10-03 runtime smoke：主持畫面保留房號與「複製加入連結」）
-- [ ] 多人加入時顯示局勢更新 cue。
+- [x] 多人加入時顯示局勢更新 cue。（CASE-20：第二人加入後狀態提示可見）
 - [x] joined / completed count 更新。（CASE-20；2026-10-03 runtime smoke B/C）
 - [x] 飯局難度只依 joined count 呈現，與 scoring 解耦。（source：`hostDifficulty` 只讀 `participants.length`）
-- [ ] 375 / 768 / desktop responsive。
-- [ ] focus / keyboard / reduced-motion 不 regression。
-- [ ] Provisional 與 Final 視覺標示足夠清楚，避免把暫時結果誤認為正式 Reveal。
+- [x] 375 / 768 / desktop responsive。（CASE-20：375、768、1280 預覽及鎖定結果截圖，無水平溢出）
+- [x] focus / keyboard / reduced-motion 不 regression。（CASE-20：reduced-motion 下以 Tab 聚焦鎖定按鈕、確認焦點外框並以 Enter 完成鎖定）
+- [x] Provisional 與 Final 視覺標示足夠清楚，避免把暫時結果誤認為正式 Reveal。（CASE-20：尚未鎖定與正式結果標示、六張畫面截圖）
 
 ## 6. Final Reveal regression
 
@@ -107,7 +107,7 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] Host-as-participant multi-browser smoke PASS。（2026-10-03 runtime smoke）
 - [x] locked / revealed late-join regression PASS。（2026-10-03 runtime smoke）
 - [x] privacy / RLS regression PASS。（2026-10-03 runtime smoke）
-- [ ] 依最終證據更新本 tasks / HANDOFF，完成 archive readiness review。
+- [x] 依最終證據更新本 tasks / HANDOFF，完成 archive readiness review。（2026-11-08：本機 full E2E 23/23、unit 71/71、typecheck、build 與 strict validation 通過）
 
 測試依據：`docs/solo-start-test-plan.md`。不要重寫產品規格或另外建立第二套測試口徑。
 
@@ -127,15 +127,15 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 
 ## 8. Archive gate
 
-- [ ] 所有已確認 Requirements 實作完成。
-- [ ] 所有驗證通過。
+- [x] 所有已確認 Requirements 實作完成。（CASE-19～23 與既有 runtime smoke）
+- [x] 所有驗證通過。（2026-11-08 本機 full E2E 23/23、unit 71/71、typecheck、build 與 strict validation）
 - [x] NEEDS_CONFIRMATION 已依目前 implementation baseline 解決或明確移出 scope。
-- [ ] capability delta 與 code 無 contract drift。
-- [ ] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
+- [x] capability delta 與 code 無 contract drift。（檢視 open provisional、food consensus、正式 Reveal 與既有案例）
+- [x] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
 
-**Current verdict: RELEASED v0.2.0 / ARCHIVE PENDING**
+**Current verdict: RELEASED v0.2.0 / ARCHIVE READY**
 
-仍未勾選：多人加入 cue、responsive / a11y、Provisional 與 Final 視覺區隔的人工檢查、archive review。
+歸檔後以 canonical specs 為準。
 
 
 ## 9. Release gate
@@ -144,7 +144,7 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] 建立對應 RC tag：`v0.2.0-rc.1`（指向 `1a0e83f`）。
 - [x] RC 上完成 unit / typecheck / build / E2E / runtime smoke（PR #10 CI；2026-10-03 production runtime smoke 兩支全 PASS，房號 84TWBV / SN9HEP）。
 - [x] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag（rc.1 未需修正）。
-- [ ] `dev` 的 Solo Start 整合驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。
+- [x] `dev` 的 Solo Start 整合驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。（2026-11-08 歸檔同步）
 - [x] 建立 `dev → main` production PR（#10，已合併 `a5d17ca`）；App version 更新為 `0.2.0`。
 - [x] 建立 immutable Git tag `v0.2.0`（指向 `cde197b`）。
 - [x] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制（https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.0）。

@@ -109,7 +109,7 @@ async function closeActors(...actors: Actor[]) {
 
 test.describe.configure({ mode: 'serial', timeout: 240_000 })
 
-test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }) => {
+test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ browser }, testInfo) => {
   const host = await createHost(browser)
   const amy = await joinParticipant(browser, host.code, 'Amy')
   const ben = await joinParticipant(browser, host.code, 'Ben')
@@ -125,12 +125,19 @@ test('CASE-01 先公布晚餐成功率，再同步翻手機人格卡', async ({ 
     await expect(ben.page.getByText(/全場結算中/)).toBeVisible()
     await expect(amy.page.getByText('你的飲食人格')).toHaveCount(0)
     await expect(ben.page.getByText('你的飲食人格')).toHaveCount(0)
+    await expect(amy.page.getByRole('button', { name: '分享人格卡' })).toHaveCount(0)
 
     await flipPersonaCards(host.page)
     // 翻牌時才寫入 food-avoid stat；成功率不得因此變動
     await expect(host.page.locator('.compatibility-score')).toHaveText(stageOneScore ?? '')
 
     await expect(amy.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
+    await expect(amy.page.getByRole('button', { name: '分享人格卡' })).toBeVisible()
+    const downloadPromise = amy.page.waitForEvent('download')
+    await amy.page.getByRole('button', { name: '分享人格卡' }).click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe('dinner-persona.png')
+    await download.saveAs(testInfo.outputPath('dinner-persona.png'))
     await expect(ben.page.getByText('你的飲食人格')).toBeVisible({ timeout: 15_000 })
     await expect(amy.page.getByText('靈魂飯友')).toBeVisible()
     await expect(ben.page.getByText('飲食天敵')).toBeVisible()
@@ -508,7 +515,7 @@ test('CASE-19 主持人可單人直接開局並先看到暫時人格', async ({ 
   }
 })
 
-test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成功率出現', async ({ browser }) => {
+test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成功率出現', async ({ browser }, testInfo) => {
   const host = await createHost(browser)
 
   try {
@@ -521,6 +528,7 @@ test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成�
     try {
       await expect(joinedMetric(host.page)).toHaveText('2')
       await expect(completedMetric(host.page)).toHaveText('1')
+      await expect(host.page.getByRole('status')).toContainText('局勢已更新')
 
       await host.page.getByRole('button', { name: /查看我的暫時人格/ }).click()
       await expect(host.page.getByTestId('provisional-persona')).toBeVisible()
@@ -532,6 +540,28 @@ test('CASE-20 第二人後加入不重置第一人，完成後 provisional 成�
       await expect(host.page.getByTestId('provisional-success')).toBeVisible({ timeout: 15_000 })
       await expect(host.page.getByTestId('provisional-success')).toContainText(/\d+%/)
       await expect(host.page.getByTestId('open-preview')).toContainText('這不是正式結果')
+      await expect(host.page.getByTestId('open-preview')).toContainText('尚未鎖定')
+      await host.page.emulateMedia({ reducedMotion: 'reduce' })
+      for (const width of [375, 768, 1280]) {
+        await host.page.setViewportSize({ width, height: 900 })
+        await expect.poll(() => host.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+        await host.page.screenshot({ path: testInfo.outputPath(`provisional-${width}.png`), fullPage: true })
+      }
+      const lockButton = host.page.getByRole('button', { name: '鎖定並揭曉' })
+      await lockButton.focus()
+      await host.page.keyboard.press('Shift+Tab')
+      await host.page.keyboard.press('Tab')
+      await expect(lockButton).toBeFocused()
+      await expect(lockButton).toHaveCSS('outline-style', 'solid')
+      await lockButton.press('Enter')
+      await expect(host.page.locator('.success-score')).toBeVisible({ timeout: 15_000 })
+      await expect(host.page.getByText('FINAL / 正式結果 · 飯局已鎖定')).toBeVisible()
+      await expect(host.page.getByTestId('open-preview')).toHaveCount(0)
+      for (const width of [375, 768, 1280]) {
+        await host.page.setViewportSize({ width, height: 900 })
+        await expect.poll(() => host.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+        await host.page.screenshot({ path: testInfo.outputPath(`final-${width}.png`), fullPage: true })
+      }
     } finally {
       await closeActors(guest)
     }

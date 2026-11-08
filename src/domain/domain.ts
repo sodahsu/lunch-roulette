@@ -252,8 +252,8 @@ export function buildParticipantResult(
   return {
     persona: assignPersona(current.answers, questions),
     ...rareFields(participantId),
-    soulmates: comparisons.filter((item) => item.similarity === max),
-    opposites: comparisons.filter((item) => item.similarity === min),
+    soulmates: max === min ? [] : comparisons.filter((item) => item.similarity === max),
+    opposites: max === min ? [] : comparisons.filter((item) => item.similarity === min),
   }
 }
 
