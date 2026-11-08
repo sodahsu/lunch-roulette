@@ -797,7 +797,7 @@ export const QUESTION_BANK_V03: Question[] = [
   {
     id: 'app-habit',
     category: 'identity',
-    prompt: '你手機裡最常打開的是哪個 App？',
+    prompt: '找吃的時候，你手機裡最常打開的是哪個 App？',
     required: true,
     options: [
       { id: 'map-app', label: '地圖，收藏了一百家', emoji: '📍', scores: { adventurer: 2, foodFanatic: 2, orderCaptain: 1 } },
