@@ -259,6 +259,13 @@ input:focus {
   font-weight: 800;
 }
 
+.share-actions {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 520px);
+  margin-top: 14px;
+}
+
 .action-stack,
 .bottom-actions {
   display: grid;

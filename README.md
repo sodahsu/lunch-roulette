@@ -40,7 +40,7 @@ Host 開房 / QR 加入
 
 Solo-start 的 provisional result 不會寫入正式 `result_snapshots` / `participant_results`；正式結果仍以 `locked` 當下的 complete responses 重新建立。每位 participant 只在自己的裝置看到 provisional Persona；群體 provisional 成功率與 food consensus 只在 Host Control Room 聚合顯示，不放寬 participant 讀取他人 responses 的 RLS。只有 1 位 complete participant 時，不顯示團體成功率百分比，也不產生 soulmate / opposite。
 
-v0.2 題庫共有 24 題、6 類；每個房間依房號固定選 12 題，每類 2 題。舊 v0.1 房間保留原 8 題。完成答題後另有獨立的忌口步驟；結果只保存各類排除計數，不影響 Persona、配對或成功率。
+新場次使用問卷 v0.3：題庫共有 48 題、6 類，每類 8 題；每個房間依房號固定選 12 題，每類 2 題，`self-image` 固定入選。進行中的 v0.2 房間沿用 v0.2 的 24 題題庫（6 類，每類 4 題，每房同樣抽 12 題）與原本的配分，舊 v0.1 房間保留原 8 題。完成答題後另有獨立的忌口步驟；結果只保存各類排除計數，不影響 Persona、配對或成功率。
 
 ## Visual direction
 
@@ -131,7 +131,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Playwright 目前包含 CASE-01～23；CASE-19～23 涵蓋 Solo-start 與隱私。實際驗證結果以執行紀錄與 CI 為準。涵蓋：
+Playwright 目前包含 CASE-01～26；CASE-19～23 涵蓋 Solo-start 與隱私，CASE-24～26 涵蓋人格卡／團體成功率卡下載與連結預覽。實際驗證結果以執行紀錄與 CI 為準。涵蓋：
 
 - 兩段式 Reveal
 - 未完成者
@@ -186,16 +186,38 @@ Vercel Production
 
 ```json
 {
+  "ignoreCommand": "[ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "git": {
     "deploymentEnabled": {
       "*": false,
+      "**": false,
       "main": true
     }
   }
 }
 ```
 
+兩層並用：`deploymentEnabled` 用 minimatch 語法，`*` 不跨 `/`，所以改用 `**` 才擋得到 `sodahsu/xxx`、`docs/17-xxx` 這類含斜線的分支；`ignoreCommand` 是備援，非 `main` 時 exit 0（略過建置），`main` 時 exit 1（繼續建置）；取不到 `VERCEL_GIT_COMMIT_REF`（空或未設定）時也 exit 1 繼續建置，避免把 `main` 的 production 一併略過，這時非 `main` 由 `deploymentEnabled` 擋下。`src/config/vercel-config.test.ts` 會斷言這個政策。
+
 Vite build output：`dist`。
+
+### 暫不開放搜尋收錄
+
+網站維持公開、不需登入，但目前內容還不完整，所以暫時請搜尋引擎不要索引，避免不完整的版本被收錄。完整後再撤回。
+
+兩處設定（雙保險，第二處涵蓋非 Vercel 的託管情境）：
+
+- `vercel.json` 的 `headers`：對所有路徑回 `X-Robots-Tag: noindex, nofollow`。
+- `index.html` `<head>` 的 `<meta name="robots" content="noindex, nofollow">`。
+
+不要用 `robots.txt` 的 `Disallow: /`：被擋住的爬蟲讀不到 `noindex`，已收錄的頁面反而不會被移除。目前沒有 `public/robots.txt`；若日後新增，只能允許爬取（`User-agent: *` + `Allow: /`）。這項設定只影響搜尋引擎索引，不加登入保護，網站照常公開使用。
+
+撤回方式：
+
+1. 刪掉 `vercel.json` 的 `headers` 區塊。
+2. 刪掉 `index.html` 的 `<meta name="robots" ...>` 與上方註解。
+3. 刪除 `src/config/noindex.test.ts`（它斷言 noindex 存在，不刪會失敗），再跑 `pnpm test:unit`、`pnpm build` 確認其餘測試通過。
+4. 合併到 `main` 並待 Production 部署完成後，用 `curl -I <網址>` 確認已沒有 `X-Robots-Tag`。已被標記 noindex 的頁面要等搜尋引擎重新爬取才會重新收錄。
 
 ## Specs
 

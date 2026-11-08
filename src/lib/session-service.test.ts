@@ -72,6 +72,22 @@ describe('session-service', () => {
   })
 
   describe('createSession retry logic', () => {
+    it('creates new sessions on questionnaire v0.3', async () => {
+      const insert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'sess-v03', code: 'ABCDEF', host_user_id: 'test-user-123', status: 'open', questionnaire_version: 'v0.3' },
+            error: null,
+          }),
+        }),
+      })
+      mockFrom.mockReturnValue({ insert })
+
+      await createSession()
+
+      expect(insert).toHaveBeenCalledWith(expect.objectContaining({ questionnaire_version: 'v0.3' }))
+    })
+
     it('returns the session directly on first successful insert', async () => {
       const fakeSession = {
         id: 'sess-1',

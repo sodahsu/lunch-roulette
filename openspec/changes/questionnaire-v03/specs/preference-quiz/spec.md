@@ -1,0 +1,68 @@
+# 問卷規格增量
+
+## MODIFIED Requirements
+
+### Requirement: 題組由 questionnaire version 決定
+The system SHALL determine the active questionnaire from the session questionnaire version.
+
+#### Scenario: v0.3 新場次
+- WHEN session questionnaire version 為 `v0.3`
+- THEN active question bank 應包含 48 題
+- AND 題庫應分成 6 類
+- AND 每類包含 8 題
+- AND 每題皆為必答二選一
+
+#### Scenario: v0.2 新場次
+- WHEN session questionnaire version 為 `v0.2`
+- THEN active question bank 應包含 24 題
+- AND 題庫應分成 6 類
+- AND 每類包含 4 題
+
+#### Scenario: v0.2 題庫凍結
+- WHEN 部署 v0.3 之後開啟既有 v0.2 場次
+- THEN 題目、選項、配分、id 與抽題結果不得改變
+
+#### Scenario: v0.1 舊場次
+- WHEN session questionnaire version 為 `v0.1`
+- THEN active questionnaire 應維持原本 8 題
+- AND 不得因部署 v0.2 或 v0.3 而把既有 v0.1 場次改成 12 題
+
+## ADDED Requirements
+
+### Requirement: v0.3 每個房間固定取得 12 題
+The system SHALL deterministically derive the v0.3 active questionnaire from the session code.
+
+#### Scenario: 建立 v0.3 題組
+- WHEN 系統取得 v0.3 session code
+- THEN 應從 6 個 question categories 各選 2 題
+- AND 共得到 12 題
+- AND `self-image` 必須包含在該 12 題中
+
+#### Scenario: 同一場次由不同 participants 開啟或重新整理
+- WHEN 多位 participants 使用同一 v0.3 session code，或同一 participant 重新載入
+- THEN 所有人應取得相同 12 題
+- AND 題目順序應一致
+
+### Requirement: v0.3 配分必須讓人格分布均勻
+The system SHALL configure v0.3 option scores so that ten personas are reachable in every category and are distributed more evenly than v0.2 under uniformly random answers.
+
+#### Scenario: 每個人格在每個類別都可得分
+- WHEN 檢視 v0.3 題庫
+- THEN 十種人格在六個類別中都至少各有一個選項帶有該人格的配分
+
+#### Scenario: 隨機作答的人格分布
+- WHEN 以固定種子模擬大量隨機房號與均勻隨機作答
+- THEN v0.3 十種人格比例中最高與最低的差距應小於 v0.2 的一半
+- AND 差距不得超過 3.5 個百分點
+- AND 每種人格（含「真・都可以」）的比例都應介於 7.5% 與 12.5% 之間
+- AND NEEDS_CONFIRMATION：上述門檻是工程防呆，產品尚未另行規定目標分布
+
+#### Scenario: 刻意朝某個人格作答
+- WHEN 每題都選擇某個人格分數較高的選項
+- THEN 該人格應在多數房間（至少 60%）成為結果
+- AND 不得為了平衡分布而讓任何人格無法被刻意選出
+
+#### Scenario: self-image 題
+- WHEN 房間使用 v0.3
+- THEN `self-image` 必須存在且保留 `very` 選項 id
+- AND 其配分不得偏袒任何單一人格

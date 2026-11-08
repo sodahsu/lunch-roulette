@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { buildProvisionalGroupPreview, buildResultSnapshot, calculateGroupStats, isCompleteResponse } from '../domain/domain'
-import { selectQuestionsForSession } from '../domain/questions'
+import { CURRENT_QUESTIONNAIRE_VERSION, selectQuestionsForSession } from '../domain/questions'
 import type { Json } from './database.types'
 import type {
   Participant,
@@ -43,7 +43,7 @@ export async function createSession(maxAttempts = MAX_CREATE_SESSION_ATTEMPTS): 
     const code = createCode()
     const { data, error } = await supabase
       .from('sessions')
-      .insert({ code, host_user_id: userId, questionnaire_version: 'v0.2' })
+      .insert({ code, host_user_id: userId, questionnaire_version: CURRENT_QUESTIONNAIRE_VERSION })
       .select()
       .single()
 
