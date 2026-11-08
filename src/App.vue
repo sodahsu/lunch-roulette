@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import QRCode from 'qrcode'
 import PersonaGlyph from './components/PersonaGlyph.vue'
 import { avatarFor, personaArt } from './lib/avatars'
-import { sharePersonaCard } from './lib/share-card'
+import { shareGroupCard, sharePersonaCard } from './lib/share-card'
 import { isAudioMuted, playCue, setAudioMuted, startLobbyLoop, stopLobbyLoop, unlockAudio } from './lib/audio'
 import {
   PERSONAS,
@@ -123,15 +123,32 @@ function pairedPeople(pairs: { participantId: string }[]) {
 const soulmates = computed(() => (meResult.value ? pairedPeople(meResult.value.soulmates) : []))
 const opposites = computed(() => (meResult.value ? pairedPeople(meResult.value.opposites) : []))
 
-async function exportPersonaCard() {
-  if (!meResult.value) return
+async function runShare(share: () => Promise<unknown>) {
   errorMessage.value = ''
   try {
-    await sharePersonaCard(meResult.value)
+    await share()
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') return
     errorMessage.value = error instanceof Error ? error.message : '圖片匯出失敗，請再試一次'
   }
+}
+
+async function exportPersonaCard() {
+  const result = meResult.value
+  if (!result) return
+  await runShare(() => sharePersonaCard(result))
+}
+
+// 團體卡只帶 aggregate；樣本不足時按鈕不顯示，shareGroupCard 內也會再擋一次
+async function exportGroupCard() {
+  await runShare(() =>
+    shareGroupCard({
+      score: dinnerSuccess.value.score,
+      verdict: dinnerSuccess.value.verdict,
+      sampleSize: resultSampleSize.value,
+      date: new Date(),
+    }),
+  )
 }
 
 const joinUrl = computed(() => {
@@ -158,6 +175,10 @@ const dinnerSuccess = computed(() =>
     session.value?.questionnaire_version ?? 'v0.2',
   ),
 )
+// 示意結果頁沒有 session，也要能預覽分享按鈕；正式場次仍只在 revealed 後才可分享
+const isDemoResult = ref(false)
+const canShareResult = computed(() => session.value?.status === 'revealed' || isDemoResult.value)
+const canShareGroupCard = computed(() => canShareResult.value && resultSampleSize.value >= 2)
 
 const provisionalPersona = computed<PersonaKey | null>(() => {
   if (
@@ -636,6 +657,7 @@ function resetRound() {
   groupStats.value = null
   foodAvoid.value = []
   personalResult.value = null
+  isDemoResult.value = false
   demoOverviewCards.value = []
   liveOverviewCards.value = []
   isLiveOverview.value = false
@@ -841,10 +863,13 @@ function showDemoResult(personaParam: string | null, rare = false) {
     soulmates: [{ participantId: 'demo-soul', similarity: 0.83 }],
     opposites: [{ participantId: 'demo-enemy', similarity: 0.08 }],
   }
-  // 示意：三人排除的聯集之外剩下的類別
+  // 示意：三人排除的聯集之外剩下的類別；後兩筆是示意計分題，讓團體成功率卡有數字可畫（約 83%）
   groupStats.value = [
     { questionId: FOOD_AVOID_ID, counts: { hotpot: 1, spicy: 2, bbq: 1, vegetarian: 1 }, sampleSize: 3 },
+    { questionId: 'demo-q1', counts: { a: 3 }, sampleSize: 3 },
+    { questionId: 'demo-q2', counts: { a: 2, b: 1 }, sampleSize: 3 },
   ]
+  isDemoResult.value = true
   screen.value = 'result'
 }
 
@@ -1442,7 +1467,6 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </article>
-        <button v-if="session?.status === 'revealed'" class="secondary" type="button" @click="exportPersonaCard">分享人格卡</button>
       </template>
       <template v-else>
         <div class="state-code">N/A</div>
@@ -1450,6 +1474,11 @@ onBeforeUnmount(() => {
         <h2>你沒有答完</h2>
         <p class="persona-tagline">這次不硬判人格。下局記得交卷，才會拿到人格卡和飯友配對。</p>
       </template>
+
+      <div v-if="canShareResult && (meResult || canShareGroupCard)" class="share-actions">
+        <button v-if="meResult" class="secondary" type="button" @click="exportPersonaCard">分享人格卡</button>
+        <button v-if="canShareGroupCard" class="secondary" type="button" @click="exportGroupCard">分享團體成功率卡</button>
+      </div>
 
       <article v-if="foodConsensus" class="food-consensus" data-testid="food-consensus">
         <span class="result-kicker">🍽️ 大家都能吃</span>

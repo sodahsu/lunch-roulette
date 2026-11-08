@@ -131,7 +131,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Playwright 目前包含 CASE-01～23；CASE-19～23 涵蓋 Solo-start 與隱私。實際驗證結果以執行紀錄與 CI 為準。涵蓋：
+Playwright 目前包含 CASE-01～26；CASE-19～23 涵蓋 Solo-start 與隱私，CASE-24～26 涵蓋人格卡／團體成功率卡下載與連結預覽。實際驗證結果以執行紀錄與 CI 為準。涵蓋：
 
 - 兩段式 Reveal
 - 未完成者
