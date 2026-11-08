@@ -107,7 +107,7 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] Host-as-participant multi-browser smoke PASS。（2026-10-03 runtime smoke）
 - [x] locked / revealed late-join regression PASS。（2026-10-03 runtime smoke）
 - [x] privacy / RLS regression PASS。（2026-10-03 runtime smoke）
-- [ ] 依最終證據更新本 tasks / HANDOFF，完成 archive readiness review。
+- [x] 依最終證據更新本 tasks / HANDOFF，完成 archive readiness review。（2026-11-08：本機 full E2E 23/23、unit 71/71、typecheck、build 與 strict validation 通過）
 
 測試依據：`docs/solo-start-test-plan.md`。不要重寫產品規格或另外建立第二套測試口徑。
 
@@ -127,15 +127,15 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 
 ## 8. Archive gate
 
-- [ ] 所有已確認 Requirements 實作完成。
-- [ ] 所有驗證通過。
+- [x] 所有已確認 Requirements 實作完成。（CASE-19～23 與既有 runtime smoke）
+- [x] 所有驗證通過。（2026-11-08 本機 full E2E 23/23、unit 71/71、typecheck、build 與 strict validation）
 - [x] NEEDS_CONFIRMATION 已依目前 implementation baseline 解決或明確移出 scope。
-- [ ] capability delta 與 code 無 contract drift。
-- [ ] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
+- [x] capability delta 與 code 無 contract drift。（檢視 open provisional、food consensus、正式 Reveal 與既有案例）
+- [x] 再把已驗證行為 archive / merge 到 `openspec/specs/`。
 
-**Current verdict: RELEASED v0.2.0 / ARCHIVE PENDING**
+**Current verdict: RELEASED v0.2.0 / ARCHIVE READY**
 
-仍未勾選：archive review。
+歸檔後以 canonical specs 為準。
 
 
 ## 9. Release gate
@@ -144,7 +144,7 @@ Codex 接手直接以 `dev` 為基準，只需處理下列執行／除錯工作�
 - [x] 建立對應 RC tag：`v0.2.0-rc.1`（指向 `1a0e83f`）。
 - [x] RC 上完成 unit / typecheck / build / E2E / runtime smoke（PR #10 CI；2026-10-03 production runtime smoke 兩支全 PASS，房號 84TWBV / SN9HEP）。
 - [x] 若 RC 需修正，以 `rc.2`、`rc.3` 依序遞增，不覆寫既有 tag（rc.1 未需修正）。
-- [ ] `dev` 的 Solo Start 整合驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。
+- [x] `dev` 的 Solo Start 整合驗證完成後，確認 `openspec/specs/`、README 與 runtime 已同步。（2026-11-08 歸檔同步）
 - [x] 建立 `dev → main` production PR（#10，已合併 `a5d17ca`）；App version 更新為 `0.2.0`。
 - [x] 建立 immutable Git tag `v0.2.0`（指向 `cde197b`）。
 - [x] 建立 GitHub Release `v0.2.0`，release notes 至少包含玩法變更、相容性、驗證摘要與已知限制（https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.0）。
