@@ -9,6 +9,8 @@ status: "ready_for_execution"
 
 # 《都可以？》預上線檢查計畫
 
+> 2026-11-10 補註：本文件是 2026-10-01 預上線檢查的歷史快照，保留原貌不改寫。題庫與測試的現況：新場次使用 v0.3（`QUESTION_BANK_V03`，48 題、6 類 × 8 題，每房仍抽 12 題）；v0.2 的 24 題題庫凍結，只供進行中的 v0.2 房間使用；Playwright 為 CASE-01～26。下文凡寫 24 題、CASE-01～18 之處，都是當時的數字。
+
 **目的：** 確認 lunch-roulette 的核心遊戲、多人同步、UI/UX、測試與部署已準備好上線。
 
 **範圍：** Backend（Auth、RLS、Realtime）→ UI（手機與 Host 流程）→ Tests（單元、類型檢查、構建、E2E）→ 環境與部署驗證。
@@ -693,7 +695,7 @@ src/
   ├── domain/
   │   ├── domain.ts               # Persona scoring / success rate 計算
   │   ├── domain.test.ts           # Unit tests
-  │   ├── questions.ts             # 24 題題庫（v0.2）
+  │   ├── questions.ts             # 24 題題庫（v0.2，凍結）；2026-11-10 補註：現行為 v0.3 的 48 題題庫
   │   ├── foods.ts                 # 忌口選項
   │   └── types.ts                 # 型別定義
   ├── lib/
