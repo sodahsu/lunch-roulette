@@ -48,9 +48,21 @@ function goldGradient(context: Ctx, x0: number, y0: number, x1: number, y1: numb
   return gradient
 }
 
+// CanvasRenderingContext2D.roundRect 在 Safari 16 以前不存在，直接呼叫會丟 TypeError 讓整張卡匯出失敗；
+// fallback 的起點、順時針方向與半徑上限與原生一致，兩條路徑畫出的外框與裁切範圍相同
 function roundRect(context: Ctx, x: number, y: number, w: number, h: number, r: number) {
   context.beginPath()
-  context.roundRect(x, y, w, h, r)
+  if (typeof context.roundRect === 'function') {
+    context.roundRect(x, y, w, h, r)
+    return
+  }
+  const radius = Math.max(0, Math.min(r, w / 2, h / 2))
+  context.moveTo(x + radius, y)
+  context.arcTo(x + w, y, x + w, y + h, radius)
+  context.arcTo(x + w, y + h, x, y + h, radius)
+  context.arcTo(x, y + h, x, y, radius)
+  context.arcTo(x, y, x + w, y, radius)
+  context.closePath()
 }
 
 function drawBackground(context: Ctx, glow: string) {
