@@ -22,7 +22,7 @@ Host 開房 / QR 加入
 
 ### Solo-start
 
-`task/solo-start` 目前規格方向是「1 個人就能先開局，朋友之後再加入」，不是另外做一套 Solo mode：
+Solo-start 已在 `v0.2.0`（2026-10-03）上線，規格於 2026-11-08 歸檔進 `openspec/specs/`。它的設計是「1 個人就能先開局，朋友之後再加入」，不是另外做一套 Solo mode：
 
 ```text
 建立飯局
@@ -221,20 +221,17 @@ Vite build output：`dist`。
 
 ## Specs
 
-現行已驗證規格：
+現行已驗證規格（截至 2026-11-10）：
 
 - `openspec/specs/`
+
+目前沒有 active change；`openspec/changes/` 下只有 `archive/`。已歸檔的 change：
+
 - `openspec/changes/archive/2026-10-01-lunch-roulette-mvp/`
-
-目前 active change：
-
-- `openspec/changes/solo-start/`
-  - `proposal.md`
-  - `design.md`
-  - `tasks.md`
-  - `specs/live-session/spec.md`
-  - `specs/result-reveal/spec.md`
-  - `specs/food-consensus/spec.md`
+- `openspec/changes/archive/2026-11-08-solo-start/`（PR #32）
+- `openspec/changes/archive/2026-11-08-result-share-card/`（PR #32）
+- `openspec/changes/archive/2026-11-10-share-upgrade/`
+- `openspec/changes/archive/2026-11-10-questionnaire-v03/`
 
 主要 capability：
 
@@ -242,10 +239,11 @@ Vite build output：`dist`。
 - `preference-quiz`
 - `result-reveal`
 - `food-consensus`
+- `link-preview`
 
-`solo-start` 目前狀態為 **VALIDATED ON DEV / ARCHIVE & RELEASE PENDING**。2026-10-03 已修正 CASE-01 timeout 的根因（open 預覽蓋掉主持人的鎖定按鈕），unit / typecheck / build / OpenSpec strict / full E2E（CASE-01～21）在 CI 通過，1 → 2 → 3 人 runtime smoke、locked / revealed late join 與 privacy / RLS smoke 也已通過。archive review 與 release 版本號核准完成前，不會把 Solo-start 併入 `openspec/specs/`。
+`solo-start` 已於 2026-11-08 歸檔，delta 併入 `openspec/specs/`。2026-10-03 修正 CASE-01 timeout 的根因（open 預覽蓋掉主持人的鎖定按鈕），unit / typecheck / build / OpenSpec strict / full E2E 在 CI 通過，1 → 2 → 3 人 runtime smoke、locked / revealed late join 與 privacy / RLS smoke 也已通過，隨 `v0.2.0` 上線。
 
-詳細測試追溯與完成 gate：`docs/solo-start-test-plan.md`。
+詳細測試追溯與完成 gate：`docs/solo-start-test-plan.md`（2026-10 的歷史紀錄）。
 
 
 ## Release versioning
@@ -255,9 +253,15 @@ App Release 使用 Semantic Versioning，與資料欄位 `questionnaire_version`
 - `package.json#version` / Git tag / GitHub Release：代表整個 Web App 的發布版本。
 - `questionnaire_version`：只代表題組與對應 domain algorithm contract，不等於 App Release。
 
-Solo-start 預定版本：
+已發布版本（截至 2026-11-10）：
 
-- `v0.2.0-rc.1`：功能實作完成並進入完整驗證時的 release candidate。
-- `v0.2.0`：相關 unit / typecheck / build / E2E / runtime smoke 全部通過，先整合 `dev`，再由 `dev → main` 合併後建立正式 Release。
+| Tag | 日期 | GitHub Release | 內容 |
+|---|---|---|---|
+| `v0.2.0-rc.1` | 2026-10-03 | 無（只有 tag） | Solo-start 的 release candidate |
+| `v0.2.0` | 2026-10-03 | 有 | Solo-start 單人先開局 |
+| `v0.2.1` | 2026-10-11 | 有（目前標為 Latest） | Realtime 同步修正 |
+| `v0.2.2` | 2026-11-05 | 無（只有 tag） | `attachRealtime` 不再等握手（PR #24～#26） |
 
-正式 Release 不從未驗證的 feature branch 建立。若 RC 驗證失敗，修正後依序使用 `v0.2.0-rc.2`、`v0.2.0-rc.3`，直到符合 release gate。
+`main` 在 `v0.2.2` 之後已多 27 個 commit（`git describe origin/main` 為 `v0.2.2-27-g0791e41`），包含 PR #28（Supabase 防暫停排程）、#31（人格結果卡與單人開局收尾）、#38（題庫 v0.3、分享升級、Preview 防護、暫停搜尋收錄），`package.json#version` 仍是 `0.2.2`，尚未建立新的 tag 或 GitHub Release；下一個版本號待決定。
+
+正式 Release 不從未驗證的 feature branch 建立，先整合 `dev`，再由 `dev → main` 合併後處理。若要先發 RC 而 RC 驗證失敗，修正後依序遞增 `-rc.2`、`-rc.3`，直到符合 release gate。
