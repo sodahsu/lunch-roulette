@@ -51,7 +51,10 @@ jobs:
       - name: OpenSpec strict validation
         run: pnpm dlx @fission-ai/openspec validate --all --strict --no-interactive
 
-      - name: E2E
+      - name: E2E (isolated test Supabase only)
+        env:
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm test:e2e
 
       - name: Upload Playwright failure artifacts
