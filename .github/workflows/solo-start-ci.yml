@@ -61,7 +61,7 @@ jobs:
             const url=process.env.VITE_SUPABASE_URL; const key=process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
             if(!url||!key) { console.error("::error::E2E requires isolated Supabase secrets; see #42"); process.exit(1); }
             let parsed; try { parsed=new URL(url); } catch { process.exit(1); }
-            if(parsed.protocol!=="https:"||!/^[-a-z0-9]+\\.supabase\\.co$/.test(parsed.hostname)||parsed.hostname==="hvaxoopyccwsqmhjnibg.supabase.co") {
+            if(parsed.protocol!=="https:"||(!parsed.hostname.endsWith(".supabase.co")||parsed.hostname.split(".").length!==3)||parsed.hostname==="hvaxoopyccwsqmhjnibg.supabase.co") {
               console.error("::error::Unsafe E2E Supabase target"); process.exit(1);
             }
           '
