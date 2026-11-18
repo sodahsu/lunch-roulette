@@ -51,8 +51,21 @@ jobs:
       - name: OpenSpec strict validation
         run: pnpm dlx @fission-ai/openspec validate --all --strict --no-interactive
 
-      - name: E2E
-        run: pnpm test:e2e
+      # #42 尚未合併 dev 時，也不得用正式 Supabase 跑本 PR 的寫入型 E2E。
+      - name: E2E (isolated Supabase required)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          node --input-type=module -e '
+            const url=process.env.VITE_SUPABASE_URL; const key=process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+            if(!url||!key) { console.error("::error::E2E requires isolated Supabase secrets; see #42"); process.exit(1); }
+            let parsed; try { parsed=new URL(url); } catch { process.exit(1); }
+            if(parsed.protocol!=="https:"||!/^[-a-z0-9]+\\.supabase\\.co$/.test(parsed.hostname)||parsed.hostname==="hvaxoopyccwsqmhjnibg.supabase.co") {
+              console.error("::error::Unsafe E2E Supabase target"); process.exit(1);
+            }
+          '
+          pnpm test:e2e
 
       - name: Upload Playwright failure artifacts
         if: failure()
