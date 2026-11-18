@@ -21,6 +21,28 @@ describe('isolated RLS target guard (no DB connection)', () => {
     expect(target.host).toContain('pooler.supabase.com')
     expect(target.user).toBe('postgres.abcd1234')
   })
+  it('rejects lookalike domains and partial project ref matches', () => {
+    for (const unsafe of [
+      'postgresql://postgres.abcd1234:fake-password@evil-abcd1234.example.org/postgres',
+      'postgresql://postgres.evilabcd1234:fake-password@aws-0-us-west-1.pooler.supabase.com:6543/postgres',
+      'postgresql://postgres.abcd1234.extra:fake-password@aws-0-us-west-1.pooler.supabase.com:6543/postgres',
+      'postgresql://postgres.abcd1234:fake-password@aws-0-us-west-1.pooler.supabase.com.evil.org/postgres',
+      'postgresql://postgres.abcd1234:fake-password@aws-0-us-west-1.pooler.supabase.com:6543/other'
+    ]) {
+      expect(() => resolveRlsTestTarget({ ...valid, E2E_POSTGRES_URL: unsafe })).toThrow()
+    }
+  })
+  it('allows a correctly scoped Supabase direct PostgreSQL endpoint', () => {
+    const target = resolveRlsTestTarget({
+      ...valid, E2E_POSTGRES_URL: 'postgresql://postgres:fixture@db.abcd1234.supabase.co:5432/postgres'
+    })
+    expect(target.host).toBe('db.abcd1234.supabase.co')
+    expect(target.user).toBe('postgres')
+  })
+  it('rejects API URL with unexpected path or query', () => {
+    expect(() => resolveRlsTestTarget({ ...valid, E2E_SUPABASE_URL: valid.E2E_SUPABASE_URL + '/auth/v1' })).toThrow()
+    expect(() => resolveRlsTestTarget({ ...valid, E2E_SUPABASE_URL: valid.E2E_SUPABASE_URL + '/?redirect=1' })).toThrow()
+  })
   it('SQL is wrapped in transaction and tests real negative policies', () => {
     const text = readFileSync('tests/db/rls-negative-smoke.sql', 'utf8')
     expect(text).toMatch(/^BEGIN;/m)
