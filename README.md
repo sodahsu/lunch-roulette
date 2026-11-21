@@ -89,6 +89,10 @@ Runtime Persona 圖形位於：
 9. Participant 手機自動載入固定 Persona / pairing result
 10. Revealed 後，Host 可用 `/?room=<ROOM_CODE>&view=overview` 查看同房 complete participants 的 Persona 總覽；participant 仍只能讀自己的 result
 
+### 隱私與資料保存
+
+場次資料的保留期限為揭曉後 30 天；正式環境尚未啟用自動清理，未揭曉場次的期限另議。場次清理會一併刪除參加者資料、作答、團體結果和個人結果。分享連結找不到場次時，頁面會提示連結可能已過期，請確認房號或請主持人重開。詳見[資料保留與清理計畫](docs/data-retention-and-rls.md)。
+
 ## Supabase
 
 Project ref：
@@ -124,12 +128,17 @@ VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 
 ## Verification
 
+**注意：E2E 會建立真實測試房間；未提供與正式環境不同的 Supabase 測試專案時會直接中止。** 不要把正式專案的 URL 或 publishable key 填入 E2E 變數。
+
 ```bash
 pnpm test:unit
 pnpm typecheck
 pnpm build
-pnpm test:e2e
+E2E_SUPABASE_URL=https://YOUR-TEST-PROJECT.supabase.co \\
+E2E_SUPABASE_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_KEY pnpm test:e2e
 ```
+
+GitHub Actions 也必須由倉庫管理者配置 `E2E_SUPABASE_URL`、`E2E_SUPABASE_PUBLISHABLE_KEY` 兩個 Secrets，且測試 Supabase 已套用相同 RLS/migrations 並啟用 Anonymous Auth 與 Realtime。Secrets 未配置時 **E2E CI 應失敗，不得回退正式專案**。Playwright 禁止重用既存開發伺服器，避免測試跑到正式連線；網站一般使用者流程仍保留原本 Supabase fallback。
 
 Playwright 目前包含 CASE-01～26；CASE-19～23 涵蓋 Solo-start 與隱私，CASE-24～26 涵蓋人格卡／團體成功率卡下載與連結預覽。實際驗證結果以執行紀錄與 CI 為準。涵蓋：
 

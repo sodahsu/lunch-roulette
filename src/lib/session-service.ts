@@ -63,7 +63,7 @@ export async function createSession(maxAttempts = MAX_CREATE_SESSION_ATTEMPTS): 
 
 export class SessionNotFoundError extends Error {
   constructor(code: string) {
-    super(`找不到房號 ${code}，請確認房號是否正確，或請主持人重新開一局。`)
+    super(`找不到房號 ${code}，連結可能已過期。請確認房號是否正確，或請主持人重新開一局。`)
     this.name = 'SessionNotFoundError'
   }
 }
