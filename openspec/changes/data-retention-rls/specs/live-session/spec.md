@@ -20,3 +20,13 @@
 - **GIVEN** 負責人尚未選定保留期限
 - **WHEN** 開發者提出清理工作
 - **THEN** MUST 不對正式資料庫啟用刪除工作
+
+#### Scenario: Revealed session retention rehearsal
+- **GIVEN** 負責人已核准已揭曉場次保留 30 天，但未核准正式執行與未結束場次期限
+- **WHEN** 維護者在隔離資料庫演練清理
+- **THEN** MUST 僅移除揭曉超過 30 天的場次與其相依資料，回報刪除場次筆數，並回滾演練；不得啟用正式排程
+
+#### Scenario: Unavailable share link
+- **GIVEN** 分享連結的房號已過期或不存在
+- **WHEN** 玩家開啟連結
+- **THEN** MUST 提示連結可能已過期，讓玩家輸入正確房號或向主持人索取新房號
