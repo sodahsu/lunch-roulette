@@ -130,15 +130,21 @@ VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 
 **注意：E2E 會建立真實測試房間；未提供與正式環境不同的 Supabase 測試專案時會直接中止。** 不要把正式專案的 URL 或 publishable key 填入 E2E 變數。
 
+建立隔離測試專案後，先完成以下設定：
+
+1. 依序套用 `supabase/migrations/` 全部 migrations，包含 PR #45（issue #43）的 `20261121_restore_authenticated_rls_access.sql`，為 `authenticated` 提供資料表最小權限。PR #44 不含這支 migration；合併順序上，若先合併或先驗證 #44，隔離測試專案仍須先套用 #45 的權限 migration，正式環境則依 #45 流程由管理者評估套用。權限由 migration 管理，不要為了讓測試通過而手動放寬 RLS。
+2. 啟用 Anonymous Auth，並確認 migrations 設定的 Realtime publication 已生效。若匿名登入成功，但建立房間時出現 `42501`（資料表權限不足），先確認上述權限 migration 是否已套用。
+3. 調整測試專案的 Anonymous Sign-ins 速率限制（例如每 IP 每小時 120 次）：完整 26 案 E2E 單輪會建立數十個匿名使用者，預設 30/hr 會在 CASE-08～09 觸發限流。
+
 ```bash
 pnpm test:unit
 pnpm typecheck
 pnpm build
-E2E_SUPABASE_URL=https://YOUR-TEST-PROJECT.supabase.co \\
+E2E_SUPABASE_URL=https://YOUR-TEST-PROJECT.supabase.co \
 E2E_SUPABASE_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_KEY pnpm test:e2e
 ```
 
-GitHub Actions 也必須由倉庫管理者配置 `E2E_SUPABASE_URL`、`E2E_SUPABASE_PUBLISHABLE_KEY` 兩個 Secrets，且測試 Supabase 已套用相同 RLS/migrations 並啟用 Anonymous Auth 與 Realtime。Secrets 未配置時 **E2E CI 應失敗，不得回退正式專案**。Playwright 禁止重用既存開發伺服器，避免測試跑到正式連線；網站一般使用者流程仍保留原本 Supabase fallback。
+GitHub Actions 也必須由倉庫管理者配置 `E2E_SUPABASE_URL`、`E2E_SUPABASE_PUBLISHABLE_KEY` 兩個 Secrets，指向完成上述設定的隔離專案。Secrets 未配置時 **E2E CI 應失敗，不得回退正式專案**。Playwright 禁止重用既存開發伺服器，避免測試跑到正式連線；網站一般使用者流程仍保留原本 Supabase fallback。
 
 Playwright 目前包含 CASE-01～26；CASE-19～23 涵蓋 Solo-start 與隱私，CASE-24～26 涵蓋人格卡／團體成功率卡下載與連結預覽。實際驗證結果以執行紀錄與 CI 為準。涵蓋：
 
