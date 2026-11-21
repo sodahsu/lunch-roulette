@@ -387,6 +387,7 @@ test('CASE-11 房號不存在時提醒使用者，並清掉失效的網址房號
   try {
     await page.goto('/?room=ZZZZZZ')
     await expect(page.getByRole('alert')).toContainText('找不到房號 ZZZZZZ')
+    await expect(page.getByRole('alert')).toContainText('連結可能已過期')
     await expect(page.getByRole('heading', { name: '先報上名來' })).toBeVisible()
     expect(new URL(page.url()).searchParams.has('room')).toBe(false)
 

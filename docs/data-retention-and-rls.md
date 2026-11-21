@@ -1,29 +1,19 @@
-# 飯局資料保留／清理與 RLS 驗證計畫（Issue #43）
+# 飯局資料保留、清理與 RLS 驗證（#43）
 
-## 目前能確認
-- `sessions`、`participants`、`responses`、`result_snapshots`、`participant_results` 存在 PostgreSQL RLS。
-- 以 `sessions` 為父表的關聯目前已設定 `ON DELETE CASCADE`：**刪除場次時可同步刪除其依附紀錄**。
-- 尚無由產品負責人核准的保留期限，也尚未建立定時清理 Job；**不得自行選擇天數或對正式資料庫做刪除**。
+## 資料保留與分享連結
+- 負責人於 2026-11-21 核准：場次資料保留至揭曉後 30 天。目前尚未啟用正式環境清理；未揭曉場次的保留期限另議。
+- 場次被清理時，其參加者資料、問卷作答、團體結果和個人結果會一併刪除。一般玩家無法取得其他玩家的逐題答案；主持人可讀取自己的場次作答以計算結果。
+- 場次不存在或已被清理時，分享連結會回到加入畫面，提示「連結可能已過期」並請使用者確認房號或聯絡主持人重開。不會恢復資料或公開結果。
 
-## 待決策：保留期限（不在本 PR 啟用）
-- 選項 A：揭曉後 7 天清理（資料最少，但分享連結很快失效）
-- 選項 B：揭曉後 30 天清理（暫作評估基準，非已核准政策）
-- 選項 C：揭曉後 90 天清理（方便回顧，增加長期資料量）
-- 未揭曉或逾期未完成場次，需要另訂 TTL（例如建立後 7 天）；不可永遠殘留測試房間。
-- 清理前需確認使用者認知：分享連結到期後應顯示友善訊息，而非把資料復原或自動公開。
+## 隔離驗證
+由管理者將 `E2E_SUPABASE_URL` 和 `E2E_POSTGRES_URL` 注入環境變數，不寫入 Git 或輸出。安裝 `psql` 後執行 `node scripts/run-isolated-rls.mjs` 與 `node scripts/run-isolated-rls.mjs retention`。兩者都只接受 `opzndeanoejcgmhcasss`，使用 TLS，在交易內造資料並回滾。斷言失敗時 `psql` 非零退出；PR 的 CI 不會跳過未配置的 SQL 步驟。
 
-## 可執行 RLS 負向測試（只對獨立測試專案）
-1. 先完成 #42 隔離測試 Supabase 的 Schema、RLS、Auth 與 Realtime 設定。
-2. 由測試管理者取得專用 PostgreSQL 連線字串，**不得放入 Git、Issue 或 PR**。
-3. 在安全終端設定 `E2E_SUPABASE_URL` 與 `E2E_POSTGRES_URL`；專案 ref 必須一致且不同於 Production。
-4. 執行 `node scripts/run-isolated-rls.mjs`。此工具會對應 project ref，再用 psql 執行 SQL；輸入 DB 密碼只透過子程序環境變數，不出現在 CLI 參數。
-5. SQL 使用 `BEGIN`、`ROLLBACK` 建立暫時房間，驗證 participant 僅能看自己的答案、outsider 無權、host 不能跨房、locked 後不能改答案與加入。
+## 清理作業草案（不自動執行）
+`openspec/changes/data-retention-rls/cleanup-expired-sessions.sql` 不在 migration 目錄，未註冊 cron 或啟用開關。只處理 `revealed` 且 `revealed_at` 早於交易起始時間 720 小時的場次，保留剛滿 30 天、未揭曉、或沒有揭曉時間的紀錄。
 
-## 上線前必需
-- [ ] 確認實際資料保存天數與公開隱私聲明
-- [ ] 經審查的 migration / 定時 cleanup 與回滾計畫
-- [ ] 隔離資料庫真實 RLS 測試 PASS（不得只看 Vitest 靜態測試）
-- [ ] 真實分享網址過期 UX、多人同步／舊房回歸測試
-- [ ] 由負責人明確核准後才可變更正式 Supabase
+1. 正式執行前另行取得負責人核准，驗證五張表的備份、回復演練及操作人員權限。先以相同條件執行唯讀 `COUNT(*)`，檢查待清理規模。
+2. 由核准的作業身分在 `BEGIN` 後執行草案，核對 `deleted_sessions`。演練、計數不符或發生錯誤時 `ROLLBACK`；僅在正式執行獲准且核對完成時 `COMMIT`。
+3. 作業日誌只記 UTC 時間、耗時、刪除場次數及交易結果。不記房號、玩家資料或憑證。若日後批准排程，沿用同一查詢和紀錄格式，非零退出或刪除量異常時告警。
+4. 已提交的刪除無法用 `ROLLBACK` 撤銷。先停止作業，在隔離庫以核准備份驗證復原，再按場次及外鍵順序還原五表受影響資料，不覆寫同期新增資料。
 
-> 本變更僅交付負向驗證工具與政策決策稿，不會新增或啟動定時刪除，不對 Production 寫資料。
+正式部署 RLS 權限 migration 和啟用清理是各自獨立的批准事項，均不在本次隔離驗證範圍內。

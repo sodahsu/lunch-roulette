@@ -89,6 +89,10 @@ Runtime Persona 圖形位於：
 9. Participant 手機自動載入固定 Persona / pairing result
 10. Revealed 後，Host 可用 `/?room=<ROOM_CODE>&view=overview` 查看同房 complete participants 的 Persona 總覽；participant 仍只能讀自己的 result
 
+### 隱私與資料保存
+
+場次資料的保留期限為揭曉後 30 天；正式環境尚未啟用自動清理，未揭曉場次的期限另議。場次清理會一併刪除參加者資料、作答、團體結果和個人結果。分享連結找不到場次時，頁面會提示連結可能已過期，請確認房號或請主持人重開。詳見[資料保留與清理計畫](docs/data-retention-and-rls.md)。
+
 ## Supabase
 
 Project ref：

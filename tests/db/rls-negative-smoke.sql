@@ -25,12 +25,18 @@ SELECT set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
 
 DO $$
 BEGIN
-  IF (SELECT count(*) FROM public.responses) <> 1 THEN
+  IF (SELECT array_agg(participant_id) FROM public.responses
+      WHERE session_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222'))
+     IS DISTINCT FROM ARRAY['33333333-3333-3333-3333-333333333331'::uuid] THEN
     RAISE EXCEPTION 'RLS FAIL: participant can read other player responses';
   END IF;
   IF (SELECT count(*) FROM public.participants) <> 2 THEN
     RAISE EXCEPTION 'RLS FAIL: participant can read other room participants';
   END IF;
+  UPDATE public.responses SET answers = '{"q":"UPDATED"}'
+  WHERE session_id = '11111111-1111-1111-1111-111111111111'
+    AND participant_id = '33333333-3333-3333-3333-333333333331';
+  IF NOT FOUND THEN RAISE EXCEPTION 'RLS FAIL: own open response not writable'; END IF;
 END $$;
 
 SELECT set_config('request.jwt.claim.sub', 'ffffffff-ffff-ffff-ffff-ffffffffffff', true);
@@ -40,6 +46,10 @@ BEGIN
      (SELECT count(*) FROM public.participants) <> 0 THEN
     RAISE EXCEPTION 'RLS FAIL: outsider can read participant or response rows';
   END IF;
+  UPDATE public.responses SET answers = '{}'
+  WHERE session_id = '11111111-1111-1111-1111-111111111111'
+    AND participant_id = '33333333-3333-3333-3333-333333333331';
+  IF FOUND THEN RAISE EXCEPTION 'RLS FAIL: outsider changed a response'; END IF;
 END $$;
 
 SELECT set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', true);
@@ -51,6 +61,10 @@ BEGIN
   IF (SELECT count(*) FROM public.responses WHERE session_id='22222222-2222-2222-2222-222222222222') <> 0 THEN
     RAISE EXCEPTION 'RLS FAIL: host can read another room';
   END IF;
+  UPDATE public.responses SET answers = '{}'
+  WHERE session_id = '22222222-2222-2222-2222-222222222222'
+    AND participant_id = '33333333-3333-3333-3333-333333333333';
+  IF FOUND THEN RAISE EXCEPTION 'RLS FAIL: host changed another room response'; END IF;
 END $$;
 
 RESET ROLE;
@@ -81,6 +95,9 @@ BEGIN
   END;
   IF NOT denied THEN RAISE EXCEPTION 'RLS FAIL: late join accepted after lock'; END IF;
 END $$;
+
+INSERT INTO public.participants (session_id, user_id, display_name)
+VALUES ('22222222-2222-2222-2222-222222222222', '99999999-9999-9999-9999-999999999999', 'open join');
 
 RESET ROLE;
 ROLLBACK;

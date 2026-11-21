@@ -60,6 +60,12 @@ jobs:
           E2E_POSTGRES_URL: ${{ secrets.E2E_POSTGRES_URL }}
         run: node scripts/run-isolated-rls.mjs
 
+      - name: Retention dry run (isolated Supabase only)
+        env:
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_POSTGRES_URL: ${{ secrets.E2E_POSTGRES_URL }}
+        run: node scripts/run-isolated-rls.mjs retention
+
       - name: E2E (isolated test Supabase only)
         env:
           E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}

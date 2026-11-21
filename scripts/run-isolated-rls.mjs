@@ -1,9 +1,9 @@
 // RLS 僅可對隔離 Supabase 測試專案執行；絕不修改正式 schema。
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { resolve } from 'node:path'
+import { realpathSync } from 'node:fs'
 
-const PRODUCTION_REF = 'hvaxoopyccwsqmhjnibg'
+export const ISOLATED_REF = 'opzndeanoejcgmhcasss'
 
 export function resolveRlsTestTarget(env = process.env) {
   if (!env.E2E_SUPABASE_URL || !env.E2E_POSTGRES_URL) {
@@ -20,8 +20,8 @@ export function resolveRlsTestTarget(env = process.env) {
     throw new Error('RLS 驗證中止：測試 API 必須是 Supabase HTTPS 專案')
   }
   const ref = site.hostname.split('.')[0]
-  if (ref === PRODUCTION_REF || !['postgres:', 'postgresql:'].includes(db.protocol)) {
-    throw new Error('RLS 驗證中止：禁止正式 Supabase 或非 PostgreSQL')
+  if (ref !== ISOLATED_REF || !['postgres:', 'postgresql:'].includes(db.protocol)) {
+    throw new Error('RLS 驗證中止：僅允許指定的隔離 Supabase PostgreSQL')
   }
   // 僅允許 Supabase Direct 或 Pooler 的確切專案身分，禁止字串部分包含造成錯誤連線。
   const user = decodeURIComponent(db.username)
@@ -44,9 +44,12 @@ export function resolveRlsTestTarget(env = process.env) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const target = resolveRlsTestTarget()
+    const mode = process.argv[2] ?? 'rls'
+    const sql = mode === 'rls' ? 'rls-negative-smoke.sql' : mode === 'retention' ? 'retention-smoke.sql' : null
+    if (!sql || process.argv.length > 3) throw new Error('用法：node scripts/run-isolated-rls.mjs [rls|retention]')
     // 避免繼承 libpq 進階環境變數（例如 PGHOSTADDR）改寫已驗證的目標。
     const isolatedPsqlEnv = { ...process.env, PGHOST: target.host, PGPORT: target.port,
       PGDATABASE: target.database, PGUSER: target.user, PGPASSWORD: target.password, PGSSLMODE: 'require' }
@@ -55,7 +58,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     }
     const result = spawnSync('psql', [
       '-X', '-v', 'ON_ERROR_STOP=1',
-      '-f', fileURLToPath(new URL('../tests/db/rls-negative-smoke.sql', import.meta.url))
+      '-f', fileURLToPath(new URL(`../tests/db/${sql}`, import.meta.url))
     ], {
       stdio: 'inherit',
       env: isolatedPsqlEnv
