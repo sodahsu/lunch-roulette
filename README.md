@@ -128,8 +128,9 @@ VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 
 建立隔離測試專案後，先完成以下設定：
 
-1. 依序套用 `supabase/migrations/` 全部 migrations，包含 PR #45（issue #43）的 `20261121_restore_authenticated_rls_access.sql`，為 `authenticated` 提供資料表最小權限。PR #44 不含這支 migration；若先驗證 #44，隔離專案仍須先套用 #45 的 migration。權限由 migration 管理，不要為了讓測試通過而手動放寬 RLS。
+1. 依序套用 `supabase/migrations/` 全部 migrations，包含 PR #45（issue #43）的 `20261121_restore_authenticated_rls_access.sql`，為 `authenticated` 提供資料表最小權限。PR #44 不含這支 migration；合併順序上，若先合併或先驗證 #44，隔離測試專案仍須先套用 #45 的權限 migration，正式環境則依 #45 流程由管理者評估套用。權限由 migration 管理，不要為了讓測試通過而手動放寬 RLS。
 2. 啟用 Anonymous Auth，並確認 migrations 設定的 Realtime publication 已生效。若匿名登入成功，但建立房間時出現 `42501`（資料表權限不足），先確認上述權限 migration 是否已套用。
+3. 調整測試專案的 Anonymous Sign-ins 速率限制（例如每 IP 每小時 120 次）：完整 26 案 E2E 單輪會建立數十個匿名使用者，預設 30/hr 會在 CASE-08～09 觸發限流。
 
 ```bash
 pnpm test:unit
