@@ -1,10 +1,48 @@
 ---
 title: "Lunch Roulette《都可以？》Solo Start｜AI 工作交接"
-date: "2026-10-11"
+date: "2026-11-10"
 handoff_status: ready_for_handoff
 ---
 
 # Lunch Roulette《都可以？》Solo Start｜AI 工作交接
+
+## 2026-11-10｜狀態更新（截至 2026-11-10）
+
+### 版本與發布（FACT：`git describe origin/main`、`git tag`、`gh release list`、GitHub Deployments 查證）
+
+- 最新 tag 是 `v0.2.2`（2026-11-05，指向 `5d6cc72`，PR #26）。`v0.2.2` **沒有** GitHub Release；最新 GitHub Release 是 `v0.2.1`（標為 Latest）。
+- `main` 在 `v0.2.2` 之後多 27 個 commit（`git describe origin/main` = `v0.2.2-27-g0791e41`），來自三次 `dev → main`：
+  - PR #28（2026-11-05）：Supabase 防暫停每日排程。
+  - PR #31（2026-11-08）：分享人格結果卡與單人開局收尾。
+  - PR #38（2026-11-08）：題庫 v0.3、分享升級、Preview 防護、暫停搜尋收錄。
+- 尚無新 tag / Release，`package.json#version` 仍是 `0.2.2`。
+- Production 最近一次部署是 `0791e41`（PR #38 的 merge commit，2026-11-08，GitHub Deployments 狀態 success），所以 production 跑的是 `v0.2.2` 之後的 `main`，不是 `v0.2.1`。
+- PR #38 描述的「上線後確認」（Production 建置、`x-robots-tag: noindex`、`og-image.png` / `favicon.ico` 回 200）與「待人工確認」（手機實機的 Web Share、iOS 16 以下不支援 `roundRect`）本次沒有重新查證。
+- **待使用者決定**：下一個版號、是否建立 tag 與 GitHub Release、是否為 `v0.2.2` 補 Release。版號與 Release 是發布決策，本文件不授權建立。
+
+### OpenSpec
+
+- 2026-11-10 歸檔 `share-upgrade` 與 `questionnaire-v03`（`openspec/changes/archive/2026-11-10-*`），delta 併入 `openspec/specs/`，新增 `link-preview` capability。`openspec/changes/` 已沒有 active change。
+
+### 原「剩餘工作」的後續完成項
+
+| 項目 | 狀態 | 佐證 |
+|---|---|---|
+| solo-start archive | 已完成 | PR #32，`openspec/changes/archive/2026-11-08-solo-start/` |
+| 局勢更新 cue、375 / 768 / desktop responsive、focus / keyboard / reduced-motion、暫時與正式結果的視覺區隔 | tasks 已勾選；證據是 E2E CASE-20 的截圖與斷言，**實機人工目視仍未做** | PR #30，archive 版 `tasks.md` 第 5 節 |
+| Supabase 防暫停排程 | 已完成 | PR #27（dev）、#28（main）；`gh run list --workflow supabase-keepalive.yml` 顯示 2026-11-06 起每日 schedule run 皆 success（2026-11-05 為 workflow_dispatch） |
+| Realtime 同步修正 | 已完成 | PR #21（訂閱空窗，v0.2.1）、#24（`attachRealtime` 不再等握手，v0.2.2） |
+| 題庫 24 → 48 題 | 已完成，已併入 `main` | PR #35、#36 → #38；`src/domain/questions.ts` 的 `QUESTION_BANK_V03` 為 48 題（6 類 × 8），`QUESTION_BANK`（v0.2）凍結為 24 題 |
+| OG 預覽圖與 favicon | 已完成，已併入 `main` | PR #34 → #38 |
+| 暫停搜尋引擎收錄（noindex） | 已完成，已併入 `main` | PR #37 → #38；撤回方式見 README「暫不開放搜尋收錄」 |
+| 封住非 `main` 分支的 Preview | 已完成，已併入 `main` | PR #33 → #38；取代 2026-10-11「保留 PR preview、`vercel.json` 不改」的決定 |
+| 人格卡匯出、團體成功率卡 | 已完成，已併入 `main` | PR #29 → #31；PR #34 → #38 |
+
+仍未做（截至 2026-11-10）：
+
+- 主持人可讀全場 response 的逐題答案：policy 沒變（`supabase/migrations/` 最新一支仍是 `20261002_require_food_submission_for_completion.sql`）。
+- Production 是否設了 `VITE_SUPABASE_*`：UNKNOWN，本次沒有查。
+- Host 大廳不輪詢：`src/` 目前沒有輪詢（唯一的 `setInterval` 在 `audio.ts`），Realtime 長時間連不上時的限制仍在。
 
 ## 2026-11-08｜dev 發布驗證
 
@@ -14,24 +52,27 @@ handoff_status: ready_for_handoff
 
 ## Resume Here
 
-**交付定位：**production 目前是 `v0.2.1`。這份文件是 2026-10-11 收尾時的狀態快照，供下一個 Agent 接手後續優化或 archive；文件本身不授權 merge 到 `main`、建立 tag / Release，也不授權修改遠端 DB。
+**交付定位：**截至 2026-11-10，最新 tag 是 `v0.2.2`、最新 GitHub Release 是 `v0.2.1`，`main` 在 `v0.2.2` 之後多 27 個 commit 且尚無新 tag（見上方「2026-11-10｜狀態更新」）。下方 2026-10 的段落是當時的狀態快照；文件本身不授權 merge 到 `main`、建立 tag / Release，也不授權修改遠端 DB。
 
-- 目標與交付物：同一個 session 支援「1 人先開局 → 朋友後加入 → open 階段暫時人格 / 暫定成功率 → 沿用正式兩段式 Reveal」。**已完成並上線**（`v0.2.0`）；`v0.2.1` 是 Realtime 同步與保哥審查修正。
+- 目標與交付物：同一個 session 支援「1 人先開局 → 朋友後加入 → open 階段暫時人格 / 暫定成功率 → 沿用正式兩段式 Reveal」。**已完成並上線**（`v0.2.0`）；`v0.2.1` 是 Realtime 同步與保哥審查修正；`v0.2.2` 是 `attachRealtime` 不再等握手。
 - 非目標（沿用）：不新增獨立 Solo session type、不改 `open → locked → revealed`、不把單人結果硬算成群體成功率、不放寬 participant 讀取他人 response / result 的隱私邊界。
-- 本次已做：PR #17～#22，詳見下方「2026-10-11｜v0.2.1 上線」；v0.2.0 的 PR #6～#15 見「2026-10-03｜v0.2.0 上線」。
-- 第一個安全動作：`git fetch` 後確認 `origin/main` 與 `origin/dev` 都在 `v0.2.1` 之後、沒有新的分歧（`git log origin/main..origin/dev --no-merges`），再讀「剩餘工作」挑一項。
+- 已做：PR #17～#22 見「2026-10-11｜v0.2.1 上線」；v0.2.0 的 PR #6～#15 見「2026-10-03｜v0.2.0 上線」；PR #24～#38（v0.2.2、Supabase 防暫停、分享卡、OpenSpec 歸檔、問卷 v0.3、分享升級、noindex）見「2026-11-10｜狀態更新」。
+- 第一個安全動作：`git fetch` 後確認 `origin/main` 與 `origin/dev` 沒有新的分歧（`git log origin/main..origin/dev --no-merges` 應為空；2026-11-10 查證為空），再讀「2026-11-10｜狀態更新」的「仍未做」挑一項。
 - 停止條件：`dev` 與 `main` 出現分歧、CI 紅、或要動遠端 Supabase schema 時，先停下來問使用者。
 
 ```yaml
 handoff_purpose: follow_up_and_archive
-task_state: released_v0.2.1
+task_state: main_ahead_of_latest_tag_2026-11-10
 code_changed: true
 repository_reverified: true
 current_integration_branch: dev
-production_release: v0.2.1 (1d05fad, https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.1)
+latest_tag: v0.2.2 (5d6cc72, 2026-11-05, 沒有 GitHub Release)
+latest_github_release: v0.2.1 (1d05fad, https://github.com/sodahsu/lunch-roulette/releases/tag/v0.2.1)
+main_head: 0791e41 (v0.2.2-27-g0791e41, PR #38, production 部署 success)
+next_version: 待使用者決定（尚未建立 tag / Release）
 previous_release: v0.2.0 (cde197b)
 production_url: https://lunch-roulette-xi.vercel.app
-approval_evidence: 使用者 2026-10-11 選「發 v0.2.1」並回「做」；PR preview 政策選「保留 PR preview」
+approval_evidence: 使用者 2026-10-11 選「發 v0.2.1」並回「做」（v0.2.1 當時的批准）；2026-10-11 的「保留 PR preview」決定已被 2026-11-08 PR #33 取代
 ```
 
 ## 2026-10-11｜v0.2.1 上線
@@ -55,6 +96,8 @@ approval_evidence: 使用者 2026-10-11 選「發 v0.2.1」並回「做」；PR 
 
 ### 剩餘工作（未做）
 
+> 2026-11-10：第 1 項已完成（PR #32）；第 2 項見「2026-11-10｜狀態更新」；第 3～5 項仍成立。
+
 1. solo-start 尚未 archive：`openspec/changes/solo-start/` 還沒併入 `openspec/specs/`；`tasks.md` 的 archive gate 與「確認 specs / README 與 runtime 同步」未勾。
 2. 人工檢查未做：多人加入時的局勢更新 cue、375 / 768 / desktop responsive、focus / keyboard / reduced-motion、暫時結果與正式結果的視覺區隔。
 3. 主持人可讀全場 response 的逐題答案（MVP 既有 policy「self or host can read responses」，鎖定時由主持人端計算 snapshot 需要）。目前 UI 不顯示，若要收緊需要把計算移到 server 端。
@@ -64,11 +107,11 @@ approval_evidence: 使用者 2026-10-11 選「發 v0.2.1」並回「做」；PR 
 ### 踩坑紀錄（給下一個 Agent）
 
 - **Supabase 防暫停**：免費專案一週內使用者資料庫活動過少會暫停，官方建議每天幾次資料庫請求，因此每天排程一次，每次依序送出三個唯讀請求。
-  GitHub 排程只從預設分支 `main` 執行，須先由 dev 發布至 main；公開 repo 連續 60 天沒有任何活動時排程會被自動停用，專案仍可能再被暫停。
+  GitHub 排程只從預設分支 `main` 執行，須先由 dev 發布至 main；公開 repo 連續 60 天沒有任何活動時排程會被自動停用，專案仍可能再被暫停。（2026-11-10：排程已隨 PR #28 發布到 `main`，每日 run 皆 success。）
 - **Supabase 的 `SUBSCRIBED` 早於 `postgres_changes` 生效**：預設 `phx_reply ok` 比伺服器的 `system: Subscribed to PostgreSQL` 早約 500ms，空窗內的變更不送事件。要開 `postgres_changes_options: { wait: true }`，且在 `SUBSCRIBED` 後主動刷新一次。查這類問題要錄 WebSocket 訊框（`page.on('websocket')` 的 `framereceived`），只看 UI 會誤判成「握手太慢」。
 - **拿掉輪詢前先想它在補什麼**：v0.2.0 的 3 秒輪詢一直默默蓋住上面的空窗，拿掉後才浮現。
 - **不要拿掉 Supabase fallback**：Vercel Preview 沒設 `VITE_SUPABASE_*`，頂層 `throw` 會被打包成無條件拋錯，bundle 只剩 57 KB、畫面全白；CI 若先複製 `.env.example` 會綠燈，把問題蓋掉。publishable key 本來就公開。
-- **`vercel.json` 的 `"*": false` 對不到含斜線的分支名**：部署紀錄顯示 `dev` 從未部署、`task/*` 每個 commit 都有 Preview（INFERENCE：glob 的 `*` 不跨 `/`）。2026-10-11 使用者決定保留 PR preview，`vercel.json` 不改。Vercel project 在 `piscean0619-7206s-projects` scope 底下，不在 `sodahsu0314-3323`。
+- **`vercel.json` 的 `"*": false` 對不到含斜線的分支名**：部署紀錄顯示 `dev` 從未部署、`task/*` 每個 commit 都有 Preview（INFERENCE：glob 的 `*` 不跨 `/`）。2026-10-11 使用者決定保留 PR preview，`vercel.json` 不改。（2026-11-10 更正：2026-11-08 PR #33 已改 `vercel.json`，加上 `**` 規則與 `ignoreCommand`，非 `main` 分支不再建置 Preview，見 README「Deployment」。）Vercel project 在 `piscean0619-7206s-projects` scope 底下，不在 `sodahsu0314-3323`。
 - **Production smoke 的跑法**：在 scratchpad 放一份 Playwright config，`testDir` 指向 repo 的 `tests/e2e`、`use.baseURL` 指向 production、不設 `webServer`，用 `-g "CASE-(01|12|20) "` 挑案例。CASE-22 / CASE-23 用 `import('/src/lib/supabase.ts')`，只在 Vite dev server 能跑，不能拿來打部署環境。
 
 ## 2026-10-03｜v0.2.0 上線

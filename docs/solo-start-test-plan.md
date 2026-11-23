@@ -2,7 +2,7 @@
 
 > Scope：`task/solo-start`
 >
-> Source of truth：`HANDOFF.md` + `openspec/changes/solo-start/`
+> Source of truth：`docs/HANDOFF.md` + `openspec/changes/solo-start/`
 >
 > Current release state：**IMPLEMENTATION PRESENT / VALIDATION BLOCKED**
 
@@ -36,7 +36,7 @@ Host 建立飯局
 2. **Architecture / invariant**
    - `openspec/changes/solo-start/design.md`
 3. **目前真實執行狀態**
-   - `HANDOFF.md`
+   - `docs/HANDOFF.md`
 4. **工作清單**
    - `openspec/changes/solo-start/tasks.md`
 

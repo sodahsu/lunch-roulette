@@ -2,7 +2,9 @@
 
 ## Purpose
 定義團體成功率與個人人格的揭曉內容、稀有卡的判定與呈現規則，以及主持人與參與者各自在結果頁看到的內容；全程不公開任何人的個人逐題答案。
+
 ## Requirements
+
 ### Requirement: Reveal 只使用完整 response
 The system SHALL calculate reveal results using only complete responses captured after the session is locked.
 
@@ -22,7 +24,7 @@ The system SHALL calculate reveal results using only complete responses captured
 The system SHALL derive a deterministic dinner success rate from locked aggregate answers using the algorithm assigned to the session questionnaire version.
 
 #### Scenario: 舊場次重新開啟
-- WHEN session questionnaire version 為 `v0.1` 或 `v0.2`
+- WHEN session questionnaire version 為 `v0.1`、`v0.2` 或 `v0.3`
 - THEN 系統應使用已固定的 `v1` dinner-success algorithm
 - AND 不得因未來加入新公式而改用不同演算法
 
@@ -125,18 +127,23 @@ The system SHALL present public reveal information only as aggregates.
 - AND 不得顯示某位 participant 的逐題答案
 
 ### Requirement: Persona 使用 deterministic scoring
-The system SHALL assign one of the configured ten personas using only the participant's active-question answers and configured v0.2 scoring rules.
+The system SHALL assign one of the configured ten personas using only the participant's active-question answers and the scoring rules of the session questionnaire version.
 
 #### Scenario: Persona scoring
 - WHEN participant 為 complete
 - THEN 系統應加總其 active answers 對各 persona 的 option scores
-- AND 選擇總分最高的 persona
-- AND 不得使用 threshold 作為 v0.2 persona 判定
+- AND 以各 persona 的得分除以該房 active questions 中該 persona 可得的最高分，得到達成率
+- AND 選擇達成率最高的 persona
+- AND 不得使用 threshold 作為 persona 判定
 
 #### Scenario: Persona score 平手
-- WHEN 兩個以上 personas 具有相同最高分
+- WHEN 兩個以上 personas 具有相同最高達成率
 - THEN 系統應依固定 `PERSONA_PRIORITY` 選出結果
 - AND 相同 answers 與相同 rules 必須得到相同 persona
+
+#### Scenario: 舊版本場次的 persona
+- WHEN session questionnaire version 為 `v0.1` 或 `v0.2`
+- THEN persona 結果應與升級 v0.3 之前相同
 
 ### Requirement: 稀有卡為與作答內容無關的 deterministic 抽籤結果
 The system SHALL mark rare Persona cards independently from questionnaire answers and SHALL guarantee at least one rare card whenever at least one complete participant exists.
@@ -198,15 +205,21 @@ The system SHALL provide a final host-screen social prompt after persona cards h
 - AND 不需要公開個人逐題答案
 
 ### Requirement: 個人人格卡可在正式揭曉後匯出
-系統 SHALL 讓玩家在正式 Reveal 後於個人裝置產生 PNG，支援檔案分享時使用系統分享，否則下載圖片。
+系統 SHALL 讓玩家在正式 Reveal 後於個人裝置產生 PNG，卡面包含自己人格的插圖，支援檔案分享時使用系統分享，否則下載圖片。
 
 #### Scenario: 正式揭曉之前
 - WHEN 場次尚未正式揭曉
 - THEN 不顯示匯出按鈕
 
+#### Scenario: 卡面插圖與稀有度外框
+- WHEN 玩家匯出人格卡
+- THEN 卡面應畫入該人格對應的插圖
+- AND 稀有（SSR）卡應有金色外框與稀有度標示，一般卡不得有金色外框
+- AND 插圖載入失敗時仍可匯出純文字版卡片
+
 #### Scenario: 匯出隱私
 - WHEN 玩家匯出人格卡
-- THEN 圖片只含自己的人格名稱、稀有度及金句等個人資訊
+- THEN 圖片只含自己的人格名稱、稀有度、金句與該人格插圖
 - AND 不得含他人暱稱、答案、配對結果或全場成功率
 - AND 圖片在本機產生，不上傳或呼叫外部服務
 - AND 不包含房號或玩家序號（NEEDS_CONFIRMATION：是否允許加入）
@@ -270,3 +283,21 @@ The system SHALL rebuild formal results from locked responses instead of persist
 - WHEN session 由 `locked` 切換為 `revealed`
 - THEN complete participant 應顯示 persisted formal result
 - AND provisional persona 不再作為結果來源
+
+### Requirement: 團體成功率卡可在正式揭曉後匯出
+系統 SHALL 讓玩家在正式 Reveal 後於結果頁產生只含 aggregate 的團體成功率卡 PNG，支援檔案分享時使用系統分享，否則下載圖片。
+
+#### Scenario: 正式揭曉之前
+- WHEN 場次尚未正式揭曉
+- THEN 不顯示團體成功率卡的匯出按鈕
+
+#### Scenario: 卡面內容只含 aggregate
+- WHEN 玩家匯出團體成功率卡
+- THEN 圖片只含成功率百分比、對應的 deterministic verdict、有效人數與日期
+- AND 不得含任何參加者暱稱、人格、配對、個人答案、房號或玩家序號
+- AND 圖片在本機產生，不上傳或呼叫外部服務
+
+#### Scenario: 有效樣本不足
+- WHEN complete participant 少於兩位
+- THEN 不顯示團體成功率卡的匯出按鈕
+- AND 不得把缺少樣本畫成 0%
