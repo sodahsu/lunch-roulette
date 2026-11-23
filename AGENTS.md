@@ -1,6 +1,6 @@
 # AGENTS.md — Lunch Roulette AI Worker 規則
 
-接手前先讀 `HANDOFF.md`（進度與踩坑的唯一來源）、`README.md`，再讀對應的 `openspec/` change。HANDOFF 是某日的狀態快照，動工前先 `git fetch` 並以 `origin/dev` 與 CI 實況為準。
+接手前先讀 `docs/HANDOFF.md`（進度與踩坑的唯一來源）、`README.md`，再讀對應的 `openspec/` change。HANDOFF 是某日的狀態快照，動工前先 `git fetch` 並以 `origin/dev` 與 CI 實況為準。
 
 ## 分支模型
 - `dev` 是整合分支，`main` 是發布線；功能一律先進 `dev`，不得日常以 `main` 為 PR 目標。
