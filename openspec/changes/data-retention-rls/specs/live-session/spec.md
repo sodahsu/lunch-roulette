@@ -13,18 +13,21 @@
 - **WHEN** 參與者嘗試改寫答案或新使用者嘗試加入
 - **THEN** MUST 拒絕修改與加入
 
-### Requirement: Retention must be an explicit decision
-系統 MUST 在負責人核准期限、UX、隱私告知及回滾計畫前維持現有資料保留行為，不可自行設定定時刪除。
+### Requirement: Expired sessions and dependent data must be deleted
+系統 MUST 每日清理到期場次：已揭曉場次以 `revealed_at` 起算 30 天，未揭曉場次以 `created_at` 起算 30 天；場次的參加者、作答及結果資料 MUST 依外鍵 cascade 刪除。
 
-#### Scenario: No approved retention duration
-- **GIVEN** 負責人尚未選定保留期限
-- **WHEN** 開發者提出清理工作
-- **THEN** MUST 不對正式資料庫啟用刪除工作
+#### Scenario: Revealed and unrevealed retention periods
+- **GIVEN** 已揭曉場次的揭曉時間、未揭曉場次的建立時間分別超過 30 天
+- **WHEN** 每日排程執行
+- **THEN** MUST 刪除兩類到期場次及其相依資料，保留未滿 30 天的場次
 
-#### Scenario: Revealed session retention rehearsal
-- **GIVEN** 負責人已核准已揭曉場次保留 30 天，但未核准正式執行與未結束場次期限
-- **WHEN** 維護者在隔離資料庫演練清理
-- **THEN** MUST 僅移除揭曉超過 30 天的場次與其相依資料，回報刪除場次筆數，並回滾演練；不得啟用正式排程
+### Requirement: Retention cleanup is observable and reversible before data deletion
+系統 MUST 提供唯讀 dry-run 分別計數兩類到期場次，並提供只停止未來排程、移除清理函式的 rollback；rollback MUST NOT 聲稱會恢復已刪資料。
+
+#### Scenario: Preview and disable cleanup
+- **GIVEN** 維護者檢視目前到期資料或需停止排程
+- **WHEN** 執行唯讀 dry-run 或 rollback migration
+- **THEN** dry-run MUST 分別回報已揭曉與未揭曉的筆數，rollback MUST 停止排程而不還原已刪資料
 
 #### Scenario: Unavailable share link
 - **GIVEN** 分享連結的房號已過期或不存在

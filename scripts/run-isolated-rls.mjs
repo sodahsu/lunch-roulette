@@ -56,9 +56,12 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
     for (const name of ['PGHOSTADDR', 'PGSERVICE', 'PGSERVICEFILE', 'PGPASSFILE', 'PGOPTIONS']) {
       delete isolatedPsqlEnv[name]
     }
+    const files = mode === 'retention'
+      ? ['../supabase/migrations/20261127_schedule_expired_session_cleanup.sql', `../tests/db/${sql}`]
+      : [`../tests/db/${sql}`]
     const result = spawnSync('psql', [
       '-X', '-v', 'ON_ERROR_STOP=1',
-      '-f', fileURLToPath(new URL(`../tests/db/${sql}`, import.meta.url))
+      ...files.flatMap(file => ['-f', fileURLToPath(new URL(file, import.meta.url))])
     ], {
       stdio: 'inherit',
       env: isolatedPsqlEnv
