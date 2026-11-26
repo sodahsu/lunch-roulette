@@ -1,17 +1,23 @@
+-- Executed only by the isolated Supabase runner; the enclosing transaction rolls everything back.
 BEGIN;
 
-CREATE TEMP TABLE retention_fixtures (id uuid, code text, status public.session_status, age interval, expires boolean);
+CREATE TEMP TABLE retention_fixtures (
+  id uuid primary key,
+  code text,
+  status public.session_status,
+  created_age interval,
+  revealed_age interval,
+  expires boolean
+);
 INSERT INTO retention_fixtures VALUES
-  (gen_random_uuid(), 'RET43A', 'revealed', interval '721 hours', true),
-  (gen_random_uuid(), 'RET43B', 'revealed', interval '719 hours', false),
-  (gen_random_uuid(), 'RET43C', 'revealed', interval '720 hours', false),
-  (gen_random_uuid(), 'RET43D', 'open', interval '721 hours', false),
-  (gen_random_uuid(), 'RET43E', 'locked', interval '721 hours', false),
-  (gen_random_uuid(), 'RET43F', 'revealed', NULL, false);
+  (gen_random_uuid(), 'RET43A', 'revealed', interval '31 days', interval '31 days', true),
+  (gen_random_uuid(), 'RET43B', 'revealed', interval '31 days', interval '29 days', false),
+  (gen_random_uuid(), 'RET43C', 'open', interval '31 days', NULL, true),
+  (gen_random_uuid(), 'RET43D', 'locked', interval '29 days', NULL, false);
 
 INSERT INTO public.sessions (id, code, host_user_id, status, created_at, revealed_at)
-SELECT id, code, gen_random_uuid(), status, now() - interval '1000 hours',
-       CASE WHEN status = 'revealed' THEN now() - age END
+SELECT id, code, gen_random_uuid(), status, now() - created_age,
+       CASE WHEN status = 'revealed' THEN now() - revealed_age END
 FROM retention_fixtures;
 
 INSERT INTO public.participants (session_id, user_id, display_name)
@@ -23,7 +29,20 @@ SELECT id, '{}' FROM retention_fixtures;
 INSERT INTO public.participant_results (session_id, participant_id, user_id, result)
 SELECT session_id, id, user_id, '{}' FROM public.participants WHERE session_id IN (SELECT id FROM retention_fixtures);
 
-\ir ../../openspec/changes/data-retention-rls/cleanup-expired-sessions.sql
+DO $$
+DECLARE
+  deleted_count bigint;
+BEGIN
+  deleted_count := public.delete_expired_sessions();
+  IF deleted_count <> 2 THEN
+    RAISE EXCEPTION 'Retention FAIL: expected 2 expired sessions deleted, got %', deleted_count;
+  END IF;
+
+  deleted_count := public.delete_expired_sessions();
+  IF deleted_count <> 0 THEN
+    RAISE EXCEPTION 'Retention FAIL: rerun should delete 0 sessions, got %', deleted_count;
+  END IF;
+END $$;
 
 DO $$
 BEGIN
