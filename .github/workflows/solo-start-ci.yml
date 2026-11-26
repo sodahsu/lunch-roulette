@@ -1,8 +1,8 @@
 name: Solo Start CI
 
 concurrency:
-  group: solo-start-final-${{ github.ref }}
-  cancel-in-progress: true
+  group: solo-start-${{ github.event.pull_request.number || (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 on:
   pull_request:
@@ -21,59 +21,124 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files (fail closed)
+        id: change_scope
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          # Tests are required unless we successfully prove every changed path is documentation-only.
+          echo "docs_only=false" >> "$GITHUB_OUTPUT"
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base="$PR_BASE_SHA"
+          elif [[ "$EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            base="$BEFORE_SHA"
+          else
+            echo "Cannot establish a comparison base; keeping full verification."
+            exit 0
+          fi
+
+          if ! git cat-file -e "$base^{commit}" 2>/dev/null || ! git cat-file -e "$HEAD_SHA^{commit}" 2>/dev/null; then
+            echo "Comparison commit unavailable; keeping full verification."
+            exit 0
+          fi
+
+          if ! changed_files=$(git diff --name-only "$base" "$HEAD_SHA"); then
+            echo "Diff failed; keeping full verification."
+            exit 0
+          fi
+
+          if [[ -z "$changed_files" ]]; then
+            echo "No changed files detected; keeping full verification."
+            exit 0
+          fi
+
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            case "$file" in
+              *.md|docs/*|openspec/*|LICENSE) ;;
+              *) echo "Non-documentation change: $file"; exit 0 ;;
+            esac
+          done <<< "$changed_files"
+
+          echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          echo "All changed files are documentation-only; test steps will be skipped."
 
       - name: Setup Node
         uses: actions/setup-node@v4
+        if: ${{ !cancelled() }}
         with:
           node-version: 22
+          cache: pnpm
+
+      - name: Report verification scope
+        run: echo "Documentation-only=${{ steps.change_scope.outputs.docs_only == 'true' }}"
 
       - name: Enable pnpm
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: |
           corepack enable
           corepack prepare pnpm@10.30.3 --activate
           pnpm --version
 
       - name: Install dependencies
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: pnpm exec playwright install chromium
 
       - name: Unit tests
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: pnpm test:unit
 
       - name: Typecheck
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: pnpm typecheck
 
       - name: Build
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: pnpm build
 
       - name: OpenSpec strict validation
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: pnpm dlx @fission-ai/openspec validate --all --strict --no-interactive
 
       - name: Install isolated PostgreSQL client
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: RLS negative tests (isolated Supabase only)
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         env:
           E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
           E2E_POSTGRES_URL: ${{ secrets.E2E_POSTGRES_URL }}
         run: node scripts/run-isolated-rls.mjs
 
       - name: Retention dry run (isolated Supabase only)
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         env:
           E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
           E2E_POSTGRES_URL: ${{ secrets.E2E_POSTGRES_URL }}
         run: node scripts/run-isolated-rls.mjs retention
 
       - name: E2E (isolated test Supabase only)
+        if: ${{ !cancelled() && steps.change_scope.outputs.docs_only != 'true' }}
         env:
           E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
           E2E_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY }}
         run: pnpm test:e2e
 
       - name: Upload Playwright failure artifacts
-        if: failure()
+        if: failure() && !cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
